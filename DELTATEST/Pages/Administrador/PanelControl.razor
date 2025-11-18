@@ -1,0 +1,91 @@
+﻿@page "/panelControlAdmin"
+@layout MainSinLayout
+
+<div class="container-fluid vh-100">
+    <div class="row h-100">
+
+        <!-- Sidebar -->
+        <div class="col-2 border-end d-flex flex-column align-items-center justify-content-center bg-white">
+            <div class="text-center">
+                <i class="bi bi-person-circle fs-1 text-dark"></i>
+                <img src="images/usuario.png" class="icon-img" alt="Ver cuentas" />
+                <div class="mt-2 fw-medium">Inicio</div>
+            </div>
+        </div>
+
+        <!-- Panel principal -->
+        <div class="col-10 p-5">
+            <h3 class="fw-semibold mb-5">Panel de Control de Administrador</h3>
+
+            <!-- Fila superior -->
+            <div class="row justify-content-center mb-4">
+
+                <!-- Ver cuentas -->
+                <div class="col-6 col-md-3 text-center mb-4">
+                    <button class="btn btn-orange rounded-circle d-flex align-items-center justify-content-center mx-auto icon-btn">
+                        <img src="images/eye.png" class="icon-img" alt="Ver cuentas" />
+                    </button>
+                    <div class="fw-medium mt-2">Ver Cuentas</div>
+                </div>
+
+                <!-- Crear cuenta -->
+                <div class="col-6 col-md-3 text-center mb-4">
+                    <button class="btn btn-orange rounded-circle d-flex align-items-center justify-content-center mx-auto icon-btn">
+                        <img src="images/create.png" class="icon-img" alt="Crear cuenta" />
+                    </button>
+                    <div class="fw-medium mt-2">Crear Cuenta</div>
+                </div>
+
+            </div>
+
+            <!-- Fila inferior -->
+            <div class="row justify-content-center">
+
+                <!-- Crear evaluación -->
+                <div class="col-6 col-md-3 text-center mb-4">
+                    <button class="btn btn-orange rounded-circle d-flex align-items-center justify-content-center mx-auto icon-btn">
+                        <img src="images/user.png" class="icon-img" alt="Crear evaluación" />
+                    </button>
+                    <div class="fw-medium mt-2">Crear Evaluación</div>
+                </div>
+
+                <!-- Ver evaluación -->
+                <div class="col-6 col-md-3 text-center mb-4">
+                    <button class="btn btn-orange rounded-circle d-flex align-items-center justify-content-center mx-auto icon-btn">
+                        <img src="images/view.png" class="icon-img" alt="Ver evaluación" />
+                    </button>
+                    <div class="fw-medium mt-2">Ver Evaluación</div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-orange {
+        background-color: #f58220;
+        border: none;
+        transition: background-color 0.3s;
+    }
+
+        .btn-orange:hover {
+            background-color: #d86c0a;
+        }
+
+    .icon-btn {
+        width: 120px;
+        height: 120px;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .icon-img {
+        width: 65%;
+        height: 65%;
+        object-fit: contain;
+    }
+</style>

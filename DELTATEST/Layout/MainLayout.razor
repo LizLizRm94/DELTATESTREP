@@ -1,16 +1,163 @@
 ﻿@inherits LayoutComponentBase
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+<!-- ENCABEZADO GLOBAL -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom shadow-sm top-row w-100">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand d-flex align-items-center" href="">
+            <img src="images/logo.jpg" alt="Logo" class="logo-img me-2" />
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav align-items-center">
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
+                        <span class="bi bi-house-door-fill me-1"></span> Inicio
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="sobre-nosotros">
+                        <span class="bi bi-people-fill me-1"></span> Sobre Nosotros
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="contacto">
+                        <span class="bi bi-envelope-fill me-1"></span> Contacto
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="panelControlAdmin">
+                        <span class="bi bi-share-fill me-1"></span> Redes Sociales
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="btn btn-orange ms-3" href="IniciarSesion">Sign In</NavLink>
+                </li>
+            </ul>
         </div>
+    </div>
+</nav>
 
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
+<!-- CONTENIDO DE CADA PÁGINA -->
+<div class="main-content">
+    @Body
 </div>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <div class="footer-grid">
+        <div>
+            <h4>Use cases</h4>
+            <ul>
+                <li><a href="#">UI design</a></li>
+                <li><a href="#">UX design</a></li>
+                <li><a href="#">Prototyping</a></li>
+            </ul>
+        </div>
+        <div>
+            <h4>Explore</h4>
+            <ul>
+                <li><a href="#">Design</a></li>
+                <li><a href="#">Documentation</a></li>
+                <li><a href="#">Community</a></li>
+            </ul>
+        </div>
+        <div>
+            <h4>Resources</h4>
+            <ul>
+                <li><a href="#">Blog</a></li>
+                <li><a href="#">Best practices</a></li>
+                <li><a href="#">Guides</a></li>
+            </ul>
+        </div>
+    </div>
+    <p class="footer-copy">© 2025 Laboratorios Delta S.A. - Todos los derechos reservados.</p>
+</footer>
+
+
+<style>
+    .btn-orange {
+        background-color: #f58220;
+        color: white;
+        border: none;
+        padding: 6px 16px;
+        border-radius: 6px;
+        transition: background-color 0.3s;
+    }
+
+    .navbar-nav .btn-orange {
+        background-color: #f58220;
+        color: white;
+    }
+
+    .btn-orange:hover {
+        background-color: #d86c0a;
+    }
+
+    .navbar-nav .nav-link {
+        color: #333 !important;
+        font-weight: 500;
+        transition: color 0.3s;
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+    }
+
+        .navbar-nav .nav-link:hover {
+            color: #f58220 !important;
+        }
+    /* logo */
+
+    .navbar-brand img.logo-img {
+        height: 60px;
+        width: auto;
+        display: block;
+    }
+
+    .navbar {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+        min-height: 70px;
+    }
+
+    .main-content {
+        padding: 0;
+        margin: 0;
+    }
+
+    /* FOOTER */
+    .footer {
+        background-color: #c66d1c;
+        color: white;
+        padding: 2rem;
+    }
+
+    .footer-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .footer h4 {
+        margin-bottom: 0.5rem;
+    }
+
+    .footer a {
+        color: white;
+        text-decoration: none;
+        font-size: 0.9rem;
+    }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+    .footer-copy {
+        text-align: center;
+        margin-top: 1rem;
+        font-size: 0.85rem;
+    }
+</style>

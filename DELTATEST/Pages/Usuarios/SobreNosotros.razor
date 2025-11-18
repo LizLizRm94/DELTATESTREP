@@ -1,0 +1,206 @@
+﻿@page "/sobre-nosotros"
+
+<!-- SECCIÓN DE PRESENTACIÓN -->
+<section class="intro">
+    <div class="intro-grid">
+        <div class="intro-card">
+            <p>
+                En Laboratorios Delta S.A., somos una empresa dedicada al control de calidad de productos farmacéuticos,
+                cosméticos y de higiene. Nuestro compromiso es la mejora continua para garantizar la eficacia de nuestro equipo
+                y asegurar el cumplimiento de las normas internas en cada una de sus áreas.
+            </p>
+            <button class="btn-principal">Página Principal</button>
+        </div>
+    </div>
+</section>
+
+<!-- QUÉ HACEMOS -->
+<section class="section que-hacemos">
+    <div class="contenido">
+        <div class="texto">
+            <h2>Qué hacemos y cómo lo hacemos</h2>
+            <ul>
+                <li>Implementamos evaluaciones por personal fijo una vez al año.</li>
+                <li>Formamos y rotamos al personal de acuerdo a sus aptitudes.</li>
+                <li>Aplicamos un sistema estandarizado para medir resultados y desempeño.</li>
+                <li>Garantizamos la mejora continua mediante indicadores de calidad.</li>
+            </ul>
+        </div>
+
+        <div class="intro-image">
+            <img src="Images/aprobacion.png" alt="Equipo de Laboratorios Delta" />
+        </div>
+    </div>
+</section>
+
+<!-- NUESTROS VALORES -->
+<section class="section valores">
+    <div class="contenido">
+        <div class="texto">
+            <h2>Nuestros valores</h2>
+            <ul>
+                <li>Nos aseguramos de que cada miembro del equipo tenga los conocimientos necesarios para desempeñar su función.</li>
+                <li>Promovemos la ética profesional, compromiso y respeto.</li>
+                <li>Fomentamos el trabajo en equipo y el crecimiento constante.</li>
+            </ul>
+        </div>
+
+        <div class="intro-image">
+            <img src="Images/personal.png" alt="Equipo de Laboratorios Delta" />
+        </div>
+    </div>
+</section>
+
+<!-- MISIÓN -->
+<section class="mision">
+    <h2>MISIÓN</h2>
+    <p>
+        Desarrollar e implementar un sistema eficaz de evaluación, rotación y capacitación del personal del área de Control de Calidad
+        de Laboratorios Delta S.A., que asegure competencia técnica, cumplimiento normativo y trazabilidad documental.
+    </p>
+</section>
+
+<!-- ESTILOS -->
+<style>
+    body {
+        font-family: 'Segoe UI', sans-serif;
+        margin: 0;
+        background-color: #fff;
+        color: #333;
+    }
+
+    /* INTRO */
+    .intro {
+        background-color: #fff7f2;
+        text-align: center;
+        padding: 3rem 1rem;
+    }
+
+    .intro-card {
+        max-width: 700px;
+        margin: auto;
+        background-color: white;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .btn-principal {
+        background-color: #f58220;
+        color: white;
+        border: none;
+        margin-top: 1rem;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+        .btn-principal:hover {
+            background-color: #d86c0a;
+        }
+
+    /* SECCIONES GENERALES */
+    .section {
+        padding: 3rem 2rem;
+        max-width: 1100px;
+        margin: auto;
+    }
+
+        .section h2 {
+            color: #333;
+            border-bottom: 2px solid #f58220;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+
+        .section ul {
+            list-style-type: disc;
+            padding-left: 1.5rem;
+            line-height: 1.6;
+        }
+
+    /* QUÉ HACEMOS */
+    .que-hacemos .contenido {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .que-hacemos .texto {
+        flex: 1;
+        min-width: 300px;
+    }
+
+    .intro-image {
+        flex: 0 0 250px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+        .intro-image img {
+            width: 100%;
+            max-width: 250px;
+            height: auto;
+            border-radius: 10px;
+            object-fit: cover;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+    /* VALORES */
+    .valores .contenido {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .valores .texto {
+        flex: 1;
+        min-width: 300px;
+    }
+
+    .valores .intro-image {
+        flex: 0 0 250px; /* Ancho fijo */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 1rem; /* Espacio inferior en móviles */
+    }
+
+        .valores .intro-image img {
+            width: 100%;
+            max-width: 250px;
+            height: auto;
+            border-radius: 10px;
+            object-fit: cover;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+    /* MISIÓN */
+    .mision {
+        text-align: center;
+        background-color: #fff7f2;
+        padding: 3rem 2rem;
+    }
+
+        .mision h2 {
+            color: #f58220;
+            margin-bottom: 1rem;
+        }
+
+        .mision p {
+            max-width: 700px;
+            margin: auto;
+            line-height: 1.7;
+        }
+
+</style>
+
+@code {
+
+}
