@@ -6,7 +6,8 @@ namespace DELTAAPI.Models;
 
 public partial class DeltaTestContext : DbContext
 {
-    public DeltaTestContext()
+    // Hago el ctor sin parámetros protected para evitar instancias manuales desde fuera del proyecto.
+    protected DeltaTestContext()
     {
     }
 
@@ -28,7 +29,13 @@ public partial class DeltaTestContext : DbContext
     public virtual DbSet<Usuario> Usuarios { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer("Name=DefaultConnection");
+    {
+        // Sólo usar la cadena hardcodeada como fallback (p. ej. diseño/ef tools).
+        if (!optionsBuilder.IsConfigured)
+        {
+            optionsBuilder.UseSqlServer("Name=DefaultConnection");
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -1,0 +1,81 @@
+@page "/Registro"
+
+@using Microsoft.AspNetCore.Components.Forms
+@using DELTATEST.Models
+@inject DELTATEST.Services.AuthService AuthService
+@inject NavigationManager Navigation
+
+<style>
+    .form-container { display:flex; justify-content:center; align-items:center; height:100vh; }
+    .form-box { width:420px; padding:30px; border:1px solid #e6e6e6; border-radius:8px; }
+    .btn-primary { background-color:#e5a650; color:white; padding:10px; width:100%; border:none; border-radius:6px }
+</style>
+
+<div class="form-container">
+    <div class="form-box">
+        <h2>Registro</h2>
+        <EditForm Model="model" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="mb-2">
+                <label>Nombre completo</label>
+                <InputText @bind-Value="model.NombreCompleto" class="form-control" />
+                <ValidationMessage For="() => model.NombreCompleto" />
+            </div>
+
+            <div class="mb-2">
+                <label>Correo</label>
+                <InputText @bind-Value="model.Correo" type="email" class="form-control" />
+                <ValidationMessage For="() => model.Correo" />
+            </div>
+
+            <div class="mb-2">
+                <label>CI (opcional)</label>
+                <InputText @bind-Value="model.Ci" class="form-control" />
+            </div>
+
+            <div class="mb-2">
+                <label>Contraseña</label>
+                <InputText @bind-Value="model.Password" type="password" class="form-control" />
+                <ValidationMessage For="() => model.Password" />
+            </div>
+
+            <div class="mb-2">
+                <label>Confirmar contraseña</label>
+                <InputText @bind-Value="model.ConfirmPassword" type="password" class="form-control" />
+                <ValidationMessage For="() => model.ConfirmPassword" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(message))
+            {
+                <div class="text-danger">@message</div>
+            }
+
+            <button type="submit" class="btn-primary">Crear cuenta</button>
+        </EditForm>
+
+        <div style="margin-top:10px">
+            <a href="/IniciarSesion">¿Ya tienes cuenta? Inicia sesión</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RegisterModel model = new();
+    private string? message;
+
+    private async Task HandleValidSubmit()
+    {
+        message = null;
+        var (success, msg) = await AuthService.RegisterAsync(model);
+        if (success)
+        {
+            // Después de registrar, redirigir al login
+            Navigation.NavigateTo("/IniciarSesion");
+            return;
+        }
+
+        message = msg ?? "Error al registrar.";
+    }
+}

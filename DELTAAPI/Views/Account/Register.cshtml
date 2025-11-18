@@ -1,0 +1,88 @@
+@{
+    ViewData["Title"] = "Registrarse";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h2>Registro</h2>
+        <div id="message" class="text-danger mb-2"></div>
+        <form id="registerForm">
+            <div class="row">
+                <div class="mb-3 col-md-6">
+                    <label for="nombre" class="form-label">Nombre completo</label>
+                    <input type="text" id="nombre" name="nombre" class="form-control" required />
+                </div>
+                <div class="mb-3 col-md-6">
+                    <label for="ci" class="form-label">CI</label>
+                    <input type="text" id="ci" name="ci" class="form-control" />
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="correo" class="form-label">Correo</label>
+                <input type="email" id="correo" name="correo" class="form-control" />
+            </div>
+
+            <div class="row">
+                <div class="mb-3 col-md-6">
+                    <label for="telefono" class="form-label">Teléfono</label>
+                    <input type="text" id="telefono" name="telefono" class="form-control" />
+                </div>
+                <div class="mb-3 col-md-6">
+                    <label for="fechaIngreso" class="form-label">Fecha de ingreso</label>
+                    <input type="date" id="fechaIngreso" name="fechaIngreso" class="form-control" />
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label">Contraseña</label>
+                <input type="password" id="password" name="password" class="form-control" required minlength="6" />
+            </div>
+
+            <button type="submit" class="btn btn-success">Crear cuenta</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('registerForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        document.getElementById('message').textContent = '';
+
+        const payload = {
+            nombreCompleto: document.getElementById('nombre').value,
+            ci: document.getElementById('ci').value,
+            correo: document.getElementById('correo').value,
+            telefono: document.getElementById('telefono').value,
+            fechaIngreso: document.getElementById('fechaIngreso').value || null,
+            password: document.getElementById('password').value
+        };
+
+        try {
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    NombreCompleto: payload.nombreCompleto,
+                    Ci: payload.ci,
+                    Correo: payload.correo,
+                    Telefono: payload.telefono,
+                    FechaIngreso: payload.fechaIngreso,
+                    Password: payload.password
+                })
+            });
+
+            if (res.status === 201) {
+                // Registro OK -> redirigir a login
+                window.location.href = '/Account/Login';
+                return;
+            }
+
+            const txt = await res.text();
+            document.getElementById('message').textContent = txt || 'Error en el registro';
+        } catch (err) {
+            document.getElementById('message').textContent = 'Error de red';
+        }
+    });
+</script>
