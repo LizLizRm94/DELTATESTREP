@@ -1,5 +1,7 @@
 ﻿@page "/panelControlAdmin"
 @layout MainSinLayout
+@inject NavigationManager Nav
+
 
 <div class="container-fluid vh-100">
     <div class="row h-100">
@@ -43,6 +45,11 @@
 
                 <!-- Crear evaluación -->
                 <div class="col-6 col-md-3 text-center mb-4">
+                    <button class="btn btn-orange rounded-circle d-flex align-items-center justify-content-center mx-auto icon-btn"
+                            @onclick="IrACrearEvaluacion">
+                        <img src="images/user.png" class="icon-img" alt="Crear evaluación" />
+                    </button>
+                    <div class="fw-medium mt-2">Crear Evaluación</div>
                     <NavLink class="text-decoration-none" href="/crear-evaluacion">
                         <div class="btn btn-orange rounded-circle d-flex align-items-center justify-content-center mx-auto icon-btn">
                             <img src="images/user.png" class="icon-img" alt="Crear evaluación" />
@@ -74,7 +81,7 @@
     }
 
         .btn-orange:hover {
-            background-color: #d86c0a;
+            background-color: #f58220;
         }
 
     .icon-btn {
@@ -92,3 +99,10 @@
         object-fit: contain;
     }
 </style>
+
+@code {
+    private void IrACrearEvaluacion()
+    {
+        Nav.NavigateTo("/Administrador/CrearEvaluacion");
+    }
+}

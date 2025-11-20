@@ -1,0 +1,68 @@
+﻿@page "/Administrador/CrearEvaluacion"
+
+<div class="pantalla-evaluacion">
+    <h3 class="titulo-evaluacion">CREE SUS EVALUACIONES</h3>
+
+    <div class="contenedor-botones">
+        <button class="btn-cuadrado">TEÓRICA</button>
+        <button class="btn-cuadrado">PRÁCTICA</button>
+    </div>
+</div>
+
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .pantalla-evaluacion {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+
+    .titulo-evaluacion {
+        font-size: 36px;
+        margin-bottom: 50px;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .contenedor-botones {
+        display: flex;
+        justify-content: center;
+        gap: 80px;
+    }
+
+    .btn-cuadrado {
+        width: 240px;
+        height: 100px;
+        font-size: 22px;
+        font-weight: 600;
+        color: white;
+        background-color: #F98220;
+        border: none;
+        border-radius: 0px;
+        cursor: pointer;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        transition: transform 0.2s ease, background-color 0.3s ease;
+    }
+
+        .btn-cuadrado:hover {
+            background-color: #e06f1c;
+            transform: scale(1.05);
+        }
+
+        .btn-cuadrado:active {
+            transform: scale(0.98);
+        }
+
+    .footer {
+        display: none !important;
+    }
+
+</style>
