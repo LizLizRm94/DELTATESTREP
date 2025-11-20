@@ -36,6 +36,25 @@
             </div>
 
             <div class="mb-2">
+                <label>Teléfono (opcional)</label>
+                <InputText @bind-Value="model.Telefono" class="form-control" />
+            </div>
+
+            <div class="mb-2">
+                <label>Fecha de ingreso (opcional)</label>
+                <InputDate @bind-Value="model.FechaIngreso" class="form-control" />
+            </div>
+
+            <div class="mb-2">
+                <label>Rol</label>
+                <InputSelect @bind-Value="model.Rol" class="form-control">
+                    <option value="">Seleccionar rol</option>
+                    <option value="Inspector">Inspector</option>
+                    <option value="Usuario">Usuario</option>
+                </InputSelect>
+            </div>
+
+            <div class="mb-2">
                 <label>Contraseña</label>
                 <InputText @bind-Value="model.Password" type="password" class="form-control" />
                 <ValidationMessage For="() => model.Password" />
@@ -74,13 +93,11 @@
 
         if (success)
         {
-            // Redirigir según rol
-            if (rol == "Administrador")
-                Navigation.NavigateTo("/admin/dashboard", forceLoad: true);
-            else if (rol == "Usuario")
-                Navigation.NavigateTo("/usuario/inicio", forceLoad: true);
-            else
-                Navigation.NavigateTo("/", forceLoad: true); // fallback
+            // Redirigir según rol: Inspector -> panel de administrador, Usuario -> home
+            if (string.Equals(rol, "Inspector", StringComparison.OrdinalIgnoreCase))
+                Navigation.NavigateTo("/panelControlAdmin", forceLoad: true);
+            else // Usuario o cualquier otro -> home
+                Navigation.NavigateTo("/", forceLoad: true);
 
             return;
         }
