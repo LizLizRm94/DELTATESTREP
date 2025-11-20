@@ -1,5 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using DELTAAPI.Models;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace DELTAAPI.Controllers
 {
@@ -8,8 +12,13 @@ namespace DELTAAPI.Controllers
     public class AuthController : ControllerBase
     {
         private readonly DeltaTestContext _context;
+        private readonly IConfiguration _configuration;
 
-        public AuthController(DeltaTestContext context) => _context = context;
+        public AuthController(DeltaTestContext context, IConfiguration configuration)
+        {
+            _context = context;
+            _configuration = configuration;
+        }
 
         public class RegisterDto
         {
@@ -72,6 +81,70 @@ namespace DELTAAPI.Controllers
             await _context.SaveChangesAsync();
 
             return StatusCode(201);
+        }
+
+        // Login DTO esperado por el cliente
+        public class LoginDto
+        {
+            public string? Username { get; set; }
+            public string? Password { get; set; }
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginDto dto)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Password))
+                return BadRequest("Usuario y contraseña son obligatorios.");
+
+            // Buscar usuario por correo o CI
+            var user = await Task.Run(() => _context.Usuarios.FirstOrDefault(u => u.Correo == dto.Username || u.Ci == dto.Username));
+            if (user == null)
+                return NotFound("Usuario no encontrado.");
+
+            // Comparación simple; en producción usar hashing
+            if (user.Contraseña != dto.Password)
+                return Unauthorized("Credenciales inválidas.");
+
+            // Generar token JWT
+            var key = _configuration["Jwt:Key"];
+            var issuer = _configuration["Jwt:Issuer"];
+            var audience = _configuration["Jwt:Audience"];
+
+            if (string.IsNullOrWhiteSpace(key))
+                return StatusCode(500, "Configuración de JWT no encontrada.");
+
+            var claims = new List<Claim>
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.NombreCompleto ?? string.Empty),
+                new Claim("IdUsuario", user.IdUsuario.ToString()),
+                new Claim(ClaimTypes.Role, user.Rol ?? "Usuario")
+            };
+
+            if (!string.IsNullOrWhiteSpace(user.Correo))
+                claims.Add(new Claim(ClaimTypes.Email, user.Correo));
+
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+            var creds = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: issuer,
+                audience: audience,
+                claims: claims,
+                expires: DateTime.UtcNow.AddHours(8),
+                signingCredentials: creds
+            );
+
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+
+            var result = new
+            {
+                Token = tokenString,
+                IdUsuario = user.IdUsuario,
+                NombreCompleto = user.NombreCompleto,
+                Rol = user.Rol
+            };
+
+            return Ok(result);
         }
     }
 }

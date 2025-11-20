@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DELTAAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DELTAAPI.Controllers
 {
@@ -12,6 +13,7 @@ namespace DELTAAPI.Controllers
         public UsuariosController(DeltaTestContext context) => _context = context;
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAll()
         {
             var list = await _context.Usuarios
