@@ -1,0 +1,122 @@
+﻿@page "/administrador/usuarios"
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject IJSRuntime Js
+
+<h3>Ver usuarios (Admin)</h3>
+
+@if (isLoading)
+{
+    <div class="spinner-border" role="status"><span class="visually-hidden">Cargando...</span></div>
+}
+else if (users == null || users.Count == 0)
+{
+    <div>No hay usuarios.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Id Usuario</th>
+                    <th>Nombre Completo</th>
+                    <th>Correo Electrónico</th>
+                    <th>Fecha de Ingreso</th>
+                    <th>Cargo Actual</th>
+                    <th>Cargo a Desempeñar</th>
+                    <th>Ingreso con</th>
+                    <th class="text-center">Detalles</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var u in users)
+                {
+                    <tr>
+                        <td>@u.IdUsuario.ToString("D4")</td>
+                        <td>@u.NombreCompleto</td>
+                        <td>@u.Correo</td>
+                        <td>@(u.FechaIngreso.HasValue ? u.FechaIngreso.Value.ToString("dd/MM/yyyy") : "")</td>
+                        <td>@u.PuestoActual</td>
+                        <td>@u.PuestoSolicitado</td>
+                        <td>@u.Estado</td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-secondary me-1" title="Ver" @onclick="() => ViewUser(u.IdUsuario)">
+                                <i class="bi bi-eye" aria-hidden="true"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary me-1" title="Editar" @onclick="() => EditUser(u.IdUsuario)">
+                                <i class="bi bi-pencil" aria-hidden="true"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" title="Eliminar" @onclick="() => DeleteUser(u.IdUsuario)" disabled="@(deletingId == u.IdUsuario)">
+                                @if (deletingId == u.IdUsuario)
+                                {
+                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-trash" aria-hidden="true"></i>
+                                }
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<DELTATEST.Models.UserViewModel>? users;
+    private bool isLoading = true;
+    private int? deletingId = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            users = await Http.GetFromJsonAsync<List<DELTATEST.Models.UserViewModel>>("api/usuarios");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    void ViewUser(int id) => NavigationManager.NavigateTo($"/usuarios/{id}");
+    void EditUser(int id) => NavigationManager.NavigateTo($"/usuarios/editar/{id}");
+
+    async Task DeleteUser(int id)
+    {
+        var ok = await Js.InvokeAsync<bool>("confirm", "¿Seguro que quieres eliminar este usuario?");
+        if (!ok) return;
+
+        deletingId = id;
+        try
+        {
+            var resp = await Http.DeleteAsync($"api/usuarios/{id}");
+            if (resp.IsSuccessStatusCode || resp.StatusCode == System.Net.HttpStatusCode.NoContent)
+            {
+                users = users?.Where(u => u.IdUsuario != id).ToList();
+                StateHasChanged();
+                await Js.InvokeVoidAsync("alert", "Usuario eliminado correctamente.");
+            }
+            else
+            {
+                var text = await resp.Content.ReadAsStringAsync();
+                await Js.InvokeVoidAsync("alert", $"Error al eliminar: {resp.StatusCode}. {text}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await Js.InvokeVoidAsync("alert", $"Error en la petición: {ex.Message}");
+        }
+        finally
+        {
+            deletingId = null;
+        }
+    }
+}

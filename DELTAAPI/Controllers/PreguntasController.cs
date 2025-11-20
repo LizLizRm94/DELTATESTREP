@@ -17,9 +17,10 @@ namespace DELTAAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> CrearPreguntas([FromBody] List<Pregunta> preguntas)
         {
+            // Cambia _db.Pregunta por _db.Set<Pregunta>()
             foreach (var p in preguntas)
             {
-                _db.Pregunta.Add(p);
+                _db.Set<Pregunta>().Add(p);
             }
 
             await _db.SaveChangesAsync();
