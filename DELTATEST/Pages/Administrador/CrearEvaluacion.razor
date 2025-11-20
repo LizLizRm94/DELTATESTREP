@@ -1,11 +1,19 @@
 ﻿@page "/Administrador/CrearEvaluacion"
+@inject NavigationManager Nav
 
 <div class="pantalla-evaluacion">
     <h3 class="titulo-evaluacion">CREE SUS EVALUACIONES</h3>
 
     <div class="contenedor-botones">
-        <button class="btn-cuadrado">TEÓRICA</button>
-        <button class="btn-cuadrado">PRÁCTICA</button>
+        <!-- Botón TEÓRICA con navegación -->
+        <button class="btn-cuadrado" @onclick='() => Nav.NavigateTo("/Administrador/CrearPreguntasTeoricas")'>
+            TEÓRICA
+        </button>
+
+        <!-- Botón PRÁCTICA (sin funcionalidad aún) -->
+        <button class="btn-cuadrado">
+            PRÁCTICO
+        </button>
     </div>
 </div>
 
@@ -52,17 +60,16 @@
         transition: transform 0.2s ease, background-color 0.3s ease;
     }
 
-        .btn-cuadrado:hover {
-            background-color: #e06f1c;
-            transform: scale(1.05);
-        }
+    .btn-cuadrado:hover {
+        background-color: #e06f1c;
+        transform: scale(1.05);
+    }
 
-        .btn-cuadrado:active {
-            transform: scale(0.98);
-        }
+    .btn-cuadrado:active {
+        transform: scale(0.98);
+    }
 
     .footer {
         display: none !important;
     }
-
 </style>
