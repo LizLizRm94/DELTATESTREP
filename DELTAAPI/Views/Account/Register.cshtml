@@ -35,6 +35,17 @@
                 </div>
             </div>
 
+            <div class="form-group">
+                <label for="role">Tipo de usuario</label>
+                <select id="role" name="role" class="form-control">
+                    <option value="">-- Seleccione --</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Supervisor">Supervisor</option>
+                    <option value="Evaluado">Evaluado</option>
+                </select>
+                <span class="text-danger" id="roleValidation"></span>
+            </div>
+
             <div class="mb-3">
                 <label for="password" class="form-label">Contraseña</label>
                 <input type="password" id="password" name="password" class="form-control" required minlength="6" />
@@ -49,6 +60,7 @@
     document.getElementById('registerForm').addEventListener('submit', async function (e) {
         e.preventDefault();
         document.getElementById('message').textContent = '';
+        document.getElementById('roleValidation').textContent = '';
 
         const payload = {
             nombreCompleto: document.getElementById('nombre').value,
@@ -56,7 +68,8 @@
             correo: document.getElementById('correo').value,
             telefono: document.getElementById('telefono').value,
             fechaIngreso: document.getElementById('fechaIngreso').value || null,
-            password: document.getElementById('password').value
+            password: document.getElementById('password').value,
+            role: document.getElementById('role').value
         };
 
         try {
@@ -69,7 +82,8 @@
                     Correo: payload.correo,
                     Telefono: payload.telefono,
                     FechaIngreso: payload.fechaIngreso,
-                    Password: payload.password
+                    Password: payload.password,
+                    Role: payload.role
                 })
             });
 
@@ -80,6 +94,7 @@
             }
 
             const txt = await res.text();
+            // si el servidor devuelve un mensaje de validación, mostrarlo
             document.getElementById('message').textContent = txt || 'Error en el registro';
         } catch (err) {
             document.getElementById('message').textContent = 'Error de red';

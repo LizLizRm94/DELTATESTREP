@@ -51,14 +51,21 @@ namespace DELTATEST.Services
         {
             try
             {
+                // Aseguramos que FechaIngreso se serialice en formato yyyy-MM-dd si existe
+                string? fechaStr = null;
+                if (model.FechaIngreso.HasValue)
+                {
+                    fechaStr = model.FechaIngreso.Value.ToString("yyyy-MM-dd");
+                }
+
                 var payload = new
                 {
                     NombreCompleto = model.NombreCompleto,
                     Ci = model.Ci,
                     Correo = model.Correo,
                     Telefono = model.Telefono,
-                    Rol = model.Rol,
-                    FechaIngreso = model.FechaIngreso,
+                    Role = model.Rol, // coincide con el DTO del API
+                    FechaIngreso = fechaStr,
                     Estado = model.Estado,
                     PuestoActual = model.PuestoActual,
                     PuestoSolicitado = model.PuestoSolicitado,
