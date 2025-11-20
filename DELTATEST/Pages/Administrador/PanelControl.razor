@@ -3,64 +3,62 @@
 @inject NavigationManager Nav
 
 
-<div class="container-fluid vh-100">
-    <div class="row h-100">
+<div class="container-fluid d-flex justify-content-center align-items-center vh-100 bg-light">
+    <div class="p-5 w-75">
+        <h3 class="fw-bold text-center mb-5 text-dark">Panel de Control de Administrador</h3>
 
-        <!-- Sidebar -->
-        <div class="col-2 border-end d-flex flex-column align-items-center justify-content-center bg-white">
-            <div class="text-center">
-                <i class="bi bi-person-circle fs-1 text-dark"></i>
-                <img src="images/usuario.png" class="icon-img" alt="Ver cuentas" />
-                <div class="mt-2 fw-medium">Inicio</div>
-            </div>
-        </div>
+        <div class="row g-4 justify-content-center">
 
-        <!-- Panel principal -->
-        <div class="col-10 p-5">
-            <h3 class="fw-semibold mb-5">Panel de Control de Administrador</h3>
-
-            <!-- Fila superior -->
-            <div class="row justify-content-center mb-4">
-
-                <!-- Ver cuentas -->
-                <div class="col-6 col-md-3 text-center mb-4">
-                    <button class="btn btn-orange rounded-circle d-flex align-items-center justify-content-center mx-auto icon-btn">
-                        <img src="images/eye.png" class="icon-img" alt="Ver cuentas" />
-                    </button>
-                    <div class="fw-medium mt-2">Ver Cuentas</div>
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                <div class="card h-100 shadow-sm border-0 dashboard-card" @onclick="() => { /* Lógica de navegación */ }">
+                    <div class="card-body text-center p-4">
+                        <div class="icon-circle bg-primary-soft mx-auto mb-3">
+                            <img src="images/eye.png" class="icon-img" alt="Ver cuentas" />
+                            @* Alternativa: <i class="bi bi-person-lines-fill text-primary" style="font-size: 2.5rem;"></i> *@
+                        </div>
+                        <h5 class="card-title fw-semibold mt-3">Ver Cuentas</h5>
+                        <p class="card-text text-muted small">Administra las cuentas de usuario.</p>
+                    </div>
                 </div>
-
-                <!-- Crear cuenta -->
-                <div class="col-6 col-md-3 text-center mb-4">
-                    <button class="btn btn-orange rounded-circle d-flex align-items-center justify-content-center mx-auto icon-btn">
-                        <img src="images/create.png" class="icon-img" alt="Crear cuenta" />
-                    </button>
-                    <div class="fw-medium mt-2">Crear Cuenta</div>
-                </div>
-
             </div>
 
-            <!-- Fila inferior -->
-            <div class="row justify-content-center">
-
-                <!-- Crear evaluación -->
-                <div class="col-6 col-md-3 text-center mb-4">
-                    <button class="btn btn-orange rounded-circle d-flex align-items-center justify-content-center mx-auto icon-btn"
-                            @onclick="IrACrearEvaluacion">
-                        <img src="images/user.png" class="icon-img" alt="Crear evaluación" />
-                    </button>
-                    <div class="fw-medium mt-2">Crear Evaluación</div>
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                <div class="card h-100 shadow-sm border-0 dashboard-card" @onclick="() => { /* Lógica de navegación */ }">
+                    <div class="card-body text-center p-4">
+                        <div class="icon-circle bg-success-soft mx-auto mb-3">
+                            <img src="images/create.png" class="icon-img" alt="Crear cuenta" />
+                            @* Alternativa: <i class="bi bi-person-plus-fill text-success" style="font-size: 2.5rem;"></i> *@
+                        </div>
+                        <h5 class="card-title fw-semibold mt-3">Crear Cuenta</h5>
+                        <p class="card-text text-muted small">Registra nuevos usuarios y roles.</p>
+                    </div>
                 </div>
+            </div>
 
-
-                <!-- Ver evaluación -->
-                <div class="col-6 col-md-3 text-center mb-4">
-                    <button class="btn btn-orange rounded-circle d-flex align-items-center justify-content-center mx-auto icon-btn">
-                        <img src="images/view.png" class="icon-img" alt="Ver evaluación" />
-                    </button>
-                    <div class="fw-medium mt-2">Ver Evaluación</div>
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                <div class="card h-100 shadow-sm border-0 dashboard-card" @onclick="IrACrearEvaluacion">
+                    <div class="card-body text-center p-4">
+                        <div class="icon-circle bg-warning-soft mx-auto mb-3">
+                            <img src="images/user.png" class="icon-img" alt="Crear evaluación" />
+                            @* Alternativa: <i class="bi bi-clipboard-plus-fill text-warning" style="font-size: 2.5rem;"></i> *@
+                        </div>
+                        <h5 class="card-title fw-semibold mt-3">Crear Evaluación</h5>
+                        <p class="card-text text-muted small">Define nuevos formularios de evaluación.</p>
+                    </div>
                 </div>
+            </div>
 
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                <div class="card h-100 shadow-sm border-0 dashboard-card" @onclick="IrARegistro">
+                    <div class="card-body text-center p-4">
+                        <div class="icon-circle bg-info-soft mx-auto mb-3">
+                            <img src="images/view.png" class="icon-img" alt="Ver evaluación" />
+                            @* Alternativa: <i class="bi bi-bar-chart-fill text-info" style="font-size: 2.5rem;"></i> *@
+                        </div>
+                        <h5 class="card-title fw-semibold mt-3">Ver Evaluación</h5>
+                        <p class="card-text text-muted small">Visualiza y descarga resultados.</p>
+                    </div>
+                </div>
             </div>
 
         </div>
@@ -68,28 +66,49 @@
 </div>
 
 <style>
-    .btn-orange {
+    /* Colores personalizados suaves */
+    .bg-primary-soft {
         background-color: #f58220;
-        border: none;
-        transition: background-color 0.3s;
     }
 
-        .btn-orange:hover {
-            background-color: #f58220;
+    .bg-success-soft {
+        background-color: #f58220;
+    }
+
+    .bg-warning-soft {
+        background-color: #f58220;
+    }
+
+    .bg-info-soft {
+        background-color: #f58220;
+    }
+
+    /* Estilo de la tarjeta del Dashboard */
+    .dashboard-card {
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        border-radius: 15px; /* Bordes redondeados */
+    }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px); /* Pequeño levantamiento al pasar el ratón */
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
         }
 
-    .icon-btn {
-        width: 120px;
-        height: 120px;
-        padding: 0;
+    /* Estilo del círculo que contiene el ícono */
+    .icon-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
         display: flex;
-        justify-content: center;
         align-items: center;
+        justify-content: center;
     }
 
+    /* Estilo de la imagen dentro del círculo */
     .icon-img {
-        width: 65%;
-        height: 65%;
+        width: 50%;
+        height: 50%;
         object-fit: contain;
     }
 </style>
@@ -98,5 +117,10 @@
     private void IrACrearEvaluacion()
     {
         Nav.NavigateTo("/Administrador/CrearEvaluacion");
+    }
+
+    private void IrARegistro()
+    {
+        Nav.NavigateTo("/Registro");
     }
 }

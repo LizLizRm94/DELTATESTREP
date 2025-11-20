@@ -16,7 +16,7 @@ namespace DELTATEST.Services
             _localStorage = localStorage;
         }
 
-        public async Task<(bool success, string? message)> LoginAsync(LoginModel model)
+        public async Task<(bool success, string? rol, string? message)> LoginAsync(LoginModel model)
         {
             try
             {
@@ -32,22 +32,22 @@ namespace DELTATEST.Services
                         await _localStorage.SetItemAsync("userName", result.NombreCompleto);
                         await _localStorage.SetItemAsync("userRole", result.Rol);
 
-                        return (true, null);
+                        return (true, result.Rol, null);
                     }
 
-                    return (false, "Respuesta inválida del servidor.");
+                    return (false, null, "Respuesta inválida del servidor.");
                 }
 
                 var error = await response.Content.ReadAsStringAsync();
-                return (false, string.IsNullOrWhiteSpace(error) ? response.ReasonPhrase : error);
+                return (false, null, string.IsNullOrWhiteSpace(error) ? response.ReasonPhrase : error);
             }
             catch (Exception ex)
             {
-                return (false, ex.Message);
+                return (false, null, ex.Message);
             }
         }
 
-        public async Task<(bool success, string? message)> RegisterAsync(RegisterModel model)
+        public async Task<(bool success, string? rol, string? message, string? nombre)> RegisterAsync(RegisterModel model)
         {
             try
             {
@@ -69,17 +69,21 @@ namespace DELTATEST.Services
                 var response = await _http.PostAsJsonAsync("api/auth/register", payload);
                 if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.Created)
                 {
-                    return (true, null);
+                    // Devuelve éxito, rol y nombre registrado
+                    return (true, model.Rol, null, model.NombreCompleto);
                 }
 
                 var error = await response.Content.ReadAsStringAsync();
-                return (false, string.IsNullOrWhiteSpace(error) ? response.ReasonPhrase : error);
+                return (false, null, string.IsNullOrWhiteSpace(error) ? response.ReasonPhrase : error, null);
             }
             catch (Exception ex)
             {
-                return (false, ex.Message);
+                // En caso de excepción, no se puede devolver null en bool
+                return (false, null, ex.Message, null);
             }
         }
+
+
 
         public async Task<string?> GetTokenAsync() => await _localStorage.GetItemAsync<string?>("authToken");
 
@@ -104,5 +108,6 @@ namespace DELTATEST.Services
             [JsonPropertyName("Rol")]
             public string Rol { get; set; } = string.Empty;
         }
+
     }
 }

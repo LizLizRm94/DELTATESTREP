@@ -69,15 +69,28 @@
             return;
         }
 
-        var (success, message) = await AuthService.LoginAsync(model);
+        var (success, rol, message) = await AuthService.LoginAsync(model);
+
         if (success)
         {
-            // redirección al home
-            Navigation.NavigateTo("/", forceLoad: true);
+            if (rol == "Inspector")
+            {
+                Navigation.NavigateTo("/panelControlAdmin", true);
+            }
+            else if (rol == "Evaluado")
+            {
+                Navigation.NavigateTo("/", true);
+            }
+            else
+            {
+                Navigation.NavigateTo("/", true);
+            }
+
             return;
         }
 
-        errorMessage = message ?? "Usuario o contraseña inválidos.";
-        StateHasChanged();
+
     }
+
+
 }

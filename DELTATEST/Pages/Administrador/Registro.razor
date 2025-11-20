@@ -68,14 +68,24 @@
     private async Task HandleValidSubmit()
     {
         message = null;
-        var (success, msg) = await AuthService.RegisterAsync(model);
+
+        // Ahora RegisterAsync devuelve también el rol
+        var (success, rol, msg, nombre) = await AuthService.RegisterAsync(model);
+
         if (success)
         {
-            // Después de registrar, redirigir al login
-            Navigation.NavigateTo("/IniciarSesion");
+            // Redirigir según rol
+            if (rol == "Administrador")
+                Navigation.NavigateTo("/admin/dashboard", forceLoad: true);
+            else if (rol == "Usuario")
+                Navigation.NavigateTo("/usuario/inicio", forceLoad: true);
+            else
+                Navigation.NavigateTo("/", forceLoad: true); // fallback
+
             return;
         }
 
         message = msg ?? "Error al registrar.";
     }
+
 }
