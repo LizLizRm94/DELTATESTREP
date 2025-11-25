@@ -5,20 +5,78 @@
 @inject DELTATEST.Services.AuthService AuthService
 
 <style>
-/* Mant?n tu CSS existente o pega el que uses */
-.login-container { display:flex; align-items:center; justify-content:center; height:100vh; }
-.login-box { width:400px; padding:40px; border:1px solid #e6e6e6; border-radius:8px; background:#fff; text-align:center; }
-.btn-login { background:#e5a650; color:white; padding:10px; width:100%; border-radius:6px; border:none; cursor:pointer; }
-.btn-login:hover { background:#cf923f; }
-.form-group { text-align:left; margin-bottom:20px; }
-.form-group label { display:block; margin-bottom:5px; }
-.form-control { width:100%; padding:10px; border-radius:6px; border:1px solid #ccc; }
-.text-danger { color:#c00; margin-bottom:10px; }
+    /* Contenedor centrado */
+    .login-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background: #f8f9fa;
+    }
+
+    /* Caja del login */
+    .login-box {
+        width: 400px;
+        padding: 40px;
+        border: 1px solid #e6e6e6;
+        border-radius: 12px;
+        background: #fff;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    /* Botón personalizado */
+    .btn-login {
+        background: #e5a650;
+        color: white;
+        padding: 10px;
+        width: 100%;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        transition: 0.2s;
+    }
+
+    .btn-login:hover:not(:disabled) {
+        background: #cf923f;
+    }
+
+    .btn-login:disabled {
+        opacity: 0.8;
+        cursor: not-allowed;
+    }
+
+    /* Inputs y etiquetas */
+    .form-group {
+        text-align: left;
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        font-weight: 500;
+        margin-bottom: 5px;
+    }
+
+    .form-control {
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+    }
+
+    /* Error */
+    .text-danger {
+        color: #c00;
+        margin-bottom: 10px;
+        font-weight: 500;
+    }
 </style>
 
 <div class="login-container">
     <div class="login-box">
-        <h1>INICIAR SESIÓN</h1>
+
+        <h1 class="mb-4">INICIAR SESIÓN</h1>
 
         <EditForm EditContext="@editContext">
             <DataAnnotationsValidator />
@@ -26,13 +84,15 @@
 
             <div class="form-group">
                 <label>Usuario (CI o correo)</label>
-                <InputText id="username" class="form-control" @bind-Value="model.Username" autocomplete="username" />
+                <InputText id="username" class="form-control"
+                           @bind-Value="model.Username" autocomplete="username" />
                 <ValidationMessage For="(() => model.Username)" />
             </div>
 
             <div class="form-group">
                 <label>Contraseña</label>
-                <InputText id="password" type="password" class="form-control" @bind-Value="model.Contrasena" autocomplete="current-password" />
+                <InputText id="password" type="password"
+                           class="form-control" @bind-Value="model.Contrasena" autocomplete="current-password" />
                 <ValidationMessage For="(() => model.Contrasena)" />
             </div>
 
@@ -41,16 +101,32 @@
                 <div class="text-danger">@errorMessage</div>
             }
 
-            <!-- button type="button" para evitar submit nativo -->
-            <button type="button" class="btn-login" @onclick="SubmitClick">Iniciar Sesión</button>
+            <button type="button"
+                    class="btn-login d-flex justify-content-center align-items-center gap-2"
+                    @onclick="SubmitClick"
+                    disabled="@isLoading">
+
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm"></span>
+                    <span>Iniciando sesión...</span>
+                }
+                else
+                {
+                    <span>Iniciar Sesión</span>
+                }
+            </button>
         </EditForm>
     </div>
 </div>
+
 
 @code {
     private DELTATEST.Models.LoginModel model = new();
     private EditContext editContext = default!;
     private string? errorMessage;
+    private bool isLoading = false;   // ? LO QUE FALTABA
+
 
     protected override void OnInitialized()
     {
@@ -60,11 +136,15 @@
     private async Task SubmitClick()
     {
         errorMessage = null;
+        isLoading = true;
+        StateHasChanged();
 
         // Validación cliente
         if (!editContext.Validate())
         {
-            errorMessage = editContext.GetValidationMessages().FirstOrDefault() ?? "Hay errores en el formulario.";
+            isLoading = false;
+            errorMessage = editContext.GetValidationMessages().FirstOrDefault()
+                           ?? "Hay errores en el formulario.";
             StateHasChanged();
             return;
         }
@@ -74,19 +154,16 @@
         if (success)
         {
             if (string.Equals(rol, "Inspector", StringComparison.OrdinalIgnoreCase))
-            {
                 Navigation.NavigateTo("/panelControlAdmin", true);
-            }
-            else // Usuario u otros -> home
-            {
+            else
                 Navigation.NavigateTo("/", true);
-            }
 
-            return;
+            return; // éxito ? no sigue ejecutando lo de abajo
         }
 
-        // Mostrar mensaje de error si falla
+        // Si falla el login
         errorMessage = message ?? "Error al iniciar sesión.";
+        isLoading = false; // Re-activar el botón
+        StateHasChanged();
     }
-
 }

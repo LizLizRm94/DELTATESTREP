@@ -15,11 +15,21 @@
 
 <body>
     <div id="app">
-        <svg class="loading-progress">
-            <circle r="40%" cx="50%" cy="50%" />
-            <circle r="40%" cx="50%" cy="50%" />
-        </svg>
-        <div class="loading-progress-text"></div>
+
+        <!-- NUEVO LOADER PEQUEÑO -->
+        <div class="d-flex flex-column justify-content-center align-items-center vh-100">
+            <div class="spinner-border text-warning" style="width:3rem;height:3rem" role="status"></div>
+            <p class="mt-3 text-secondary">Cargando...</p>
+        </div>
+
+        <!-- OCULTA el loader anterior (no lo borramos para evitar romper Blazor) -->
+        <style>
+            .loading-progress,
+            .loading-progress-text {
+                display: none !important;
+            }
+        </style>
+
     </div>
 
     <div id="blazor-error-ui">

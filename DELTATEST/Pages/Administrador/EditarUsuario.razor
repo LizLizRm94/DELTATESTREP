@@ -1,0 +1,189 @@
+﻿@page "/editarUsuario/{IdUsuario:int}"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@layout MainSinLayout
+@inject IJSRuntime Js
+
+<h3 class="mb-4 text-center fw-bold">Editar Usuario</h3>
+
+@if (isLoading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-warning" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+    </div>
+}
+else if (notFound)
+{
+    <div class="alert alert-warning text-center">
+        Usuario no encontrado.
+    </div>
+}
+else
+{
+    <div class="card shadow-sm p-4 mx-auto" style="max-width: 550px; border-radius: 15px;">
+        <EditForm Model="usuario" OnValidSubmit="Guardar">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="row">
+                <div class="col-12 mb-3">
+                    <label class="fw-semibold">Nombre Completo</label>
+                    <InputText class="form-control" @bind-Value="usuario.NombreCompleto" />
+                </div>
+
+                <div class="col-12 mb-3">
+                    <label class="fw-semibold">Correo</label>
+                    <InputText class="form-control" @bind-Value="usuario.Correo" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="fw-semibold">CI</label>
+                    <InputText class="form-control" @bind-Value="usuario.Ci" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="fw-semibold">Teléfono</label>
+                    <InputText class="form-control" @bind-Value="usuario.Telefono" />
+                </div>
+
+                <div class="col-12 mb-3">
+                    <label class="fw-semibold">Fecha de ingreso</label>
+                    <InputDate class="form-control" @bind-Value="usuario.FechaIngreso" />
+                </div>
+
+                <div class="col-12 mb-3">
+                    <label class="fw-semibold">Puesto Actual</label>
+                    <InputText class="form-control" @bind-Value="usuario.PuestoActual" />
+                </div>
+
+                <div class="col-12 mb-3">
+                    <label class="fw-semibold">Puesto Solicitado</label>
+                    <InputText class="form-control" @bind-Value="usuario.PuestoSolicitado" />
+                </div>
+
+                <div class="col-12 mb-3">
+                    <label class="fw-semibold">Puesto a Rotar</label>
+                    <InputText class="form-control" @bind-Value="usuario.PuestoARotar" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="fw-semibold">Estado</label>
+                    <InputText class="form-control" @bind-Value="usuario.Estado" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="fw-semibold">Rol</label>
+                    <InputSelect @bind-Value="usuario.Rol" class="form-control">
+                        <option value="">Seleccionar</option>
+                        <option value="Inspector">Inspector</option>
+                        <option value="Usuario">Usuario</option>
+                    </InputSelect>
+                </div>
+
+                <div class="col-12 mt-3 text-center">
+                    <button class="btn btn-primary px-4" type="submit">Guardar cambios</button>
+                    <button type="button" class="btn btn-secondary ms-2 px-4" @onclick="Cancelar">Cancelar</button>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+}
+
+
+@code {
+    [Parameter] public int IdUsuario { get; set; }
+
+    private bool isLoading = true;
+    private bool notFound = false;
+
+    private EditUsuarioModel usuario = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var resp = await Http.GetAsync($"api/usuarios/{IdUsuario}");
+            if (!resp.IsSuccessStatusCode)
+            {
+                notFound = resp.StatusCode == System.Net.HttpStatusCode.NotFound;
+                return;
+            }
+
+            var data = await resp.Content.ReadFromJsonAsync<EditUsuarioModel>();
+            if (data != null)
+            {
+                usuario = data;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+            await Js.InvokeVoidAsync("alert", "Error al cargar usuario: " + ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task Guardar()
+    {
+        try
+        {
+            string? fechaStr = null;
+            if (usuario.FechaIngreso.HasValue)
+            {
+                fechaStr = usuario.FechaIngreso.Value.ToString("yyyy-MM-dd");
+            }
+
+            var payload = new
+            {
+                NombreCompleto = usuario.NombreCompleto,
+                Ci = usuario.Ci,
+                Correo = usuario.Correo,
+                Telefono = usuario.Telefono,
+                FechaIngreso = fechaStr,
+                PuestoActual = usuario.PuestoActual,
+                PuestoSolicitado = usuario.PuestoSolicitado,
+                PuestoARotar = usuario.PuestoARotar,
+                Estado = usuario.Estado,
+                Rol = usuario.Rol
+            };
+
+            var resp = await Http.PutAsJsonAsync($"api/usuarios/{IdUsuario}", payload);
+            if (resp.IsSuccessStatusCode || resp.StatusCode == System.Net.HttpStatusCode.NoContent)
+            {
+                await Js.InvokeVoidAsync("alert", "Usuario actualizado correctamente.");
+                Navigation.NavigateTo("/verUsuarios", forceLoad: true);
+            }
+            else
+            {
+                var text = await resp.Content.ReadAsStringAsync();
+                await Js.InvokeVoidAsync("alert", $"Error al guardar: {resp.StatusCode}. {text}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await Js.InvokeVoidAsync("alert", $"Error en la petición: {ex.Message}");
+        }
+    }
+
+    private void Cancelar() => Navigation.NavigateTo("/verUsuarios");
+
+    public class EditUsuarioModel
+    {
+        public int IdUsuario { get; set; }
+        public string? NombreCompleto { get; set; }
+        public string? Correo { get; set; }
+        public string? Ci { get; set; }
+        public string? Telefono { get; set; }
+        public DateTime? FechaIngreso { get; set; }
+        public string? PuestoActual { get; set; }
+        public string? PuestoSolicitado { get; set; }
+        public string? PuestoARotar { get; set; }
+        public string? Estado { get; set; }
+        public string? Rol { get; set; }
+    }
+}
