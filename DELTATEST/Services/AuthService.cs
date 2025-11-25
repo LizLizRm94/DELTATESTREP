@@ -16,7 +16,7 @@ namespace DELTATEST.Services
         _localStorage = localStorage;
     }
 
-    public async Task<(bool success, string? rol, string? message)> LoginAsync(LoginModel model)
+    public async Task<(bool success, string? rol, string? message, int? idUsuario)> LoginAsync(LoginModel model)
     {
         try
         {
@@ -31,19 +31,21 @@ namespace DELTATEST.Services
                     await _localStorage.SetItemAsync("authToken", result.Token);
                     await _localStorage.SetItemAsync("userName", result.NombreCompleto);
                     await _localStorage.SetItemAsync("userRole", result.Rol);
+                    // Store user id so other parts can access it
+                    await _localStorage.SetItemAsync("userId", result.IdUsuario);
 
-                    return (true, result.Rol, null);
+                    return (true, result.Rol, null, result.IdUsuario);
                 }
 
-                return (false, null, "Respuesta inválida del servidor.");
+                return (false, null, "Respuesta inválida del servidor.", null);
             }
 
             var error = await response.Content.ReadAsStringAsync();
-            return (false, null, string.IsNullOrWhiteSpace(error) ? response.ReasonPhrase : error);
+            return (false, null, string.IsNullOrWhiteSpace(error) ? response.ReasonPhrase : error, null);
         }
         catch (Exception ex)
         {
-            return (false, null, ex.Message);
+            return (false, null, ex.Message, null);
         }
     }
 
@@ -96,6 +98,7 @@ namespace DELTATEST.Services
             await _localStorage.RemoveItemAsync("authToken");
             await _localStorage.RemoveItemAsync("userName");
             await _localStorage.RemoveItemAsync("userRole");
+            await _localStorage.RemoveItemAsync("userId");
         }
 
         private class LoginResponse

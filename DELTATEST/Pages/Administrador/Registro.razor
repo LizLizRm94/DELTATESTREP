@@ -104,14 +104,7 @@
 @code {
     private RegisterModel model = new();
     private string? message;
-    private bool isLoading = true;
     private bool isSubmitting = false;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await Task.Delay(1000); // Loader de entrada
-        isLoading = false;
-    }
 
     private async Task HandleValidSubmit()
     {

@@ -125,7 +125,7 @@
     private DELTATEST.Models.LoginModel model = new();
     private EditContext editContext = default!;
     private string? errorMessage;
-    private bool isLoading = false;   // ? LO QUE FALTABA
+    private bool isLoading = false;   
 
 
     protected override void OnInitialized()
@@ -149,21 +149,29 @@
             return;
         }
 
-        var (success, rol, message) = await AuthService.LoginAsync(model);
+        var (success, rol, message, idUsuario) = await AuthService.LoginAsync(model);
 
         if (success)
         {
             if (string.Equals(rol, "Inspector", StringComparison.OrdinalIgnoreCase))
+            {
                 Navigation.NavigateTo("/panelControlAdmin", true);
+            }
+            else if (string.Equals(rol, "Usuario", StringComparison.OrdinalIgnoreCase))
+            {
+                var id = idUsuario ?? 0;
+                Navigation.NavigateTo($"/estado/{id}", true);
+            }
             else
+            {
                 Navigation.NavigateTo("/", true);
+            }
 
-            return; // éxito ? no sigue ejecutando lo de abajo
+            return;
         }
 
-        // Si falla el login
         errorMessage = message ?? "Error al iniciar sesión.";
-        isLoading = false; // Re-activar el botón
+        isLoading = false;
         StateHasChanged();
     }
 }

@@ -10,5 +10,8 @@ namespace DELTATEST.Models
         [Required(ErrorMessage = "Contraseña es obligatoria")]
         [MinLength(6, ErrorMessage = "La contraseña debe tener al menos 6 caracteres")]
         public string Contrasena { get; set; } = string.Empty;
+
+        // Agregar la propiedad IdUsuario
+        public int IdUsuario { get; set; }
     }
 }
