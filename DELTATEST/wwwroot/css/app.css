@@ -101,3 +101,56 @@ a, .btn-link {
 code {
     color: #c02d76;
 }
+.text-orange {
+    color: #ff7a00;
+}
+
+.btn-orange-outline {
+    border: 1px solid #ff7a00;
+    color: #ff7a00;
+    background-color: transparent;
+}
+
+    .btn-orange-outline:hover {
+        background-color: #ff7a00;
+        color: #fff;
+    }
+
+.card-orange {
+    border: 1px solid #ff7a00;
+}
+
+.text-orange {
+    color: #ff7a00;
+}
+
+.btn-orange {
+    background-color: #ff7a00;
+    color: #fff;
+    border: none;
+}
+
+    .btn-orange:hover {
+        background-color: #e86d00;
+        color: #fff;
+    }
+
+.btn-orange-outline {
+    border: 1px solid #ff7a00;
+    color: #ff7a00;
+    background-color: transparent;
+}
+
+    .btn-orange-outline:hover {
+        background-color: #ff7a00;
+        color: #fff;
+    }
+.text-uppercase {
+    text-transform: uppercase;
+}
+
+.card-orange {
+    background-color: #fffaf3;
+    border: 1px solid #ff7a00;
+    border-radius: 8px;
+}

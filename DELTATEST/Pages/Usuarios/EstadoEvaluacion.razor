@@ -1,0 +1,106 @@
+﻿@page "/usuarios/estado/{IdUsuario:int}"
+@using DELTATEST.Models
+@using DELTATEST.Services
+@layout MainSinLayout
+@inject NavigationManager NavigationManager
+@inject EvaluadoService EvaluadoService
+
+
+@if (estado == null)
+{
+    <p>Cargando estado del usuario...</p>
+}
+else
+{
+    <div class="d-flex justify-content-end mb-2">
+        <p class="text-muted fw-semibold">Hola, @estado.NombreCompleto</p>
+    </div>
+
+    <h2 class="text-center text-orange text-uppercase mb-4">Mi estado de evaluación</h2>
+
+    <div class="d-flex justify-content-center mb-4 gap-4 flex-wrap">
+        <div class="card shadow-sm border-0 card-orange text-center p-3" style="min-width: 250px;">
+            <h5 class="card-title text-orange">Promedio General</h5>
+            <p class="display-6 fw-bold text-orange">@estado.PromedioGeneral / 100</p>
+        </div>
+        <div class="card shadow-sm border-0 card-orange text-center p-3" style="min-width: 250px;">
+            <h5 class="card-title text-orange">Próxima Rotación</h5>
+            <p class="fs-5">@estado.ProximaRotacion</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-7">
+            <h4 class="mb-3 text-orange">Mis Evaluaciones</h4>
+            <table class="table table-striped align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th class="text-center">Evaluación</th>
+                        <th class="text-center">Fecha</th>
+                        <th class="text-center">Calificación</th>
+                        <th class="text-center">Estado</th>
+                        <th class="text-center">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var ev in estado.Evaluaciones)
+                    {
+                        var aprobado = (ev.Nota ?? 0) >= 70;
+                        <tr>
+                            <td>@ev.NombreEvaluacion</td>
+                            <td>@(ev.FechaEvaluacion?.ToString("yyyy-MM-dd") ?? "-")</td>
+                            <td class="text-center">@(ev.Nota.HasValue ? $"{ev.Nota:0}/100" : "-")</td>
+                            <td class="text-center">
+                                <span class="badge @(aprobado ? "bg-success" : "bg-danger")">
+                                    @(aprobado ? "APROBADO" : "REPROBADO")
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-orange-outline" @onclick="() => VerDetalles(ev.IdEvaluacion)">
+                                    Ver Detalles
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="col-md-5">
+            <h4 class="mb-3 text-orange">Notificaciones</h4>
+            @if (estado.Notificaciones.Any())
+            {
+                <ul class="list-group">
+                    @foreach (var n in estado.Notificaciones)
+                    {
+                        <li class="list-group-item">
+                            <strong>@n.TipoNotificacion:</strong> @n.Mensaje
+                            <div class="small text-muted">
+                                @(n.FechaEnvio?.ToString("dd/MM/yyyy HH:mm"))
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <div class="alert alert-info">No tienes notificaciones nuevas.</div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int IdUsuario { get; set; }
+    private EvaluadoEstado? estado;
+
+    protected override async Task OnInitializedAsync()
+    {
+        estado = await EvaluadoService.ObtenerEstadoAsync(IdUsuario);
+    }
+
+    private void VerDetalles(int idEvaluacion)
+    {
+        NavigationManager.NavigateTo($"/evaluaciones/detalle/{idEvaluacion}");
+    }
+}

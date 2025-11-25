@@ -1,9 +1,10 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
 
 <!-- ENCABEZADO GLOBAL -->
 <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom shadow-sm top-row w-100">
     <div class="container-fluid px-4">
-        <a class="navbar-brand d-flex align-items-center" href="">
+        <a class="navbar-brand d-flex align-items-center" href="/">
             <img src="images/logo.jpg" alt="Logo" class="logo-img me-2" />
         </a>
 
@@ -20,22 +21,22 @@
                     </NavLink>
                 </li>
                 <li class="nav-item">
-                    <NavLink class="nav-link" href="sobre-nosotros">
+                    <NavLink class="nav-link" href="/sobre-nosotros">
                         <span class="bi bi-people-fill me-1"></span> Sobre Nosotros
                     </NavLink>
                 </li>
                 <li class="nav-item">
-                    <NavLink class="nav-link" href="contacto">
+                    <NavLink class="nav-link" href="/contacto">
                         <span class="bi bi-envelope-fill me-1"></span> Contacto
                     </NavLink>
                 </li>
                 <li class="nav-item">
-                    <NavLink class="nav-link" href="redesSociales">
+                    <NavLink class="nav-link" href="/redesSociales">
                         <span class="bi bi-share-fill me-1"></span> Redes Sociales
                     </NavLink>
                 </li>
                 <li class="nav-item">
-                    <NavLink class="btn btn-orange ms-3" href="IniciarSesion">Sign In</NavLink>
+                    <NavLink class="btn btn-orange ms-3" href="/IniciarSesion">Sign In</NavLink>
                 </li>
             </ul>
         </div>
@@ -47,37 +48,29 @@
     @Body
 </div>
 
-<!-- FOOTER -->
-<footer class="footer">
-    <div class="footer-grid">
-        <div>
-            <h4>Use cases</h4>
-            <ul>
-                <li><a href="#">UI design</a></li>
-                <li><a href="#">UX design</a></li>
-                <li><a href="#">Prototyping</a></li>
-            </ul>
+<!-- FOOTER CENTRADO -->
+<footer class="footer mt-5 text-center">
+    <div class="container">
+        <div class="row justify-content-center mb-3">
+            <div class="col-md-4">
+                <h5 class="text-white mb-3">Empresa</h5>
+                <ul class="list-unstyled">
+                    <li><a href="/sobre-nosotros" class="footer-link"><i class="bi bi-building me-2"></i>Sobre Nosotros</a></li>
+                    <li><a href="/contacto" class="footer-link"><i class="bi bi-envelope me-2"></i>Contacto</a></li>
+                    <li><a href="/convocatoria" class="footer-link"><i class="bi bi-file-earmark-text me-2"></i>Convocatoria</a></li>
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <h5 class="text-white mb-3">Redes Sociales</h5>
+                <ul class="list-unstyled">
+                    <li><a href="https://www.facebook.com/share/1ETxTBPRFc/" target="_blank" class="footer-link"><i class="bi bi-facebook me-2"></i>Facebook</a></li>
+                    <li><a href="https://www.instagram.com/deltalaboratorios.12?igsh=MWw4ZDJwbnRpcXN" target="_blank" class="footer-link"><i class="bi bi-instagram me-2"></i>Instagram</a></li>
+                </ul>
+            </div>
         </div>
-        <div>
-            <h4>Explore</h4>
-            <ul>
-                <li><a href="#">Design</a></li>
-                <li><a href="#">Documentation</a></li>
-                <li><a href="#">Community</a></li>
-            </ul>
-        </div>
-        <div>
-            <h4>Resources</h4>
-            <ul>
-                <li><a href="#">Blog</a></li>
-                <li><a href="#">Best practices</a></li>
-                <li><a href="#">Guides</a></li>
-            </ul>
-        </div>
+        <p class="footer-copy">© 2025 Laboratorios Delta S.A. - Todos los derechos reservados.</p>
     </div>
-    <p class="footer-copy">© 2025 Laboratorios Delta S.A. - Todos los derechos reservados.</p>
 </footer>
-
 
 <style>
     .btn-orange {
@@ -89,14 +82,9 @@
         transition: background-color 0.3s;
     }
 
-    .navbar-nav .btn-orange {
-        background-color: #f58220;
-        color: white;
-    }
-
-    .btn-orange:hover {
-        background-color: #d86c0a;
-    }
+        .btn-orange:hover {
+            background-color: #d86c0a;
+        }
 
     .navbar-nav .nav-link {
         color: #333 !important;
@@ -109,7 +97,6 @@
         .navbar-nav .nav-link:hover {
             color: #f58220 !important;
         }
-    /* logo */
 
     .navbar-brand img.logo-img {
         height: 45px;
@@ -132,36 +119,32 @@
         padding-top: 85px;
     }
 
-    /* FOOTER */
     .footer {
         background-color: #f58220;
         color: white;
-        padding: 2rem;
+        padding: 2rem 1rem;
     }
 
-    .footer-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-    }
+        .footer h5 {
+            font-weight: 600;
+        }
 
-    .footer h4 {
-        margin-bottom: 0.5rem;
-    }
-
-    .footer a {
+    .footer-link {
         color: white;
         text-decoration: none;
-        font-size: 0.9rem;
+        font-size: 0.95rem;
+        display: inline-block;
+        margin-bottom: 0.5rem;
+        transition: color 0.3s;
     }
 
-        .footer a:hover {
+        .footer-link:hover {
+            color: #ffe6cc;
             text-decoration: underline;
         }
 
     .footer-copy {
-        text-align: center;
-        margin-top: 1rem;
         font-size: 0.85rem;
+        margin-top: 1rem;
     }
 </style>
