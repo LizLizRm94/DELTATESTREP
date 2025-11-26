@@ -28,6 +28,9 @@ public partial class DeltaTestContext : DbContext
 
     public virtual DbSet<Usuario> Usuarios { get; set; }
 
+    public virtual DbSet<Pregunta> Preguntas { get; set; }
+
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         // Sólo usar la cadena hardcodeada como fallback (p. ej. diseño/ef tools).
@@ -236,6 +239,19 @@ public partial class DeltaTestContext : DbContext
                         j.IndexerProperty<int>("IdUsuario").HasColumnName("id_usuario");
                         j.IndexerProperty<int>("IdConvocatoria").HasColumnName("id_convocatoria");
                     });
+        });
+
+        modelBuilder.Entity<Pregunta>(entity =>
+        {
+            entity.HasKey(e => e.IdPregunta).HasName("PK__PREGUNTA__3C69FB99");
+
+            entity.ToTable("PREGUNTA");
+
+            entity.Property(e => e.IdPregunta).HasColumnName("id_pregunta");
+            entity.Property(e => e.Texto)
+                .HasMaxLength(500)
+                .HasColumnName("texto");
+            entity.Property(e => e.TipoEvaluacion).HasColumnName("tipo_evaluacion");
         });
 
         OnModelCreatingPartial(modelBuilder);

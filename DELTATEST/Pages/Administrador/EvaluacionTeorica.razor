@@ -1,0 +1,298 @@
+@page "/EvaluacionTeorica"
+@using DELTATEST.Models
+@inject HttpClient Http
+@inject IJSRuntime JS
+@layout MainSinLayout
+
+<h3 class="titulo-form">EVALUACION TEORICA</h3>
+
+@if (mostrarMensaje)
+{
+    <div class="alerta @(esError ? "alerta-error" : "alerta-exito")">
+        <span>@mensajeRespuesta</span>
+        <button type="button" class="btn-cerrar" @onclick="CerrarMensaje">&times;</button>
+    </div>
+}
+
+<form @onsubmit="OnSubmit">
+    <div class="form-evaluacion">
+        @if (modelo?.Preguntas != null)
+        {
+            @foreach (var pregunta in modelo.Preguntas)
+            {
+                <div class="fila-pregunta">
+                    <label class="label-pregunta">Pregunta @(modelo.Preguntas.IndexOf(pregunta) + 1)</label>
+                    <input type="text" class="input-respuesta" @bind="pregunta.Texto" @bind:event="oninput" placeholder="Ingrese la pregunta" />
+                </div>
+            }
+        }
+
+        <div class="acciones">
+            <button type="submit" class="btn btn-primario" disabled="@cargando">
+                @if (cargando)
+                {
+                    <span>Guardando...</span>
+                }
+                else
+                {
+
+                    <span>Subir</span>
+                }
+            </button>
+
+            <button type="button" class="btn btn-secundario" @onclick="OnCancel" disabled="@cargando">Cancelar</button>
+        </div>
+    </div>
+</form>
+
+@code {
+    private EvaluacionTeoricaModelo modelo = new();
+    private bool cargando = false;
+    private bool mostrarMensaje = false;
+    private string mensajeRespuesta = string.Empty;
+    private bool esError = false;
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            modelo.Preguntas = Enumerable.Range(1, 10)
+                .Select(i => new Pregunta { Texto = string.Empty, TipoEvaluacion = true })
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error en OnInitialized: {ex.Message}");
+        }
+    }
+
+    private async Task OnSubmit()
+    {
+        cargando = true;
+        try
+        {
+            var preguntasValidas = modelo.Preguntas
+                .Where(p => !string.IsNullOrWhiteSpace(p.Texto))
+                .ToList();
+
+            if (preguntasValidas.Count == 0)
+            {
+                mostrarMensaje = true;
+                esError = true;
+                mensajeRespuesta = "Debe ingresar al menos una pregunta";
+                cargando = false;
+                return;
+            }
+
+            var request = new
+            {
+                preguntas = preguntasValidas.Select(p => new
+                {
+                    texto = p.Texto,
+                    tipoEvaluacion = p.TipoEvaluacion
+                }).ToList()
+            };
+
+            var response = await Http.PostAsJsonAsync("https://localhost:7287/api/preguntas/crear-evaluacion-teorica", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                mostrarMensaje = true;
+                esError = false;
+                mensajeRespuesta = "¡Preguntas de evaluación teórica guardadas exitosamente!";
+                await Task.Delay(2000);
+                OnCancel();
+            }
+            else
+            {
+                var contenidoError = await response.Content.ReadAsStringAsync();
+                mostrarMensaje = true;
+                esError = true;
+                mensajeRespuesta = $"Error al guardar: {response.StatusCode} - {contenidoError}";
+            }
+        }
+        catch (Exception ex)
+        {
+            mostrarMensaje = true;
+            esError = true;
+            mensajeRespuesta = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private void OnCancel()
+    {
+        if (modelo?.Preguntas != null)
+        {
+            foreach (var p in modelo.Preguntas)
+                p.Texto = string.Empty;
+        }
+        mostrarMensaje = false;
+    }
+
+    private void CerrarMensaje()
+    {
+        mostrarMensaje = false;
+    }
+}
+
+<style>
+    .titulo-form {
+        text-align: center;
+        margin: 20px 0 30px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+
+    /* Quitamos el scroll */
+    .form-evaluacion {
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 24px;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        background: #ffffff;
+        box-shadow: 0 6px 24px rgba(0,0,0,0.06);
+        max-height: none;
+        overflow: hidden;
+    }
+
+    .fila-pregunta {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 14px;
+    }
+
+    .label-pregunta {
+        font-weight: 500;
+        color: #374151;
+    }
+
+    .input-respuesta {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+
+    .acciones {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 22px;
+    }
+
+    .btn {
+        padding: 10px 16px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+    /* Botones naranjas */
+    .btn-primario {
+        background: #f58220;
+        color: #fff;
+    }
+
+        .btn-primario:hover:not(:disabled) {
+            background: #f58220;
+        }
+
+    .btn-secundario {
+        background: #f58220;
+        color: #f58220;
+    }
+
+        .btn-secundario:hover:not(:disabled) {
+            background: #f58220;
+        }
+
+    .alerta {
+        max-width: 700px;
+        margin: 0 auto 20px;
+        padding: 16px 20px;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        animation: slideIn 0.3s ease-in-out;
+    }
+
+    .alerta-exito {
+        background: #d1f4d1;
+        border: 1px solid #6ee76e;
+        color: #155724;
+    }
+
+    .alerta-error {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+    }
+
+    .btn-cerrar {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: inherit;
+        padding: 0;
+        margin-left: 20px;
+    }
+
+        .btn-cerrar:hover {
+            opacity: 0.7;
+        }
+
+    @@keyframes slideIn {
+        from
+
+    {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    }
+
+    @@media (max-width: 640px) {
+        .fila-pregunta
+
+    {
+        grid-template-columns: 1fr;
+    }
+
+    .label-pregunta {
+        margin-bottom: 6px;
+    }
+
+    .alerta {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .btn-cerrar {
+        align-self: flex-end;
+        margin-left: 0;
+        margin-top: 10px;
+    }
+
+    }
+</style>

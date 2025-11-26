@@ -4,62 +4,62 @@
 
 <div class="container-fluid d-flex justify-content-center align-items-center vh-100 bg-light">
     <div class="p-5 w-75">
-        <h3 class="fw-bold text-center mb-5 text-dark">Panel de Control de Administrador</h3>
+   <h3 class="fw-bold text-center mb-5 text-dark">Panel de Control de Administrador</h3>
 
         <!-- FILA SUPERIOR -->
         <div class="row g-4 justify-content-center">
 
             <!-- Ver Cuentas -->
-            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                <div class="card h-100 shadow-sm border-0 dashboard-card" @onclick="IrAVerUsuario">
-                    <div class="card-body text-center p-4">
-                        <div class="icon-circle bg-primary-soft mx-auto mb-3">
-                            <img src="images/eye.png" class="icon-img" alt="Ver cuentas" />
-                        </div>
-                        <h5 class="card-title fw-semibold mt-3">Ver Cuentas</h5>
-                        <p class="card-text text-muted small">Administra las cuentas de usuario.</p>
-                    </div>
+   <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+    <div class="card h-100 shadow-sm border-0 dashboard-card" @onclick="IrAVerUsuario">
+              <div class="card-body text-center p-4">
+    <div class="icon-circle bg-primary-soft mx-auto mb-3">
+          <img src="images/eye.png" class="icon-img" alt="Ver cuentas" />
+   </div>
+       <h5 class="card-title fw-semibold mt-3">Ver Cuentas</h5>
+         <p class="card-text text-muted small">Administra las cuentas de usuario.</p>
+</div>
                 </div>
-            </div>
+       </div>
 
             <!-- Crear Cuenta -->
             <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                <div class="card h-100 shadow-sm border-0 dashboard-card" @onclick="IrARegistro">
+         <div class="card h-100 shadow-sm border-0 dashboard-card" @onclick="IrARegistro">
                     <div class="card-body text-center p-4">
-                        <div class="icon-circle bg-success-soft mx-auto mb-3">
-                            <img src="images/create.png" class="icon-img" alt="Crear cuenta" />
-                        </div>
-                        <h5 class="card-title fw-semibold mt-3">Crear Cuenta</h5>
-                        <p class="card-text text-muted small">Registra nuevos usuarios y roles.</p>
-                    </div>
-                </div>
-            </div>
+     <div class="icon-circle bg-success-soft mx-auto mb-3">
+      <img src="images/create.png" class="icon-img" alt="Crear cuenta" />
+     </div>
+   <h5 class="card-title fw-semibold mt-3">Crear Cuenta</h5>
+            <p class="card-text text-muted small">Registra nuevos usuarios y roles.</p>
+     </div>
+     </div>
+ </div>
 
             <!-- Crear Evaluación -->
             <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <div class="card h-100 shadow-sm border-0 dashboard-card" @onclick="IrACrearEvaluacion">
-                    <div class="card-body text-center p-4">
-                        <div class="icon-circle bg-warning-soft mx-auto mb-3">
-                            <img src="images/user.png" class="icon-img" alt="Crear evaluación" />
-                        </div>
-                        <h5 class="card-title fw-semibold mt-3">Crear Evaluación</h5>
-                        <p class="card-text text-muted small">Define nuevos formularios de evaluación.</p>
-                    </div>
-                </div>
+        <div class="card-body text-center p-4">
+   <div class="icon-circle bg-warning-soft mx-auto mb-3">
+         <img src="images/user.png" class="icon-img" alt="Crear evaluación" />
+     </div>
+      <h5 class="card-title fw-semibold mt-3">Crear Evaluación</h5>
+               <p class="card-text text-muted small">Define nuevos formularios de evaluación.</p>
+ </div>
+        </div>
             </div>
 
-            <!-- Ver Evaluación -->
-            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                <div class="card h-100 shadow-sm border-0 dashboard-card">
-                    <div class="card-body text-center p-4">
-                        <div class="icon-circle bg-info-soft mx-auto mb-3">
-                            <img src="images/view.png" class="icon-img" alt="Ver evaluación" />
-                        </div>
-                        <h5 class="card-title fw-semibold mt-3">Ver Evaluación</h5>
-                        <p class="card-text text-muted small">Visualiza y descarga resultados.</p>
-                    </div>
-                </div>
-            </div>
+      <!-- Ver Evaluación -->
+ <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="card h-100 shadow-sm border-0 dashboard-card">
+    <div class="card-body text-center p-4">
+         <div class="icon-circle bg-info-soft mx-auto mb-3">
+         <img src="images/view.png" class="icon-img" alt="Ver evaluación" />
+           </div>
+      <h5 class="card-title fw-semibold mt-3">Ver Evaluación</h5>
+             <p class="card-text text-muted small">Visualiza y descarga resultados.</p>
+        </div>
+        </div>
+   </div>
 
         </div>
     </div>
@@ -71,13 +71,13 @@
     .bg-success-soft,
     .bg-warning-soft,
     .bg-info-soft {
-        background-color: #f58220 !important;
+   background-color: #f58220 !important;
     }
 
     .dashboard-card {
         cursor: pointer;
-        transition: transform 0.2s, box-shadow 0.2s;
-        border-radius: 15px;
+     transition: transform 0.2s, box-shadow 0.2s;
+     border-radius: 15px;
     }
 
         .dashboard-card:hover {
@@ -91,12 +91,12 @@
         border-radius: 50%;
         display: flex;
         align-items: center;
-        justify-content: center;
+    justify-content: center;
     }
 
     .icon-img {
         width: 50%;
-        height: 50%;
+   height: 50%;
         object-fit: contain;
     }
 </style>
@@ -104,16 +104,16 @@
 @code {
     private void IrACrearEvaluacion()
     {
-        Nav.NavigateTo("/CrearEvaluacion");
+     Nav.NavigateTo("/CrearEvaluacion");
     }
 
     private void IrARegistro()
     {
-        Nav.NavigateTo("/Registro");
+      Nav.NavigateTo("/Registro");
     }
 
     private void IrAVerUsuario()
-    {
-        Nav.NavigateTo("/verUsuarios");
+  {
+      Nav.NavigateTo("/verUsuarios");
     }
 }

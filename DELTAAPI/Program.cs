@@ -13,7 +13,13 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddControllers();
 
 // Configure CORS to allow the Blazor WebAssembly client during development
-var clientOrigins = new[] { "https://localhost:7105", "http://localhost:5216" };
+var clientOrigins = new[] 
+{ 
+    "https://localhost:7105",      // Cliente Blazor HTTPS
+    "http://localhost:5216",       // Cliente Blazor HTTP
+    "https://localhost:7287",      // API HTTPS
+    "http://localhost:5160"        // API HTTP
+};
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowClient", policy =>

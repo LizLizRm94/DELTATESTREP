@@ -1,0 +1,401 @@
+@page "/EvaluacionPracticaLista"
+@using DELTATEST.Models
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+@layout MainSinLayout
+
+<h3 class="titulo-form">EVALUACION PRACTICA</h3>
+
+<div class="search-container">
+    <input type="text" 
+           class="search-input" 
+    placeholder="Ingrese el nombre del evaluado" 
+           @bind="searchTerm"
+           @bind:event="oninput"
+      @onkeyup="OnSearch" />
+    <button class="btn-search" @onclick="OnSearch" title="Buscar">
+        <i class="bi bi-search"></i>
+    </button>
+</div>
+
+@if (mostrarMensaje)
+{
+    <div class="alerta @(esError ? "alerta-error" : "alerta-exito")">
+     <span>@mensajeRespuesta</span>
+<button type="button" class="btn-cerrar" @onclick="CerrarMensaje">&times;</button>
+    </div>
+}
+
+@if (cargando)
+{
+    <div class="loading-container">
+      <div class="spinner"></div>
+        <p>Cargando usuarios...</p>
+    </div>
+}
+else if (usuariosFiltrados == null || usuariosFiltrados.Count == 0)
+{
+    <div class="alerta alerta-info">
+        <span>@(usuarios?.Count == 0 ? "No hay usuarios registrados" : "No se encontraron resultados para su búsqueda")</span>
+    </div>
+}
+else
+{
+    <div class="table-container">
+        <table class="table-evaluacion">
+       <thead>
+                <tr>
+           <th>Id</th>
+         <th>Nombre</th>
+         <th>Correo</th>
+  <th>Fecha de Ingreso</th>
+          <th>Puesto Actual</th>
+      <th>Puesto Solicitado</th>
+          <th>Evaluacion Practica</th>
+  </tr>
+            </thead>
+         <tbody>
+       @foreach (var usuario in usuariosFiltrados)
+            {
+  <tr>
+           <td>@usuario.IdUsuario.ToString("D4")</td>
+           <td>@usuario.NombreCompleto</td>
+           <td>@usuario.Correo</td>
+           <td>@(usuario.FechaIngreso.HasValue ? usuario.FechaIngreso.Value.ToString("dd/MM/yyyy") : "-")</td>
+           <td>@usuario.PuestoActual</td>
+           <td>@usuario.PuestoSolicitado</td>
+            <td>
+         <button class="btn-iniciar" 
+  @onclick="() => IniciarEvaluacion(usuario.IdUsuario, usuario.NombreCompleto)"
+              disabled="@(iniciandoId == usuario.IdUsuario)">
+  @if (iniciandoId == usuario.IdUsuario)
+        {
+         <span>Iniciando...</span>
+               }
+        else
+        {
+             <span>Inicio</span>
+             }
+          </button>
+         </td>
+      </tr>
+          }
+            </tbody>
+        </table>
+    </div>
+}
+
+<style>
+    .titulo-form {
+    text-align: center;
+        margin: 20px 0 30px;
+        font-weight: 600;
+      letter-spacing: 0.5px;
+      font-size: 28px;
+    }
+
+    .search-container {
+      max-width: 750px;
+        margin: 0 auto 30px;
+        display: flex;
+     gap: 10px;
+        padding: 0 16px;
+    }
+
+    .search-input {
+        flex: 1;
+        padding: 12px 16px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+     font-size: 14px;
+        background: #f5f5f7;
+        color: #666;
+    }
+
+    .search-input::placeholder {
+        color: #999;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: #f58220;
+        box-shadow: 0 0 0 3px rgba(245, 130, 32, 0.1);
+    }
+
+    .btn-search {
+        padding: 12px 16px;
+      background: #f58220;
+   color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+    display: flex;
+      align-items: center;
+        justify-content: center;
+ min-width: 48px;
+    }
+
+    .btn-search:hover {
+        background: #e67e1a;
+    }
+
+    .table-container {
+        max-width: 1200px;
+      margin: 0 auto;
+        padding: 0 16px;
+        overflow-x: auto;
+    }
+
+    .table-evaluacion {
+        width: 100%;
+        border-collapse: collapse;
+   background: white;
+   border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 6px 24px rgba(0,0,0,0.06);
+    }
+
+    .table-evaluacion thead {
+        background: linear-gradient(135deg, #f58220 0%, #e67e1a 100%);
+        color: white;
+  }
+
+    .table-evaluacion th {
+     padding: 16px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 13px;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+    }
+
+    .table-evaluacion td {
+     padding: 14px 16px;
+   border-bottom: 1px solid #e5e7eb;
+        font-size: 14px;
+        color: #374151;
+    }
+
+    .table-evaluacion tbody tr:hover {
+        background-color: #f9fafb;
+    }
+
+    .table-evaluacion tbody tr:last-child td {
+  border-bottom: none;
+    }
+
+    .btn-iniciar {
+        padding: 8px 20px;
+        background: #f58220;
+  color: white;
+     border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+    transition: all 0.3s ease;
+     min-width: 100px;
+    }
+
+    .btn-iniciar:hover:not(:disabled) {
+        background: #e67e1a;
+  transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(245, 130, 32, 0.3);
+    }
+
+    .btn-iniciar:disabled {
+  opacity: 0.6;
+   cursor: not-allowed;
+    }
+
+    .alerta {
+        max-width: 750px;
+        margin: 0 auto 20px;
+    padding: 16px 20px;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+  animation: slideIn 0.3s ease-in-out;
+    }
+
+    .alerta-exito {
+    background: #d1f4d1;
+        border: 1px solid #6ee76e;
+    color: #155724;
+    }
+
+    .alerta-error {
+        background: #f8d7da;
+    border: 1px solid #f5c6cb;
+        color: #721c24;
+    }
+
+    .alerta-info {
+        background: #e7f3ff;
+      border: 1px solid #b3d9ff;
+        color: #004085;
+    }
+
+    .btn-cerrar {
+     background: none;
+        border: none;
+        font-size: 24px;
+    cursor: pointer;
+        color: inherit;
+        padding: 0;
+        margin-left: 20px;
+    }
+
+    .btn-cerrar:hover {
+      opacity: 0.7;
+    }
+
+    .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+   justify-content: center;
+ padding: 60px 20px;
+    }
+
+    .spinner {
+        width: 50px;
+        height: 50px;
+  border: 4px solid #e5e7eb;
+     border-top-color: #f58220;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+   margin-bottom: 20px;
+    }
+
+    .loading-container p {
+        color: #666;
+        font-size: 16px;
+    }
+
+    @@keyframes slideIn {
+        from {
+     opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+         transform: translateY(0);
+        }
+    }
+
+    @@keyframes spin {
+        to {
+     transform: rotate(360deg);
+        }
+ }
+
+    @@media (max-width: 768px) {
+        .search-container {
+  flex-direction: column;
+        }
+
+    .btn-search {
+        width: 100%;
+        }
+
+        .table-evaluacion {
+        font-size: 12px;
+ }
+
+        .table-evaluacion th,
+        .table-evaluacion td {
+            padding: 10px 8px;
+        }
+
+        .btn-iniciar {
+       padding: 6px 12px;
+      font-size: 12px;
+     min-width: 85px;
+    }
+    }
+</style>
+
+@code {
+    private List<UserViewModel>? usuarios;
+    private List<UserViewModel> usuariosFiltrados = new();
+    private string searchTerm = string.Empty;
+    private bool cargando = true;
+    private bool mostrarMensaje = false;
+    private string mensajeRespuesta = string.Empty;
+    private bool esError = false;
+    private int? iniciandoId = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarUsuarios();
+    }
+
+    private async Task CargarUsuarios()
+    {
+     try
+        {
+    cargando = true;
+            usuarios = await Http.GetFromJsonAsync<List<UserViewModel>>("https://localhost:7287/api/usuarios");
+  usuariosFiltrados = usuarios ?? new List<UserViewModel>();
+        }
+        catch (Exception ex)
+   {
+ mostrarMensaje = true;
+            esError = true;
+            mensajeRespuesta = $"Error al cargar usuarios: {ex.Message}";
+          Console.WriteLine($"Error: {ex.Message}");
+        }
+      finally
+        {
+   cargando = false;
+        }
+    }
+
+    private void OnSearch()
+    {
+        if (usuarios == null)
+   return;
+
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            usuariosFiltrados = usuarios;
+        }
+        else
+        {
+            var termoBusqueda = searchTerm.ToLower();
+          usuariosFiltrados = usuarios
+                .Where(u => u.NombreCompleto.ToLower().Contains(termoBusqueda) ||
+                  (u.Correo?.ToLower().Contains(termoBusqueda) ?? false))
+       .ToList();
+        }
+    }
+
+    private void IniciarEvaluacion(int idUsuario, string nombreUsuario)
+    {
+        iniciandoId = idUsuario;
+      try
+  {
+            // Navegar a la página de evaluación práctica con los parámetros del usuario
+      NavigationManager.NavigateTo($"/EvaluacionPractica/{idUsuario}/{System.Uri.EscapeDataString(nombreUsuario)}");
+  }
+        catch (Exception ex)
+     {
+    mostrarMensaje = true;
+            esError = true;
+ mensajeRespuesta = $"Error al iniciar evaluación: {ex.Message}";
+        }
+      finally
+        {
+  iniciandoId = null;
+        }
+    }
+
+    private void CerrarMensaje()
+    {
+        mostrarMensaje = false;
+    }
+}
