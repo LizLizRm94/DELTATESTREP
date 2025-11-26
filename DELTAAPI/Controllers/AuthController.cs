@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 
 namespace DELTAAPI.Controllers
 {
@@ -13,11 +14,13 @@ namespace DELTAAPI.Controllers
     {
         private readonly DeltaTestContext _context;
         private readonly IConfiguration _configuration;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(DeltaTestContext context, IConfiguration configuration)
+        public AuthController(DeltaTestContext context, IConfiguration configuration, ILogger<AuthController> logger)
         {
             _context = context;
             _configuration = configuration;
+            _logger = logger;
         }
 
         public class RegisterDto
@@ -96,14 +99,33 @@ namespace DELTAAPI.Controllers
             if (dto == null || string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Password))
                 return BadRequest("Usuario y contraseña son obligatorios.");
 
-            // Buscar usuario por correo o CI
-            var user = await Task.Run(() => _context.Usuarios.FirstOrDefault(u => u.Correo == dto.Username || u.Ci == dto.Username));
+            var usernameNormalized = dto.Username.Trim();
+            var usernameLower = usernameNormalized.ToLowerInvariant();
+
+            _logger.LogInformation("Login attempt for {User}", usernameNormalized);
+
+            // Buscar usuario por correo o CI, comparando en minusculas y sin espacios
+            var user = await _context.Usuarios
+                .FirstOrDefaultAsync(u =>
+                    (!string.IsNullOrEmpty(u.Correo) && u.Correo.ToLower() == usernameLower) ||
+                    (!string.IsNullOrEmpty(u.Ci) && u.Ci.ToLower() == usernameLower)
+                );
+
             if (user == null)
+            {
+                _logger.LogWarning("Login failed: user not found {User}", usernameNormalized);
                 return NotFound("Usuario no encontrado.");
+            }
 
             // Comparación simple; en producción usar hashing
-            if (user.Contraseña != dto.Password)
+            var providedPassword = dto.Password.Trim();
+            var storedPassword = (user.Contraseña ?? string.Empty).Trim();
+
+            if (storedPassword != providedPassword)
+            {
+                _logger.LogWarning("Login failed: invalid credentials for {User}", usernameNormalized);
                 return Unauthorized("Credenciales inválidas.");
+            }
 
             // Generar token JWT
             var key = _configuration["Jwt:Key"];
@@ -143,6 +165,8 @@ namespace DELTAAPI.Controllers
                 NombreCompleto = user.NombreCompleto,
                 Rol = user.Rol
             };
+
+            _logger.LogInformation("Login successful for {User}", usernameNormalized);
 
             return Ok(result);
         }

@@ -29,4 +29,7 @@ builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().Cre
 // Register application services
 builder.Services.AddScoped<AuthService>();
 
+builder.Services.AddScoped<EvaluadoService>();
+
+
 await builder.Build().RunAsync();

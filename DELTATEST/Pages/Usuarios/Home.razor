@@ -78,6 +78,39 @@
             font-size: 14px;
         }
 
+    .btn {
+        background-color: #f58220;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 500;
+        margin-top: 10px;
+        cursor: pointer;
+    }
+
+        .btn:hover {
+            background-color: #d86c0a;
+        }
+
+    footer {
+        background-color: #f9f9f9;
+        padding: 20px;
+        text-align: center;
+        font-size: 14px;
+        color: #666;
+        border-top: 1px solid #ddd;
+    }
+
+        footer a {
+            color: #f58220;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+            footer a:hover {
+                text-decoration: underline;
+            }
 </style>
 
 <header>
@@ -89,14 +122,38 @@
 <section id="convocatoria">
     <h3><span class="icon">⚠️</span> CONVOCATORIA</h3>
     <div class="card">
-        <h4>Title</h4>
-        <p>Body text for whatever you'd like to say. Add main takeaway points, quotes, anecdotes, or even a very very short story.</p>
+        <h4>Convocatoria Oficial 2025</h4>
+        <p>Consulta los requisitos y fechas importantes para participar en el proceso de evaluación.</p>
+
+        <!-- PDF embebido -->
+        <iframe src="pdfs/convocatoria2025.pdf" width="100%" height="400px" style="border:1px solid #ccc;"></iframe>
+
+        <!-- Botón de descarga -->
+        <a href="pdfs/convocatoria2025.pdf" download class="btn">
+        <i class="bi bi-file-earmark-arrow-down-fill me-1"></i> Descargar PDF</a>
+
     </div>
-    <button class="btn">Más información</button>
 </section>
 
 <section id="nosotros">
     <h3>SOBRE NOSOTROS</h3>
-    <p>Body text for whatever you'd like to say. Add main takeaway points, quotes, anecdotes, or even a very very short story.</p>
-    <button class="btn">Más información</button>
+    <div class="card">
+        <p>
+            En Laboratorios Delta S.A., somos una empresa dedicada al control de calidad de productos farmacéuticos, cosméticos y de higiene. Nuestro compromiso es la mejora continua para garantizar la eficacia de nuestro equipo y asegurar el cumplimiento de las normas internas en cada una de sus áreas.
+        </p>
+        <a href="/sobre-nosotros" class="btn">Más información</a>
+    </div>
 </section>
+
+<footer class="bg-light border-top py-3 text-center">
+    <p class="mb-2">Visítanos en nuestras páginas oficiales:</p>
+    <div class="d-flex justify-content-center gap-4">
+        <a href="https://www.facebook.com/share/1ETxTBPRFc/" target="_blank" class="text-decoration-none text-dark">
+            <i class="bi bi-facebook fs-4 me-1 text-primary"></i> Facebook
+        </a>
+        <a href="https://www.instagram.com/deltalaboratorios.12?igsh=MWw4ZDJwbnRpcXNr" target="_blank" class="text-decoration-none text-dark">
+            <i class="bi bi-instagram fs-4 me-1 text-danger"></i> Instagram
+        </a>
+    </div>
+</footer>
+

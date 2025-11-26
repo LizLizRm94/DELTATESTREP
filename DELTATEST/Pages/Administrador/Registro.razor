@@ -12,98 +12,127 @@
     .btn-primary { background-color:#e5a650; color:white; padding:10px; width:100%; border:none; border-radius:6px }
 </style>
 
-<div class="form-container">
-    <div class="form-box">
-        <h2>Registro</h2>
-        <EditForm Model="model" OnValidSubmit="HandleValidSubmit">
-            <DataAnnotationsValidator />
-            <ValidationSummary />
+    <div class="form-container">
+        <div class="form-box">
+            <h2>Registro</h2>
 
-            <div class="mb-2">
-                <label>Nombre completo</label>
-                <InputText @bind-Value="model.NombreCompleto" class="form-control" />
-                <ValidationMessage For="() => model.NombreCompleto" />
-            </div>
-
-            <div class="mb-2">
-                <label>Correo</label>
-                <InputText @bind-Value="model.Correo" type="email" class="form-control" />
-                <ValidationMessage For="() => model.Correo" />
-            </div>
-
-            <div class="mb-2">
-                <label>CI (opcional)</label>
-                <InputText @bind-Value="model.Ci" class="form-control" />
-            </div>
-
-            <div class="mb-2">
-                <label>Teléfono (opcional)</label>
-                <InputText @bind-Value="model.Telefono" class="form-control" />
-            </div>
-
-            <div class="mb-2">
-                <label>Fecha de ingreso (opcional)</label>
-                <InputDate @bind-Value="model.FechaIngreso" class="form-control" />
-            </div>
-
-            <div class="mb-2">
-                <label>Rol</label>
-                <InputSelect @bind-Value="model.Rol" class="form-control">
-                    <option value="">Seleccionar rol</option>
-                    <option value="Inspector">Inspector</option>
-                    <option value="Usuario">Usuario</option>
-                </InputSelect>
-            </div>
-
-            <div class="mb-2">
-                <label>Contraseña</label>
-                <InputText @bind-Value="model.Password" type="password" class="form-control" />
-                <ValidationMessage For="() => model.Password" />
-            </div>
-
-            <div class="mb-2">
-                <label>Confirmar contraseña</label>
-                <InputText @bind-Value="model.ConfirmPassword" type="password" class="form-control" />
-                <ValidationMessage For="() => model.ConfirmPassword" />
-            </div>
-
-            @if (!string.IsNullOrEmpty(message))
+            @if (isSubmitting)
             {
-                <div class="text-danger">@message</div>
+                <div class="text-center mb-3">
+                    <div class="spinner-border text-warning" role="status"></div>
+                    <p class="mt-2">Creando cuenta...</p>
+                </div>
             }
 
-            <button type="submit" class="btn-primary">Crear cuenta</button>
-        </EditForm>
+            <EditForm Model="model" OnValidSubmit="HandleValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
 
-        <div style="margin-top:10px">
-            <a href="/IniciarSesion">¿Ya tienes cuenta? Inicia sesión</a>
+                <div class="mb-2">
+                    <label>Nombre completo</label>
+                    <InputText @bind-Value="model.NombreCompleto" class="form-control" />
+                    <ValidationMessage For="() => model.NombreCompleto" />
+                </div>
+
+                <div class="mb-2">
+                    <label>Correo</label>
+                    <InputText @bind-Value="model.Correo" type="email" class="form-control" />
+                    <ValidationMessage For="() => model.Correo" />
+                </div>
+
+                <div class="mb-2">
+                    <label>CI (opcional)</label>
+                    <InputText @bind-Value="model.Ci" class="form-control" />
+                </div>
+
+                <div class="mb-2">
+                    <label>Teléfono (opcional)</label>
+                    <InputText @bind-Value="model.Telefono" class="form-control" />
+                </div>
+
+                <div class="mb-2">
+                    <label>Fecha de ingreso (opcional)</label>
+                    <InputDate @bind-Value="model.FechaIngreso" class="form-control" />
+                </div>
+
+                <div class="mb-2">
+                    <label>Rol</label>
+                    <InputSelect @bind-Value="model.Rol" class="form-control">
+                        <option value="">Seleccionar rol</option>
+                        <option value="Inspector">Inspector</option>
+                        <option value="Usuario">Usuario</option>
+                    </InputSelect>
+                </div>
+
+                <div class="mb-2">
+                    <label>Contraseña</label>
+                    <InputText @bind-Value="model.Password" type="password" class="form-control" />
+                    <ValidationMessage For="() => model.Password" />
+                </div>
+
+                <div class="mb-2">
+                    <label>Confirmar contraseña</label>
+                    <InputText @bind-Value="model.ConfirmPassword" type="password" class="form-control" />
+                    <ValidationMessage For="() => model.ConfirmPassword" />
+                </div>
+
+                @if (!string.IsNullOrEmpty(message))
+                {
+                    <div class="text-danger">@message</div>
+                }
+
+                <button type="submit" class="btn-primary" disabled="@isSubmitting">
+                    @if (isSubmitting)
+                    {
+                        <span>Procesando...</span>
+                    }
+                    else
+                    {
+                        <span>Crear cuenta</span>
+                    }
+                </button>
+
+            </EditForm>
+
+            <div style="margin-top:10px">
+                <a href="/IniciarSesion">¿Ya tienes cuenta? Inicia sesión</a>
+            </div>
         </div>
     </div>
-</div>
+
 
 @code {
     private RegisterModel model = new();
     private string? message;
+    private bool isLoading = true;
+    private bool isSubmitting = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(1000); // Loader de entrada
+        isLoading = false;
+    }
 
     private async Task HandleValidSubmit()
     {
+        isSubmitting = true;
         message = null;
+        StateHasChanged();
 
-        // Ahora RegisterAsync devuelve también el rol
         var (success, rol, msg, nombre) = await AuthService.RegisterAsync(model);
 
         if (success)
         {
-            // Redirigir según rol: Inspector -> panel de administrador, Usuario -> home
             if (string.Equals(rol, "Inspector", StringComparison.OrdinalIgnoreCase))
                 Navigation.NavigateTo("/panelControlAdmin", forceLoad: true);
-            else // Usuario o cualquier otro -> home
+            else
                 Navigation.NavigateTo("/", forceLoad: true);
 
             return;
         }
 
         message = msg ?? "Error al registrar.";
+        isSubmitting = false;
     }
-
 }
+
