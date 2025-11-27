@@ -1,10 +1,21 @@
 ﻿@page "/panelControlAdmin"
 @layout MainSinLayout
 @inject NavigationManager Nav
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 
 <div class="container-fluid d-flex justify-content-center align-items-center vh-100 bg-light">
     <div class="p-5 w-75">
-   <h3 class="fw-bold text-center mb-5 text-dark">Panel de Control de Administrador</h3>
+   <h3 class="fw-bold text-center mb-2 text-dark">Panel de Control de Administrador</h3>
+
+        <!-- Greeting -->
+        @if (isLoading)
+        {
+            <p class="text-center text-muted mb-4">Cargando...</p>
+        }
+        else
+        {
+            <p class="text-center text-dark mb-4 h5">Bienvenido @(!string.IsNullOrWhiteSpace(userName) ? userName : "Administrador")</p>
+        }
 
         <!-- FILA SUPERIOR -->
         <div class="row g-4 justify-content-center">
@@ -102,6 +113,24 @@
 </style>
 
 @code {
+    private string? userName;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            userName = await LocalStorage.GetItemAsync<string>("userName");
+        }
+        catch
+        {
+            userName = null;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
 
     private void IrACrearEvaluacion()
     {
