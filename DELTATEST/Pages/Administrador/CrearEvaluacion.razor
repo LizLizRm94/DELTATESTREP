@@ -1,4 +1,4 @@
-﻿@page "/Administrador/CrearEvaluacion"
+﻿@page "/CrearEvaluacion"
 @layout MainSinLayout
 @inject NavigationManager Nav
 
@@ -6,13 +6,11 @@
     <h3 class="titulo-evaluacion">CREE SUS EVALUACIONES</h3>
 
     <div class="contenedor-botones">
-        <!-- Botón TEÓRICA con navegación -->
-        <button class="btn-cuadrado" @onclick='() => Nav.NavigateTo("/Administrador/CrearPreguntasTeoricas")'>
+        <button class="btn-cuadrado" @onclick='() => Nav.NavigateTo("/EvaluacionTeorica")'>
             TEÓRICA
         </button>
 
-        <!-- Botón PRÁCTICA (sin funcionalidad aún) -->
-        <button class="btn-cuadrado">
+        <button class="btn-cuadrado" @onclick='() => Nav.NavigateTo("/EvaluacionPracticaLista")'>
             PRÁCTICO
         </button>
     </div>

@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
-namespace DELTAAPI.Models;
+namespace DELTATEST.Models;
 
 public partial class Pregunta
 {
