@@ -24,7 +24,13 @@ namespace DELTAAPI.Controllers
                     FechaIngreso = u.FechaIngreso,
                     u.PuestoActual,
                     PuestoSolicitado = u.PuestoSolicitado,
-                    Estado = u.Estado
+                    Estado = u.Estado,
+                    // Obtener la última evaluación práctica (TipoEvaluacion = false)
+                    NotaPractica = u.EvaluacionIdEvaluadoNavigations
+                        .Where(e => e.TipoEvaluacion == false)
+                        .OrderByDescending(e => e.FechaEvaluacion)
+                        .Select(e => e.Nota)
+                        .FirstOrDefault()
                 })
                 .ToListAsync();
 

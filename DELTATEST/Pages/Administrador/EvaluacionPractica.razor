@@ -10,72 +10,22 @@
 
  @if (mostrarMensaje)
     {
-        <div class="alerta @(esError ? "alerta-error" : "alerta-exito")">
+  <div class="alerta @(esError ? "alerta-error" : "alerta-exito")">
    <span>@mensajeRespuesta</span>
   <button type="button" class="btn-cerrar" @onclick="CerrarMensaje">&times;</button>
    </div>
     }
 
-    <!-- Resultado de evaluación -->
-    @if (mostrarResultado && !esError)
-    {
-        <div class="resultado-evaluacion">
- <div class="resultado-card @(ObtenerClaseResultado(puntuacionFinal))">
-                <div class="resultado-header">
-             <h2>✅ Evaluación Completada</h2>
-     </div>
-    
- <div class="resultado-content">
-                    <div class="evaluado-resultado">
-  <p><strong>Evaluado:</strong> <span>@NombreUsuario</span></p>
-     </div>
-
-        <div class="puntuacion-container">
-        <div class="puntuacion-circulo @(ObtenerClaseResultado(puntuacionFinal))">
-          <span class="puntuacion-numero">@puntuacionFinal</span>
-    <span class="puntuacion-maximo">/100</span>
-      </div>
-  
-             <div class="puntuacion-detalles">
-         <p class="puntuacion-concepto">
-               <strong>@ObtenerConcepto(puntuacionFinal)</strong>
-    </p>
-    <p class="puntuacion-descripcion">
-       @ObtenerDescripcion(puntuacionFinal)
-    </p>
-  </div>
-   </div>
-
-             <div class="resultado-resumen">
-                 <div class="resumen-item">
-   <span class="resumen-label">Total de tareas calificadas:</span>
-        <span class="resumen-valor">@modelo?.Tareas?.Count</span>
-                </div>
-    <div class="resumen-item">
-    <span class="resumen-label">Calificación promedio por tarea:</span>
-    <span class="resumen-valor">@(modelo?.Tareas?.Count > 0 ? Math.Round((decimal)puntuacionFinal / modelo.Tareas.Count, 2) : 0) / 10</span>
-             </div>
-       </div>
-
-            <div class="resultado-botones">
-         <button type="button" class="btn btn-volver" @onclick="VolverALista">
-    Volver a Lista
-     </button>
-          </div>
-    </div>
-            </div>
-        </div>
-    }
-  else if (!mostrarResultado)
+  @if (!mostrarResultado)
     {
         <div class="evaluado-info">
         <p>Evaluad(a): <strong>@NombreUsuario</strong></p>
    </div>
 
-     @if (cargando)
+   @if (cargando)
         {
             <div class="loading-container">
-     <div class="spinner"></div>
+<div class="spinner"></div>
      <p>Cargando evaluación...</p>
             </div>
         }
@@ -84,22 +34,22 @@
      <div class="alerta alerta-info">
     <span>No hay tareas disponibles para esta evaluación</span>
      </div>
-        }
+      }
         else
         {
        <div class="tarea-card">
             <!-- Información de progreso -->
-                <div class="progreso-section">
+            <div class="progreso-section">
         <p class="contador-progreso">Tarea <strong>@(indiceActual + 1)</strong> de <strong>@modelo.Tareas.Count</strong></p>
            <div class="barra-progreso">
        <div class="barra-progreso-fill" style="width: @((indiceActual + 1) * 100 / modelo.Tareas.Count)%"></div>
         </div>
          </div>
 
-        <!-- Pregunta actual -->
+      <!-- Pregunta actual -->
       <div class="pregunta-section">
           <p class="contador-tareas">Del 1 al 10 ¿Que tal lo hizo? Califique:</p>
-        </div>
+ </div>
 
      <!-- Sistema de estrellas para calificación -->
     <div class="estrellas-container">
@@ -107,7 +57,7 @@
         {
    int calificacion = i;
    <button type="button" 
-         class="estrella @(indiceActual < modelo.Tareas.Count && modelo.Tareas[indiceActual].Calificacion >= calificacion ? "activa" : "")"
+       class="estrella @(indiceActual < modelo.Tareas.Count && modelo.Tareas[indiceActual].Calificacion >= calificacion ? "activa" : "")"
       @onclick="() => CalificarTarea(calificacion)"
   title="@calificacion estrella(s)">
           ★
@@ -115,38 +65,38 @@
          }
          </div>
 
-         <!-- Campo de descripción -->
+   <!-- Campo de descripción -->
 <div class="descripcion-section">
  <label class="label-descripcion">Ingrese una breve descripcion para mejorar</label>
        @if (indiceActual < modelo.Tareas.Count)
     {
-       <textarea class="textarea-descripcion" 
+     <textarea class="textarea-descripcion" 
        @bind="modelo.Tareas[indiceActual].ResultadoObtenido"
       placeholder="Ingrese su descripcion"></textarea>
  }
     </div>
 
-         <!-- Botones de navegación -->
+  <!-- Botones de navegación -->
     <div class="botones-navegacion">
-         <button type="button" 
+      <button type="button" 
             class="btn btn-siguiente"
      @onclick="IrASiguiente"
-         disabled="@(indiceActual >= modelo.Tareas.Count - 1 || cargandoSubmit || (indiceActual < modelo.Tareas.Count && (!modelo.Tareas[indiceActual].Calificacion.HasValue || modelo.Tareas[indiceActual].Calificacion.Value <= 0)))">
+ disabled="@(indiceActual >= modelo.Tareas.Count - 1 || cargandoSubmit || (indiceActual < modelo.Tareas.Count && (!modelo.Tareas[indiceActual].Calificacion.HasValue || modelo.Tareas[indiceActual].Calificacion.Value <= 0)))">
         Siguiente
     </button>
      <button type="button" 
-           class="btn btn-listo"
-      @onclick="Finalizar"
-      disabled="@cargandoSubmit">
-           @if (cargandoSubmit)
-       {
+        class="btn btn-listo"
+    @onclick="Finalizar"
+  disabled="@cargandoSubmit">
+  @if (cargandoSubmit)
+ {
          <span>Guardando...</span>
    }
        else
          {
           <span>Listo</span>
      }
-        </button>
+     </button>
  </div>
      </div>
     }
@@ -673,7 +623,7 @@ opacity: 0.9;
     }
 
     @@media (max-width: 768px) {
-        .container-evaluacion {
+      .container-evaluacion {
         padding: 20px;
         }
 
@@ -688,18 +638,18 @@ padding: 20px;
 
     .estrellas-container {
   gap: 12px;
-        }
+     }
 
-        .estrella {
+    .estrella {
     width: 40px;
     height: 40px;
-          font-size: 30px;
+      font-size: 30px;
     }
 
   .botones-navegacion {
    flex-direction: column;
     gap: 12px;
-        }
+      }
 
         .btn {
      width: 100%;
@@ -737,42 +687,42 @@ padding: 20px;
    cargando = true;
             // Crear evaluación de ejemplo con tareas
   modelo = new EvaluacionPracticaModelo
-          {
+    {
         IdUsuario = IdUsuario,
   NombreUsuario = NombreUsuario,
        Tareas = new List<TareaPractica>
-                {
+    {
         new TareaPractica { IdTarea = 1, Descripcion = "Tarea 1", Completada = false },
-            new TareaPractica { IdTarea = 2, Descripcion = "Tarea 2", Completada = false },
+          new TareaPractica { IdTarea = 2, Descripcion = "Tarea 2", Completada = false },
       new TareaPractica { IdTarea = 3, Descripcion = "Tarea 3", Completada = false },
           new TareaPractica { IdTarea = 4, Descripcion = "Tarea 4", Completada = false },
     new TareaPractica { IdTarea = 5, Descripcion = "Tarea 5", Completada = false },
           new TareaPractica { IdTarea = 6, Descripcion = "Tarea 6", Completada = false },
-        new TareaPractica { IdTarea = 7, Descripcion = "Tarea 7", Completada = false },
+      new TareaPractica { IdTarea = 7, Descripcion = "Tarea 7", Completada = false },
         new TareaPractica { IdTarea = 8, Descripcion = "Tarea 8", Completada = false },
            new TareaPractica { IdTarea = 9, Descripcion = "Tarea 9", Completada = false },
       new TareaPractica { IdTarea = 10, Descripcion = "Tarea 10", Completada = false }
      }
 };
-            indiceActual = 0;
+          indiceActual = 0;
       }
         catch (Exception ex)
     {
-       mostrarMensaje = true;
-            esError = true;
+    mostrarMensaje = true;
+      esError = true;
   mensajeRespuesta = $"Error al cargar la evaluación: {ex.Message}";
-            Console.WriteLine($"Error: {ex.Message}");
+      Console.WriteLine($"Error: {ex.Message}");
         }
         finally
    {
-            cargando = false;
+  cargando = false;
         }
     }
 
     private void CalificarTarea(int calificacion)
     {
-        if (indiceActual < modelo?.Tareas?.Count)
-        {
+if (indiceActual < modelo?.Tareas?.Count)
+      {
     modelo.Tareas[indiceActual].Calificacion = calificacion;
  }
     }
@@ -780,8 +730,8 @@ padding: 20px;
     private void IrASiguiente()
     {
         if (indiceActual < modelo?.Tareas?.Count - 1)
-        {
-            indiceActual++;
+     {
+  indiceActual++;
         }
     }
 
@@ -790,26 +740,26 @@ padding: 20px;
         if (modelo == null) return;
 
         cargandoSubmit = true;
-        try
+try
         {
 // Validar que TODAS las tareas tengan calificación
 var tareasSinCalificacion = modelo.Tareas
     .Where(t => !t.Calificacion.HasValue || t.Calificacion.Value <= 0)
-        .ToList();
+ .ToList();
 
           if (tareasSinCalificacion.Count > 0)
-            {
+      {
     mostrarMensaje = true;
     esError = true;
          mensajeRespuesta = $"Debe calificar todas las tareas. Faltan {tareasSinCalificacion.Count} por calificar.";
-           cargandoSubmit = false;
+     cargandoSubmit = false;
      return;
           }
 
    // Calcular puntuación total
    var puntuacionTotal = modelo.Tareas
             .Where(t => t.Calificacion.HasValue)
-          .Sum(t => t.Calificacion.Value);
+       .Sum(t => t.Calificacion.Value);
 
             puntuacionFinal = (int)puntuacionTotal;
 
@@ -818,13 +768,13 @@ var tareasSinCalificacion = modelo.Tareas
        idUsuario = modelo.IdUsuario,
    nombreUsuario = modelo.NombreUsuario,
      tareas = modelo.Tareas.Select(t => new
-                {
+     {
     idTarea = t.IdTarea,
       descripcion = t.Descripcion,
       resultadoObtenido = t.ResultadoObtenido,
     completada = t.Completada,
          calificacion = t.Calificacion
-                }).ToList(),
+           }).ToList(),
       puntuacion = puntuacionTotal
  };
 
@@ -834,70 +784,34 @@ var tareasSinCalificacion = modelo.Tareas
      );
 
       if (response.IsSuccessStatusCode)
-      {
+ {
       mostrarMensaje = true;
              esError = false;
    mensajeRespuesta = $"¡Evaluación práctica guardada exitosamente!";
-              mostrarResultado = true;
     
-   // Redirigir después de 5 segundos
-       await Task.Delay(5000);
+   // Redirigir después de 2 segundos
+       await Task.Delay(2000);
     NavigationManager.NavigateTo("/EvaluacionPracticaLista");
             }
             else
-            {
-       var contenidoError = await response.Content.ReadAsStringAsync();
+   {
+ var contenidoError = await response.Content.ReadAsStringAsync();
       mostrarMensaje = true;
-             esError = true;
+         esError = true;
      mensajeRespuesta = $"Error al guardar: {response.StatusCode}";
-            }
+  }
      }
         catch (Exception ex)
         {
-            mostrarMensaje = true;
+          mostrarMensaje = true;
    esError = true;
     mensajeRespuesta = $"Error: {ex.Message}";
         }
         finally
         {
-         cargandoSubmit = false;
+     cargandoSubmit = false;
         }
-    }
-
-    private string ObtenerClaseResultado(int puntuacion)
-    {
-        if (puntuacion >= 80)
-        return "excelente";
-        else if (puntuacion >= 51)
-       return "bien";
-        else
-            return "reprobado";
-    }
-
-    private string ObtenerConcepto(int puntuacion)
-    {
-        if (puntuacion >= 80)
-         return "⭐ EXCELENTE";
-  else if (puntuacion >= 51)
-            return "👍 BIEN";
-      else
-        return "❌ REPROBADO";
-    }
-
-    private string ObtenerDescripcion(int puntuacion)
-    {
-      if (puntuacion >= 80)
-            return "Desempeño excepcional. El evaluado demostró excelentes habilidades en todas las áreas evaluadas.";
-      else if (puntuacion >= 51)
-            return "Desempeño satisfactorio. El evaluado cumplió adecuadamente con las tareas asignadas.";
-    else
-    return "Desempeño insuficiente. Se recomienda refuerzo y mejora en las áreas evaluadas.";
-    }
-
-    private void VolverALista()
- {
-        NavigationManager.NavigateTo("/EvaluacionPracticaLista");
-    }
+ }
 
     private void CerrarMensaje()
     {

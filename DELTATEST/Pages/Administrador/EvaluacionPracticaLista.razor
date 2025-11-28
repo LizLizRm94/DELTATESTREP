@@ -52,6 +52,7 @@ else
   <th>Fecha de Ingreso</th>
           <th>Puesto Actual</th>
       <th>Puesto Solicitado</th>
+          <th>Nota Práctica</th>
           <th>Evaluacion Practica</th>
   </tr>
             </thead>
@@ -65,21 +66,33 @@ else
            <td>@(usuario.FechaIngreso.HasValue ? usuario.FechaIngreso.Value.ToString("dd/MM/yyyy") : "-")</td>
            <td>@usuario.PuestoActual</td>
            <td>@usuario.PuestoSolicitado</td>
-            <td>
-         <button class="btn-iniciar" 
-  @onclick="() => IniciarEvaluacion(usuario.IdUsuario, usuario.NombreCompleto)"
-              disabled="@(iniciandoId == usuario.IdUsuario)">
-  @if (iniciandoId == usuario.IdUsuario)
+            <td class="nota-practica">
+@if (usuario.NotaPractica.HasValue)
+     {
+    <span class="nota-badge @ObtenerClaseNota(usuario.NotaPractica.Value)">
+    @usuario.NotaPractica.Value.ToString("F0") / 100
+    </span>
+        }
+    else
+       {
+ <span class="sin-evaluacion">Sin evaluar</span>
+    }
+        </td>
+     <td>
+  <button class="btn-iniciar" 
+ @onclick="() => IniciarEvaluacion(usuario.IdUsuario, usuario.NombreCompleto)"
+   disabled="@(iniciandoId == usuario.IdUsuario)">
+ @if (iniciandoId == usuario.IdUsuario)
+         {
+ <span>Iniciando...</span>
+      }
+    else
         {
-         <span>Iniciando...</span>
-               }
-        else
-        {
-             <span>Inicio</span>
-             }
-          </button>
-         </td>
-      </tr>
+    <span>Inicio</span>
+              }
+      </button>
+      </td>
+    </tr>
           }
             </tbody>
         </table>
@@ -210,6 +223,48 @@ else
    cursor: not-allowed;
     }
 
+ .nota-practica {
+        text-align: center;
+    }
+
+    .nota-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 20px;
+      font-weight: 600;
+        font-size: 13px;
+        min-width: 80px;
+    }
+
+    .nota-badge.excelente {
+     background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #6ee7b7;
+  }
+
+    .nota-badge.bien {
+        background: #dbeafe;
+        color: #1e40af;
+    border: 1px solid #93c5fd;
+    }
+
+    .nota-badge.reprobado {
+   background: #fee2e2;
+        color: #7f1d1d;
+        border: 1px solid #fca5a5;
+    }
+
+  .sin-evaluacion {
+        display: inline-block;
+      padding: 6px 12px;
+        border-radius: 20px;
+   font-weight: 600;
+        font-size: 13px;
+        background: #f3f4f6;
+  color: #6b7280;
+   border: 1px solid #d1d5db;
+    }
+
     .alerta {
         max-width: 750px;
         margin: 0 auto 20px;
@@ -275,6 +330,36 @@ else
         color: #666;
         font-size: 16px;
     }
+
+    .nota-practica {
+        text-align: center;
+    }
+
+.nota-badge {
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 14px;
+  color: white;
+}
+
+.nota-badge.baja {
+  background-color: #f44336;
+}
+
+.nota-badge.moderada {
+  background-color: #ff9800;
+}
+
+.nota-badge.alta {
+  background-color: #4caf50;
+}
+
+.sin-evaluacion {
+  color: #999;
+  font-style: italic;
+}
 
     @@keyframes slideIn {
         from {
@@ -397,5 +482,15 @@ else
     private void CerrarMensaje()
     {
         mostrarMensaje = false;
+    }
+
+ private string ObtenerClaseNota(decimal nota)
+    {
+     if (nota >= 80)
+   return "excelente";
+      else if (nota >= 51)
+         return "bien";
+  else
+         return "reprobado";
     }
 }
