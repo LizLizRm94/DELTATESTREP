@@ -339,3 +339,4 @@ FodyWeavers.xsd
 # Ignorar archivo de configuración sensible
 appsettings.json
 /DELTAAPI/appsettings.json
+/DELTAAPI/appsettings.json
