@@ -1,0 +1,67 @@
+﻿@page "/usuarios/evaluaciones/{IdUsuario:int}"
+@layout MainSinLayout
+@inject NavigationManager NavigationManager
+
+<h2 class="text-center text-orange text-uppercase mb-4">Resumen de Evaluaciones</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <h4 class="text-orange text-center mb-3">Evaluaciones Prácticas</h4>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th class="text-center">Puntaje</th>
+                    <th class="text-center">Fecha</th>
+                    <th class="text-center">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="text-center">85 / 100</td>
+                    <td class="text-center">10/11/2025</td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-orange-outline" @onclick="() => VerDetallePractica(1)">
+                            Ver Detalles
+                        </button>
+                    </td>
+                </tr>
+                <!-- Más filas dinámicas luego con API -->
+            </tbody>
+        </table>
+    </div>
+    <div class="col-md-6">
+        <h4 class="text-orange text-center mb-3">Examen Teórico</h4>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th class="text-center">Evaluación</th>
+                    <th class="text-center">Fecha</th>
+                    <th class="text-center">Puntaje</th>
+                    <th class="text-center">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="text-center">Normas de Seguridad</td>
+                    <td class="text-center">08/11/2025</td>
+                    <td class="text-center">78 / 100</td>
+                    <td class="text-center">
+                        <a href="pdfs/examen-teorico.pdf" download class="btn btn-sm btn-orange">
+                            Descargar
+                        </a>
+                    </td>
+                </tr>
+                <!-- Más filas dinámicas luego con API -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int IdUsuario { get; set; }
+
+    private void VerDetallePractica(int idEvaluacion)
+    {
+        NavigationManager.NavigateTo($"/detalle-evaluacion/{idEvaluacion}");
+    }
+}
