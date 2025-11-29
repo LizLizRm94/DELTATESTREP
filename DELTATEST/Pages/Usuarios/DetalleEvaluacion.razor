@@ -1,16 +1,15 @@
 ﻿@page "/detalle-evaluacion/{IdEvaluacion:int}"
 @using DELTATEST.Models
-@layout MainLayout
+@layout MainSinLayout
 @inject NavigationManager NavigationManager
 
-<!-- TÍTULO CENTRADO Y MAYÚSCULAS -->
 <h2 class="text-center text-orange text-uppercase mb-4">Detalle de Evaluación: Manejo de Equipos</h2>
 
-<!-- RECUADRO DE RESULTADO Y ALERTA CENTRADO -->
+<!-- RECUADRO DE RESULTADO Y ALERTA -->
 <div class="d-flex justify-content-center mb-4">
     <div class="card border-danger" style="max-width: 500px;">
         <div class="card-body text-center">
-            <h5 class="card-title text-danger">Resultado: 50 / 100</h5>
+            <h5 class="card-title text-danger">Resultado: @notaObtenida / 100</h5>
             <p class="text-muted mb-1">Fecha: 03/05/2025</p>
             <p class="text-muted mb-1">Área: Control de Calidad</p>
             <p class="text-muted mb-3">Evaluador: Mishale Rodríguez</p>
@@ -21,65 +20,69 @@
     </div>
 </div>
 
-<!-- TÍTULO DEL DESGLOSE CENTRADO -->
-<h4 class="text-center text-orange mb-3">Desglose de la Evaluación</h4>
+<!-- COMENTARIOS DEL EXAMEN PRÁCTICO -->
+<h4 class="text-center text-orange mb-3">Comentarios del Examen Práctico</h4>
 
-<!-- TABLA DE DESGLOSE CENTRADA -->
 <div class="d-flex justify-content-center mb-4">
-    <div style="min-width: 700px;">
-        <table class="table table-bordered">
-            <thead class="table-light">
-                <tr>
-                    <th class="text-center">Evaluación</th>
-                    <th class="text-center">Puntaje</th>
-                    <th class="text-center">Obtenido</th>
-                    <th class="text-center">Detalles</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                <tr>
-                    <td>Uso de Equipos</td>
-                    <td>20</td>
-                    <td>15</td>
-                    <td>Falta conocimiento</td>
-                </tr>
-                <tr>
-                    <td>Normas de Seguridad</td>
-                    <td>30</td>
-                    <td>20</td>
-                    <td>Confusión en protocolos</td>
-                </tr>
-                <tr>
-                    <td>Resolución de Fallas</td>
-                    <td>50</td>
-                    <td>15</td>
-                    <td>No identificó causas raíz</td>
-                </tr>
-            </tbody>
-        </table>
+    <div class="card shadow-sm border-0 p-3" style="max-width: 600px;">
+        <p  <strong>Uso de Equipos:</strong> Falta conocimiento</p>
+        <p <strong>Normas de Seguridad:</strong> Confusión en protocolos</p>
+        <p  <strong>Resolución de Fallas:</strong> No identificó causas raíz</p>
     </div>
 </div>
 
-
-<!-- BOTONES MÁS ABAJO -->
+<!-- BOTONES -->
 <div class="text-center mt-5">
     <div class="btn-group gap-3">
-        <button class="btn btn-orange me-2" @onclick="RepetirEvaluacion">Repetir Evaluación</button>
+        @if (notaObtenida < 50)
+        {
+            <button class="btn btn-orange me-2" data-bs-toggle="modal" data-bs-target="#adminModal">
+                Repetir Evaluación
+            </button>
+        }
         <button class="btn btn-orange-outline" @onclick="VolverAlPanel">Volver al Panel</button>
+    </div>
+</div>
+
+<!-- MODAL DE ADMINISTRADORES -->
+<div class="modal fade" id="adminModal" tabindex="-1" aria-labelledby="adminModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-orange" id="adminModalLabel">Contacto de Administradores</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="list-group">
+                    <li class="list-group-item">
+                        <strong>Inspector - Mishale Rodriguez</strong><br />
+                        78965410
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Inspector - Alex Tancara</strong><br />
+                        7896450
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Inspector - Gerald Mollo</strong><br />
+                        7773410
+                    </li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-orange-outline" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
     </div>
 </div>
 
 @code {
     [Parameter] public int IdEvaluacion { get; set; }
 
-    private void RepetirEvaluacion()
-    {
-        Console.WriteLine($"Repetir evaluación {IdEvaluacion}");
-    }
+    private int notaObtenida = 50; // ← reemplaza con valor dinámico cuando conectes la API
 
     private void VolverAlPanel()
     {
-        NavigationManager.NavigateTo("/usuarios/estado");
+        NavigationManager.NavigateTo($"/estado/{IdEvaluacion}");
     }
 }
+
