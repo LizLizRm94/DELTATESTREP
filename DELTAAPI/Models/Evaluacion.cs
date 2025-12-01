@@ -27,5 +27,7 @@ public partial class Evaluacion
 
     public virtual Usuario IdEvaluadoNavigation { get; set; } = null!;
 
+    public virtual ICollection<Respuesta> Respuestas { get; set; } = new List<Respuesta>();
+
     public virtual ICollection<Notificacion> Notificacions { get; set; } = new List<Notificacion>();
 }

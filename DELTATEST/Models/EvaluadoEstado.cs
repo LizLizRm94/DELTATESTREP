@@ -10,9 +10,6 @@ namespace DELTATEST.Models
         public decimal PromedioGeneral { get; set; }
         public string ProximaRotacion { get; set; } = string.Empty;
 
-        // Added PuestoActual to match the view usage
-        public string PuestoActual { get; set; } = string.Empty;
-
         public List<Evaluacion> Evaluaciones { get; set; } = new();
         public List<Notificacion> Notificaciones { get; set; } = new();
     }

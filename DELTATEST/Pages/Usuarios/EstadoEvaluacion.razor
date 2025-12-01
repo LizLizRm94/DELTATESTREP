@@ -1,71 +1,173 @@
-ï»¿@page "/estado/{IdUsuario:int}"
+@page "/estado/{IdUsuario:int}"
 @using DELTATEST.Models
-@using DELTATEST.Services
-@layout MainSinLayout
+@inject HttpClient Http
 @inject NavigationManager NavigationManager
-@inject EvaluadoService EvaluadoService
+@layout MainSinLayout
 
-@if (estado == null)
+@if (cargando)
 {
-    <p>Cargando estado del usuario...</p>
+    <div class="text-center mt-5">
+        <p>Cargando estado del usuario...</p>
+  </div>
 }
 else
 {
     <div class="d-flex justify-content-end mb-2">
-        <p class="text-muted fw-semibold">Hola, @estado.NombreCompleto</p>
+     <p class="text-muted fw-semibold">Hola, @nombreUsuario</p>
     </div>
 
-    <h2 class="text-center text-orange text-uppercase mb-4">Mi estado de evaluaciÃ³n</h2>
+    <h2 class="text-center text-orange text-uppercase mb-4">Mi estado de evaluación</h2>
 
     <div class="row">
-        <div class="col-md-6 d-flex flex-column align-items-center">
+   <div class="col-md-6 d-flex flex-column align-items-center">
             <div class="d-flex flex-column align-items-center w-100" style="max-width: 420px;">
-                <div class="card shadow-sm border-0 card-orange text-center p-4 mb-3 w-100">
-                    <h5 class="card-title text-orange">Promedio General</h5>
-                    <p class="display-6 fw-bold text-orange">@estado.PromedioGeneral / 100</p>
-                </div>
-                <div class="card shadow-sm border-0 card-orange text-center p-3 mb-3 w-100">
-                    <h5 class="card-title text-orange mb-1">Puesto Actual</h5>
-                    <p class="fs-5 fw-semibold">@estado.PuestoActual</p>
-                </div>
+       <div class="card shadow-sm border-0 card-orange text-center p-4 mb-3 w-100">
+        <h5 class="card-title text-orange">Promedio General</h5>
+     <p class="display-6 fw-bold text-orange">@promedio / 100</p>
+           </div>
                 <button class="btn btn-orange mt-1" @onclick="VerEvaluaciones">
-                    Ver Evaluaciones
+Ver Evaluaciones
                 </button>
-            </div>
-        </div>
+     </div>
+ </div>
 
-        <!-- DERECHA: NOTIFICACIONES -->
-        <div class="col-md-6">
-            <h4 class="mb-3 text-orange text-center">Notificaciones</h4>
-            @if (estado.Notificaciones.Any())
+ <!-- DERECHA: NOTIFICACIONES -->
+      <div class="col-md-6">
+  <h4 class="mb-3 text-orange text-center">Notificaciones</h4>
+      @if (notificaciones != null && notificaciones.Count > 0)
+    {
+        <ul class="list-group">
+        @foreach (var n in notificaciones)
+ {
+    <li class="list-group-item">
+     <strong>@n.TipoNotificacion:</strong> @n.Mensaje
+            <div class="small text-muted">
+          @(n.FechaEnvio?.ToString("dd/MM/yyyy HH:mm") ?? "Sin fecha")
+            </div>
+           </li>
+   }
+          </ul>
+          }
+          else
             {
-                <ul class="list-group">
-                    @foreach (var n in estado.Notificaciones)
-                    {
-                        <li class="list-group-item">
-                            <strong>@n.TipoNotificacion:</strong> @n.Mensaje
-                            <div class="small text-muted">
-                                @(n.FechaEnvio?.ToString("dd/MM/yyyy HH:mm"))
-                            </div>
-                        </li>
-                    }
-                </ul>
-            }
-            else
-            {
-                <div class="alert alert-info text-center">No tienes notificaciones nuevas.</div>
-            }
+            <div class="alert alert-info text-center">No tienes notificaciones nuevas.</div>
+    }
         </div>
     </div>
 }
 
 @code {
-    [Parameter] public int IdUsuario { get; set; }
-    private EvaluadoEstado? estado;
+    [Parameter]
+    public int IdUsuario { get; set; }
+
+    private string nombreUsuario = "Usuario";
+    private decimal promedio = 0;
+    private List<NotificacionSimple>? notificaciones = new();
+    private bool cargando = true;
+
+    private class NotificacionSimple
+    {
+        public string TipoNotificacion { get; set; } = string.Empty;
+        public string Mensaje { get; set; } = string.Empty;
+        public DateTime? FechaEnvio { get; set; }
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        estado = await EvaluadoService.ObtenerEstadoAsync(IdUsuario);
+     await CargarEstado();
+    }
+
+    private async Task CargarEstado()
+    {
+   try
+        {
+ cargando = true;
+
+    // 1. Obtener nombre del usuario
+  try
+   {
+     var userResponse = await Http.GetAsync($"api/usuarios/{IdUsuario}");
+                if (userResponse.IsSuccessStatusCode)
+     {
+      var usuario = await userResponse.Content.ReadFromJsonAsync<dynamic>();
+       if (usuario != null)
+  {
+          nombreUsuario = usuario.NombreCompleto?.ToString() ?? "Usuario";
+       }
+     }
+          }
+          catch (Exception ex)
+   {
+        Console.WriteLine($"Error obteniendo usuario: {ex.Message}");
+ nombreUsuario = "Usuario";
+            }
+
+       // 2. Calcular promedio de evaluaciones prácticas
+         try
+     {
+       var evalsResponse = await Http.GetAsync($"api/evaluaciones/usuario/{IdUsuario}");
+        if (evalsResponse.IsSuccessStatusCode)
+    {
+    var evals = await evalsResponse.Content.ReadFromJsonAsync<List<dynamic>>();
+         if (evals != null && evals.Count > 0)
+     {
+    decimal suma = 0;
+ int count = 0;
+              
+    foreach (var eval in evals)
+       {
+        try
+{
+         var notaObj = eval?.GetType().GetProperty("NotaPractica")?.GetValue(eval);
+        if (notaObj != null)
+        {
+         if (decimal.TryParse(notaObj.ToString(), out decimal nota))
+         {
+   suma += nota;
+   count++;
+     }
+        }
+    }
+    catch { }
+ }
+
+         promedio = count > 0 ? Math.Round(suma / count, 0) : 0;
+   }
+       }
+   }
+          catch (Exception ex)
+       {
+       Console.WriteLine($"Error calculando promedio: {ex.Message}");
+                promedio = 0;
+  }
+
+          // 3. Obtener notificaciones
+            try
+      {
+   var notifResponse = await Http.GetAsync($"api/notificaciones/usuario/{IdUsuario}");
+                if (notifResponse.IsSuccessStatusCode)
+{
+     notificaciones = await notifResponse.Content.ReadFromJsonAsync<List<NotificacionSimple>>();
+ }
+           else
+          {
+notificaciones = new List<NotificacionSimple>();
+        }
+ }
+     catch (Exception ex)
+        {
+           Console.WriteLine($"Advertencia notificaciones: {ex.Message}");
+   notificaciones = new List<NotificacionSimple>();
+    }
+      }
+    catch (Exception ex)
+        {
+          Console.WriteLine($"Error general: {ex.Message}");
+        }
+        finally
+        {
+            cargando = false;
+    }
     }
 
     private void VerEvaluaciones()

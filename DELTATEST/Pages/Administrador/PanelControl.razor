@@ -50,13 +50,13 @@
 
       <!-- Ver Evaluación -->
  <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-          <div class="card h-100 shadow-sm border-0 dashboard-card">
+          <div class="card h-100 shadow-sm border-0 dashboard-card" @onclick="IrAVerEvaluaciones">
     <div class="card-body text-center p-4">
          <div class="icon-circle bg-info-soft mx-auto mb-3">
-         <img src="images/view.png" class="icon-img" alt="Ver evaluación" />
+      <img src="images/view.png" class="icon-img" alt="Ver evaluación" />
            </div>
-      <h5 class="card-title fw-semibold mt-3">Ver Evaluación</h5>
-             <p class="card-text text-muted small">Visualiza y descarga resultados.</p>
+<h5 class="card-title fw-semibold mt-3">Ver Evaluación</h5>
+             <p class="card-text text-muted small">Visualiza y califica evaluaciones.</p>
         </div>
         </div>
    </div>
@@ -116,5 +116,10 @@
     private void IrAVerUsuario()
   {
       Nav.NavigateTo("/verUsuarios");
+    }
+
+    private void IrAVerEvaluaciones()
+    {
+        Nav.NavigateTo("/admin/evaluaciones-teoricas");
     }
 }

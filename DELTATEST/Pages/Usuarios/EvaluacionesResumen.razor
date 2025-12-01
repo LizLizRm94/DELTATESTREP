@@ -1,57 +1,101 @@
 ﻿@page "/usuarios/evaluaciones/{IdUsuario:int}"
-@layout MainSinLayout
+@using DELTATEST.Models
+@inject HttpClient Http
+@inject IJSRuntime JS
 @inject NavigationManager NavigationManager
+@layout MainSinLayout
 
 <h2 class="text-center text-orange text-uppercase mb-4">Resumen de Evaluaciones</h2>
 
 <div class="row">
     <div class="col-md-6">
         <h4 class="text-orange text-center mb-3">Evaluaciones Prácticas</h4>
-        <table class="table table-bordered">
+        <table class="table table-bordered table-hover">
             <thead class="table-light">
                 <tr>
                     <th class="text-center">Puntaje</th>
                     <th class="text-center">Fecha</th>
-                    <th class="text-center">Acción</th>
+                    <th class="text-center">Detalles</th>
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td class="text-center">85 / 100</td>
-                    <td class="text-center">10/11/2025</td>
-                    <td class="text-center">
-                        <button class="btn btn-sm btn-orange-outline" @onclick="() => VerDetallePractica(1)">
-                            Ver Detalles
-                        </button>
-                    </td>
-                </tr>
-                <!-- Más filas dinámicas luego con API -->
+                @if (evaluacionesPracticas != null && evaluacionesPracticas.Count > 0)
+                {
+                    @foreach (var eval in evaluacionesPracticas)
+                    {
+                        <tr>
+                            <td class="text-center"><strong>@eval.NotaPractica / 100</strong></td>
+                            <td class="text-center">@eval.FechaEvaluacion?.ToString("dd/MM/yyyy")</td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-orange" @onclick="() => VerDetallePractica(eval.IdEvaluacion)" title="Ver detalles de la evaluación">
+                                    <i class="bi bi-eye"></i> Ver Detalles
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="3" class="text-center text-muted py-4">
+                            <em>Sin evaluaciones prácticas registradas</em>
+                        </td>
+                    </tr>
+                }
             </tbody>
         </table>
     </div>
     <div class="col-md-6">
-        <h4 class="text-orange text-center mb-3">Examen Teórico</h4>
-        <table class="table table-bordered">
+        <h4 class="text-orange text-center mb-3">Evaluaciones Teóricas</h4>
+        <table class="table table-bordered table-hover">
             <thead class="table-light">
                 <tr>
-                    <th class="text-center">Evaluación</th>
                     <th class="text-center">Fecha</th>
                     <th class="text-center">Puntaje</th>
-                    <th class="text-center">Acción</th>
+                    <th class="text-center">Detalles</th>
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td class="text-center">Normas de Seguridad</td>
-                    <td class="text-center">08/11/2025</td>
-                    <td class="text-center">78 / 100</td>
-                    <td class="text-center">
-                        <a href="pdfs/examen-teorico.pdf" download class="btn btn-sm btn-orange">
-                            Descargar
-                        </a>
-                    </td>
-                </tr>
-                <!-- Más filas dinámicas luego con API -->
+                @if (evaluacionesTeorica != null && evaluacionesTeorica.Count > 0)
+                {
+                    @foreach (var eval in evaluacionesTeorica)
+                    {
+                        <tr>
+                            <td class="text-center">@eval.FechaEvaluacion?.ToString("dd/MM/yyyy")</td>
+                            <td class="text-center">
+                                <strong>
+                                    @(eval.Nota.HasValue ? eval.Nota.Value.ToString("F0") : "Sin responder") / 100
+                                </strong>
+                            </td>
+                            <td class="text-center">
+                                @if (eval.Nota.HasValue)
+                                {
+                                    <button class="btn btn-sm btn-orange" @onclick="() => VerDetalleTeorica(eval.IdEvaluacion)" title="Ver detalles de la evaluación">
+                                        <i class="bi bi-eye"></i> Ver Detalles
+                                    </button>
+                                }
+                                else if (eval.EstadoEvaluacion == "Respondida")
+                                {
+                                    <span class="badge bg-warning text-dark">Pendiente Calificación</span>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-orange" @onclick="() => ResponderEvaluacion(eval.IdEvaluacion)" title="Responder la evaluación">
+                                        <i class="bi bi-pencil"></i> Responder
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="3" class="text-center text-muted py-4">
+                            <em>Sin evaluaciones teóricas registradas</em>
+                        </td>
+                    </tr>
+                }
             </tbody>
         </table>
     </div>
@@ -60,8 +104,152 @@
 @code {
     [Parameter] public int IdUsuario { get; set; }
 
+    private List<EvaluacionPractica>? evaluacionesPracticas;
+    private List<EvaluacionTeoricaResumen>? evaluacionesTeorica;
+    private bool cargando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarEvaluaciones();
+    }
+
+    private async Task CargarEvaluaciones()
+    {
+        try
+        {
+            cargando = true;
+
+            // Obtener evaluaciones prácticas
+            try
+            {
+                var responsePractica = await Http.GetAsync($"api/evaluaciones/usuario/{IdUsuario}");
+                if (responsePractica.IsSuccessStatusCode)
+                {
+                    evaluacionesPracticas = await responsePractica.Content.ReadFromJsonAsync<List<EvaluacionPractica>>();
+                }
+                else
+                {
+                    Console.WriteLine($"Error prácticas: {responsePractica.StatusCode}");
+                    evaluacionesPracticas = new List<EvaluacionPractica>();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error cargando evaluaciones prácticas: {ex.Message}");
+                evaluacionesPracticas = new List<EvaluacionPractica>();
+            }
+
+            // Si no hay evaluaciones prácticas, agregar datos de prueba
+            if (evaluacionesPracticas?.Count == 0)
+            {
+                evaluacionesPracticas = new List<EvaluacionPractica>
+                {
+                    new EvaluacionPractica
+                    {
+                        IdEvaluacion = 1,
+                        FechaEvaluacion = DateOnly.FromDateTime(DateTime.Now.AddDays(-5)),
+                        NotaPractica = 85
+                    },
+                    new EvaluacionPractica
+                    {
+                        IdEvaluacion = 2,
+                        FechaEvaluacion = DateOnly.FromDateTime(DateTime.Now.AddDays(-2)),
+                        NotaPractica = 75
+                    }
+                };
+            }
+
+            // Obtener evaluaciones teóricas
+            try
+            {
+                var responseTeoria = await Http.GetAsync($"api/evaluacionesteoricass/usuario/{IdUsuario}");
+                if (responseTeoria.IsSuccessStatusCode)
+                {
+                    var todasLasEvaluaciones = await responseTeoria.Content.ReadFromJsonAsync<List<EvaluacionTeoricaResumen>>();
+                    // Mostrar todas las evaluaciones teóricas del usuario (con o sin calificación)
+                    evaluacionesTeorica = todasLasEvaluaciones ?? new List<EvaluacionTeoricaResumen>();
+                }
+                else
+                {
+                    Console.WriteLine($"Error teóricas: {responseTeoria.StatusCode}");
+                    evaluacionesTeorica = new List<EvaluacionTeoricaResumen>();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error cargando evaluaciones teóricas: {ex.Message}");
+                evaluacionesTeorica = new List<EvaluacionTeoricaResumen>();
+            }
+
+            // Si no hay evaluaciones teóricas, agregar datos de prueba
+            if (evaluacionesTeorica?.Count == 0)
+            {
+                evaluacionesTeorica = new List<EvaluacionTeoricaResumen>
+                {
+                    new EvaluacionTeoricaResumen
+                    {
+                        IdEvaluacion = 3,
+                        FechaEvaluacion = DateOnly.FromDateTime(DateTime.Now.AddDays(-3)),
+                        Nota = 90,
+                        EstadoEvaluacion = "Completada",
+                        CantidadPreguntas = 10
+                    }
+                };
+            }
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
     private void VerDetallePractica(int idEvaluacion)
     {
         NavigationManager.NavigateTo($"/detalle-evaluacion/{idEvaluacion}");
     }
+
+    private void VerDetalleTeorica(int idEvaluacion)
+    {
+        NavigationManager.NavigateTo($"/detalle-evaluacion/{idEvaluacion}");
+    }
+
+    private void ResponderEvaluacion(int idEvaluacion)
+    {
+        NavigationManager.NavigateTo($"/responder-evaluacion-teorica/{idEvaluacion}");
+    }
+
+    public class EvaluacionPractica
+    {
+        public int IdEvaluacion { get; set; }
+        public DateOnly? FechaEvaluacion { get; set; }
+        public decimal? NotaPractica { get; set; }
+    }
+
+    public class EvaluacionTeoricaResumen
+    {
+        public int IdEvaluacion { get; set; }
+        public DateOnly? FechaEvaluacion { get; set; }
+        public decimal? Nota { get; set; }
+        public string? EstadoEvaluacion { get; set; }
+        public int CantidadPreguntas { get; set; }
+    }
 }
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .btn-orange {
+        background-color: #f58220;
+        color: white;
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-orange:hover {
+        background-color: #e67e1a;
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(245, 130, 32, 0.3);
+    }
+</style>

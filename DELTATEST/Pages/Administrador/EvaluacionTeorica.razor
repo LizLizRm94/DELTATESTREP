@@ -2,6 +2,7 @@
 @using DELTATEST.Models
 @inject HttpClient Http
 @inject IJSRuntime JS
+@inject NavigationManager NavigationManager
 @layout MainSinLayout
 
 <h3 class="titulo-form">EVALUACION TEORICA</h3>
@@ -16,29 +17,43 @@
 
 <form @onsubmit="OnSubmit">
     <div class="form-evaluacion">
+        <!-- Selector de usuario -->
+        <div class="fila-pregunta">
+     <label class="label-pregunta">Seleccionar Usuario</label>
+    <select class="input-respuesta" @bind="idUsuarioSeleccionado" disabled="@cargando">
+        <option value="0">-- Seleccione un usuario --</option>
+                @if (usuarios != null)
+          {
+        @foreach (var usuario in usuarios)
+   {
+       <option value="@usuario.IdUsuario">@usuario.NombreCompleto</option>
+          }
+     }
+       </select>
+        </div>
+
         @if (modelo?.Preguntas != null)
         {
-            @foreach (var pregunta in modelo.Preguntas)
-            {
+        @foreach (var pregunta in modelo.Preguntas)
+      {
                 <div class="fila-pregunta">
-                    <label class="label-pregunta">Pregunta @(modelo.Preguntas.IndexOf(pregunta) + 1)</label>
-                    <input type="text" class="input-respuesta" @bind="pregunta.Texto" @bind:event="oninput" placeholder="Ingrese la pregunta" />
-                </div>
+  <label class="label-pregunta">Pregunta @(modelo.Preguntas.IndexOf(pregunta) + 1)</label>
+           <input type="text" class="input-respuesta" @bind="pregunta.Texto" @bind:event="oninput" placeholder="Ingreso la pregunta" />
+     </div>
             }
-        }
+     }
 
         <div class="acciones">
-            <button type="submit" class="btn btn-primario" disabled="@cargando">
+         <button type="submit" class="btn btn-primario" disabled="@(cargando || idUsuarioSeleccionado == 0)">
                 @if (cargando)
-                {
-                    <span>Guardando...</span>
-                }
-                else
-                {
-
-                    <span>Subir</span>
-                }
-            </button>
+        {
+       <span>Guardando...</span>
+       }
+            else
+   {
+        <span>Subir</span>
+       }
+     </button>
 
             <button type="button" class="btn btn-secundario" @onclick="OnCancel" disabled="@cargando">Cancelar</button>
         </div>
@@ -47,90 +62,140 @@
 
 @code {
     private EvaluacionTeoricaModelo modelo = new();
+    private List<UserViewModel>? usuarios;
+    private int idUsuarioSeleccionado = 0;
     private bool cargando = false;
     private bool mostrarMensaje = false;
     private string mensajeRespuesta = string.Empty;
     private bool esError = false;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
+    {
+     await CargarUsuarios();
+      InicializarPreguntas();
+    }
+
+    private async Task CargarUsuarios()
     {
         try
         {
-            modelo.Preguntas = Enumerable.Range(1, 10)
-                .Select(i => new Pregunta { Texto = string.Empty, TipoEvaluacion = true })
-                .ToList();
+     usuarios = await Http.GetFromJsonAsync<List<UserViewModel>>("api/usuarios");
         }
-        catch (Exception ex)
+    catch (Exception ex)
         {
-            Console.WriteLine($"Error en OnInitialized: {ex.Message}");
+        Console.WriteLine($"Error cargando usuarios: {ex.Message}");
+            usuarios = new List<UserViewModel>();
+            mostrarMensaje = true;
+     esError = true;
+mensajeRespuesta = $"Error al cargar usuarios: {ex.Message}";
         }
+    }
+
+    private void InicializarPreguntas()
+    {
+ try
+        {
+     modelo.Preguntas = Enumerable.Range(1, 10)
+       .Select(i => new Pregunta { Texto = string.Empty, TipoEvaluacion = true })
+      .ToList();
+        }
+  catch (Exception ex)
+   {
+            Console.WriteLine($"Error en InicializarPreguntas: {ex.Message}");
+     }
     }
 
     private async Task OnSubmit()
     {
+ if (idUsuarioSeleccionado == 0)
+        {
+            mostrarMensaje = true;
+            esError = true;
+ mensajeRespuesta = "Debe seleccionar un usuario";
+            return;
+        }
+
         cargando = true;
         try
         {
             var preguntasValidas = modelo.Preguntas
-                .Where(p => !string.IsNullOrWhiteSpace(p.Texto))
-                .ToList();
+            .Where(p => !string.IsNullOrWhiteSpace(p.Texto))
+          .ToList();
 
-            if (preguntasValidas.Count == 0)
-            {
-                mostrarMensaje = true;
-                esError = true;
-                mensajeRespuesta = "Debe ingresar al menos una pregunta";
-                cargando = false;
-                return;
-            }
+      if (preguntasValidas.Count == 0)
+   {
+     mostrarMensaje = true;
+      esError = true;
+     mensajeRespuesta = "Debe ingresar al menos una pregunta";
+      cargando = false;
+      return;
+       }
 
-            var request = new
+     // Limitar a máximo 10 preguntas
+            preguntasValidas = preguntasValidas.Take(10).ToList();
+
+            // 1. Guardar las preguntas
+            var requestPreguntas = new
+    {
+  preguntas = preguntasValidas.Select(p => new
+        {
+        texto = p.Texto,
+        tipoEvaluacion = p.TipoEvaluacion
+      }).ToList()
+        };
+
+    var responsePregunta = await Http.PostAsJsonAsync("api/preguntas/crear-evaluacion-teorica", requestPreguntas);
+
+      if (!responsePregunta.IsSuccessStatusCode)
+         {
+              mostrarMensaje = true;
+   esError = true;
+          mensajeRespuesta = $"Error al guardar preguntas: {responsePregunta.StatusCode}";
+    cargando = false;
+    return;
+        }
+
+      // 2. Crear la evaluación teórica para el usuario
+ var requestEvaluacion = new
             {
-                preguntas = preguntasValidas.Select(p => new
-                {
-                    texto = p.Texto,
-                    tipoEvaluacion = p.TipoEvaluacion
-                }).ToList()
+       idUsuario = idUsuarioSeleccionado,
+    tipoEvaluacion = true // true = teórica
             };
 
-            var response = await Http.PostAsJsonAsync("https://localhost:7287/api/preguntas/crear-evaluacion-teorica", request);
+     var responseEvaluacion = await Http.PostAsJsonAsync("api/evaluaciones/crear-evaluacion-teorica", requestEvaluacion);
 
-            if (response.IsSuccessStatusCode)
-            {
-                mostrarMensaje = true;
-                esError = false;
-                mensajeRespuesta = "¡Preguntas de evaluación teórica guardadas exitosamente!";
-                await Task.Delay(2000);
+            if (responseEvaluacion.IsSuccessStatusCode)
+    {
+ mostrarMensaje = true;
+        esError = false;
+                mensajeRespuesta = "¡Evaluación teórica creada exitosamente!";
+await Task.Delay(2000);
+     // Reinicializar para crear otra evaluación con 10 preguntas
                 OnCancel();
-            }
+ }
             else
             {
-                var contenidoError = await response.Content.ReadAsStringAsync();
+         var contenidoError = await responseEvaluacion.Content.ReadAsStringAsync();
                 mostrarMensaje = true;
-                esError = true;
-                mensajeRespuesta = $"Error al guardar: {response.StatusCode} - {contenidoError}";
-            }
+esError = true;
+   mensajeRespuesta = $"Error al crear evaluación: {responseEvaluacion.StatusCode}";
+      }
         }
-        catch (Exception ex)
+   catch (Exception ex)
         {
-            mostrarMensaje = true;
-            esError = true;
+         mostrarMensaje = true;
+        esError = true;
             mensajeRespuesta = $"Error: {ex.Message}";
         }
         finally
         {
-            cargando = false;
+     cargando = false;
         }
     }
 
     private void OnCancel()
     {
-        if (modelo?.Preguntas != null)
-        {
-            foreach (var p in modelo.Preguntas)
-                p.Texto = string.Empty;
-        }
-        mostrarMensaje = false;
+ NavigationManager.NavigateTo("/panelControlAdmin");
     }
 
     private void CerrarMensaje()
@@ -142,72 +207,76 @@
 <style>
     .titulo-form {
         text-align: center;
-        margin: 20px 0 30px;
+  margin: 20px 0 30px;
         font-weight: 600;
         letter-spacing: 0.5px;
-   font-size: 28px;
-    }
+      font-size: 28px;
+}
 
-    /* Quitamos el scroll */
     .form-evaluacion {
-        max-width: 700px;
+      max-width: 700px;
         margin: 0 auto;
         padding: 24px;
-      border: 1px solid #e5e7eb;
-      border-radius: 10px;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
         background: #ffffff;
         box-shadow: 0 6px 24px rgba(0,0,0,0.06);
         max-height: none;
-   overflow: hidden;
-    }
+    overflow: hidden;
+  }
 
     .fila-pregunta {
-display: grid;
-   grid-template-columns: 180px 1fr;
-     gap: 16px;
-        align-items: center;
-        margin-bottom: 14px;
+        display: grid;
+     grid-template-columns: 180px 1fr;
+    gap: 16px;
+   align-items: center;
+     margin-bottom: 14px;
     }
 
     .label-pregunta {
         font-weight: 500;
-        color: #374151;
+   color: #374151;
     }
 
     .input-respuesta {
         width: 100%;
-    padding: 10px 12px;
+      padding: 10px 12px;
         border: 1px solid #d1d5db;
         border-radius: 8px;
-   font-size: 14px;
+        font-size: 14px;
+  }
+
+    .input-respuesta:focus {
+     outline: none;
+      border-color: #f58220;
+        box-shadow: 0 0 0 3px rgba(245, 130, 32, 0.1);
     }
 
     .acciones {
         display: flex;
-        gap: 16px;
+    gap: 16px;
         justify-content: flex-end;
-     margin-top: 22px;
-        padding-top: 24px;
-      border-top: 1px solid #e5e7eb;
+        margin-top: 22px;
+  padding-top: 24px;
+        border-top: 1px solid #e5e7eb;
     }
 
     .btn {
         padding: 12px 32px;
- border: none;
-        border-radius: 24px;
-   font-size: 16px;
-  font-weight: 600;
+        border: none;
+ border-radius: 24px;
+        font-size: 16px;
+        font-weight: 600;
         cursor: pointer;
         transition: all 0.3s ease;
         min-width: 140px;
     }
 
     .btn:disabled {
-        opacity: 0.5;
+    opacity: 0.5;
         cursor: not-allowed;
     }
 
-    /* Botones naranjos con estilos de EvaluacionPractica */
     .btn-primario {
         background: #f58220;
         color: white;
@@ -217,7 +286,7 @@ display: grid;
     .btn-primario:hover:not(:disabled) {
         background: #e67e1a;
         transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(245, 130, 32, 0.3);
+        box-shadow: 0 4px 12px rgba(245, 130, 32, 0.3);
     }
 
     .btn-secundario {
@@ -227,87 +296,87 @@ display: grid;
     }
 
     .btn-secundario:hover:not(:disabled) {
-    background: #f58220;
-        color: white;
+  background: #f58220;
+     color: white;
         transform: translateY(-2px);
-   box-shadow: 0 4px 12px rgba(245, 130, 32, 0.3);
+  box-shadow: 0 4px 12px rgba(245, 130, 32, 0.3);
     }
 
     .alerta {
         max-width: 700px;
-        margin: 0 auto 20px;
-      padding: 16px 20px;
-    border-radius: 8px;
+  margin: 0 auto 20px;
+        padding: 16px 20px;
+ border-radius: 8px;
         display: flex;
-        justify-content: space-between;
-        align-items: center;
+     justify-content: space-between;
+   align-items: center;
         animation: slideIn 0.3s ease-in-out;
     }
 
     .alerta-exito {
         background: #d1f4d1;
         border: 1px solid #6ee76e;
-    color: #155724;
+        color: #155724;
     }
 
     .alerta-error {
         background: #f8d7da;
- border: 1px solid #f5c6cb;
+        border: 1px solid #f5c6cb;
         color: #721c24;
     }
 
     .btn-cerrar {
         background: none;
         border: none;
-    font-size: 24px;
+   font-size: 24px;
         cursor: pointer;
         color: inherit;
-      padding: 0;
-        margin-left: 20px;
+        padding: 0;
+   margin-left: 20px;
     }
 
-    .btn-cerrar:hover {
-        opacity: 0.7;
- }
+  .btn-cerrar:hover {
+      opacity: 0.7;
+    }
 
     @@keyframes slideIn {
-        from {
+   from {
         opacity: 0;
-        transform: translateY(-10px);
+       transform: translateY(-10px);
         }
         to {
-       opacity: 1;
-    transform: translateY(0);
+    opacity: 1;
+            transform: translateY(0);
         }
     }
 
     @@media (max-width: 640px) {
-      .fila-pregunta {
-        grid-template-columns: 1fr;
-     }
+        .fila-pregunta {
+          grid-template-columns: 1fr;
+        }
 
-        .label-pregunta {
-margin-bottom: 6px;
+    .label-pregunta {
+      margin-bottom: 6px;
         }
 
         .alerta {
-flex-direction: column;
-   align-items: flex-start;
+            flex-direction: column;
+            align-items: flex-start;
         }
 
-        .btn-cerrar {
+   .btn-cerrar {
             align-self: flex-end;
-          margin-left: 0;
- margin-top: 10px;
+            margin-left: 0;
+   margin-top: 10px;
         }
 
-    .acciones {
-          flex-direction: column;
-         gap: 12px;
+        .acciones {
+      flex-direction: column;
+     gap: 12px;
         }
 
-   .btn {
-     width: 100%;
+        .btn {
+        width: 100%;
         min-width: auto;
         }
     }

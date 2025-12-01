@@ -25,9 +25,9 @@
 
 <div class="d-flex justify-content-center mb-4">
     <div class="card shadow-sm border-0 p-3" style="max-width: 600px;">
-        <p  <strong>Uso de Equipos:</strong> Falta conocimiento</p>
-        <p <strong>Normas de Seguridad:</strong> Confusión en protocolos</p>
-        <p  <strong>Resolución de Fallas:</strong> No identificó causas raíz</p>
+        <p><strong>Uso de Equipos:</strong> Falta conocimiento</p>
+        <p><strong>Normas de Seguridad:</strong> Confusión en protocolos</p>
+        <p><strong>Resolución de Fallas:</strong> No identificó causas raíz</p>
     </div>
 </div>
 
@@ -78,11 +78,12 @@
 @code {
     [Parameter] public int IdEvaluacion { get; set; }
 
-    private int notaObtenida = 50; // ← reemplaza con valor dinámico cuando conectes la API
+    // Datos estáticos de ejemplo
+    private int notaObtenida = 50;
 
     private void VolverAlPanel()
     {
-        NavigationManager.NavigateTo($"/estado/{IdEvaluacion}");
+        NavigationManager.NavigateTo("/usuarios/evaluaciones/1");
     }
 }
 

@@ -148,27 +148,26 @@ namespace DELTAAPI.Controllers
         /// </summary>
       [HttpGet("usuario/{idUsuario}")]
    [AllowAnonymous]
-        public async Task<IActionResult> GetEvaluacionesByUsuario(int idUsuario)
-        {
-      try
+ public async Task<IActionResult> GetEvaluacionesByUsuario(int idUsuario)
+    {
+   try
        {
-    var evaluaciones = await _context.Evaluacions
- .Where(e => e.IdEvaluado == idUsuario)
-         .Select(e => new
+  var evaluaciones = await _context.Evaluacions
+ .Where(e => e.IdEvaluado == idUsuario && e.TipoEvaluacion == false)
+       .Select(e => new
 {
              e.IdEvaluacion,
-           e.FechaEvaluacion,
-          e.Nota,
- e.EstadoEvaluacion,
-  TipoEvaluacion = e.TipoEvaluacion == true ? "Teórica" : "Práctica"
+ e.FechaEvaluacion,
+          NotaPractica = e.Nota,
+ e.EstadoEvaluacion
             })
-             .ToListAsync();
+     .ToListAsync();
 
         return Ok(evaluaciones);
       }
-    catch (Exception ex)
-      {
-                return StatusCode(500, new { mensaje = "Error al obtener las evaluaciones", error = ex.Message });
+  catch (Exception ex)
+ {
+    return StatusCode(500, new { mensaje = "Error al obtener las evaluaciones", error = ex.Message });
          }
         }
 
@@ -241,7 +240,70 @@ namespace DELTAAPI.Controllers
 
             return sumaCalificaciones;
      }
+
+    /// <summary>
+ /// Crea una evaluación teórica para un usuario
+     /// </summary>
+        [HttpPost("crear-evaluacion-teorica")]
+   [AllowAnonymous]
+public async Task<IActionResult> CrearEvaluacionTeorica([FromBody] CrearEvaluacionTeoricaRequest request)
+     {
+     if (request == null || request.IdUsuario <= 0)
+        {
+  return BadRequest(new { mensaje = "El ID del usuario es requerido" });
+ }
+
+     try
+  {
+    // Verificar que el usuario existe
+        var usuario = await _context.Usuarios.FindAsync(request.IdUsuario);
+    if (usuario == null)
+    {
+      return NotFound(new { mensaje = "Usuario no encontrado" });
+          }
+
+      // Crear una nueva evaluación teórica
+   var evaluacion = new Evaluacion
+        {
+    IdEvaluado = request.IdUsuario,
+  FechaEvaluacion = DateOnly.FromDateTime(DateTime.Now),
+     TipoEvaluacion = true, // true = teórica
+ EstadoEvaluacion = "Pendiente",
+        Nota = null // Sin calificación hasta que responda
+     };
+
+  _context.Evaluacions.Add(evaluacion);
+   await _context.SaveChangesAsync();
+
+  return Ok(new
+          {
+     mensaje = "Evaluación teórica creada exitosamente",
+    idEvaluacion = evaluacion.IdEvaluacion,
+         idUsuario = usuario.IdUsuario,
+ nombreUsuario = usuario.NombreCompleto
+    });
     }
+    catch (DbUpdateException dbEx)
+       {
+ var innerMessage = dbEx.InnerException?.Message ?? "Sin detalles";
+    return StatusCode(500, new
+   {
+mensaje = "Error de base de datos al guardar",
+  error = dbEx.Message,
+   details = innerMessage
+      });
+        }
+ catch (Exception ex)
+  {
+      return StatusCode(500, new
+      {
+      mensaje = "Error al crear la evaluación",
+          error = ex.Message,
+        innerException = ex.InnerException?.Message
+     });
+          }
+ }
+  }
 
     /// <summary>
     /// Modelo para crear una evaluación práctica
@@ -257,14 +319,14 @@ public class CrearEvaluacionPracticaRequest
     /// <summary>
     /// Modelo para una tarea en la evaluación práctica
     /// </summary>
-    public class TareaRequest
+public class TareaRequest
     {
-        public int IdTarea { get; set; }
+   public int IdTarea { get; set; }
         public string Descripcion { get; set; } = string.Empty;
         public string? ResultadoObtenido { get; set; }
-        public bool Completada { get; set; }
+  public bool Completada { get; set; }
    public int? Calificacion { get; set; }
-    }
+  }
 
     /// <summary>
  /// Modelo para actualizar una evaluación
@@ -273,5 +335,13 @@ public class CrearEvaluacionPracticaRequest
     {
    public string? EstadoEvaluacion { get; set; }
       public decimal? Nota { get; set; }
+    }
+
+    /// <summary>
+    /// Modelo para crear una evaluación teórica
+    /// </summary>
+    public class CrearEvaluacionTeoricaRequest
+    {
+        public int IdUsuario { get; set; }
     }
 }

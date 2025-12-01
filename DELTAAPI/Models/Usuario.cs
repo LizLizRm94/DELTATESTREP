@@ -57,5 +57,7 @@ public partial class Usuario
 
     public virtual ICollection<Notificacion> NotificacionIdUsuarioDestinoNavigations { get; set; } = new List<Notificacion>();
 
+    public virtual ICollection<Respuesta> Respuestas { get; set; } = new List<Respuesta>();
+
     public virtual ICollection<Convocatorium> IdConvocatoria { get; set; } = new List<Convocatorium>();
 }

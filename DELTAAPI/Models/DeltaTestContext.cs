@@ -30,6 +30,7 @@ public partial class DeltaTestContext : DbContext
 
     public virtual DbSet<Pregunta> Preguntas { get; set; }
 
+    public virtual DbSet<Respuesta> Respuestas { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -252,6 +253,37 @@ public partial class DeltaTestContext : DbContext
                 .HasMaxLength(500)
                 .HasColumnName("texto");
             entity.Property(e => e.TipoEvaluacion).HasColumnName("tipo_evaluacion");
+        });
+
+        modelBuilder.Entity<Respuesta>(entity =>
+        {
+            entity.HasKey(e => e.IdRespuesta).HasName("PK__RESPUEST__1AAA640C");
+
+            entity.ToTable("RESPUESTA");
+
+            entity.Property(e => e.IdRespuesta).HasColumnName("id_respuesta");
+            entity.Property(e => e.IdUsuario).HasColumnName("id_usuario");
+            entity.Property(e => e.IdPregunta).HasColumnName("id_pregunta");
+            entity.Property(e => e.IdEvaluacion).HasColumnName("id_evaluacion");
+            entity.Property(e => e.TextoRespuesta)
+                .HasMaxLength(255)
+                .IsRequired()
+                .HasColumnName("texto_respuesta");
+
+            entity.HasOne(d => d.IdUsuarioNavigation).WithMany(p => p.Respuestas)
+                .HasForeignKey(d => d.IdUsuario)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Respuesta_Usuario");
+
+            entity.HasOne(d => d.IdPreguntaNavigation).WithMany(p => p.Respuestas)
+                .HasForeignKey(d => d.IdPregunta)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Respuesta_Pregunta");
+
+            entity.HasOne(d => d.IdEvaluacionNavigation).WithMany(p => p.Respuestas)
+                .HasForeignKey(d => d.IdEvaluacion)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Respuesta_Evaluacion");
         });
 
         OnModelCreatingPartial(modelBuilder);
