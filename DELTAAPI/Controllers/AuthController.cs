@@ -1,10 +1,12 @@
-using Microsoft.AspNetCore.Mvc;
+ï»¿using Microsoft.AspNetCore.Mvc;
 using DELTAAPI.Models;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
+using BCrypt.Net;
+
 
 namespace DELTAAPI.Controllers
 {
@@ -38,9 +40,9 @@ namespace DELTAAPI.Controllers
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto?.NombreCompleto) || string.IsNullOrWhiteSpace(dto.Password))
-                return BadRequest("Nombre completo y contraseña son obligatorios.");
+                return BadRequest("Nombre completo y contraseÃ±a son obligatorios.");
 
-            // Validar correo/ci únicos si se proporcionan
+            // Validar correo/ci Ãºnicos si se proporcionan
             if (!string.IsNullOrWhiteSpace(dto.Correo))
             {
                 var existsCorreo = await Task.Run(() => _context.Usuarios.Any(u => u.Correo == dto.Correo));
@@ -53,12 +55,14 @@ namespace DELTAAPI.Controllers
                 if (existsCi) return BadRequest("CI ya registrado.");
             }
 
-            // Normalizar rol: solo se permiten 'Inspector' y 'Usuario'
-            var roleNormalized = "Usuario"; // default
+            var roleNormalized = "Usuario"; 
             if (!string.IsNullOrWhiteSpace(dto.Role) && dto.Role.Trim().Equals("Inspector", System.StringComparison.OrdinalIgnoreCase))
             {
                 roleNormalized = "Inspector";
             }
+
+
+            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
             var usuario = new Usuario
             {
@@ -66,7 +70,7 @@ namespace DELTAAPI.Controllers
                 Ci = dto.Ci ?? string.Empty,
                 Correo = dto.Correo,
                 Telefono = dto.Telefono,
-                Contraseña = dto.Password ?? string.Empty, // considerar hashing en producción
+                ContraseÃ±a = hashedPassword, 
                 Rol = roleNormalized,
                 Estado = "Activo"
             };
@@ -97,7 +101,7 @@ namespace DELTAAPI.Controllers
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
             if (dto == null || string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Password))
-                return BadRequest("Usuario y contraseña son obligatorios.");
+                return BadRequest("Usuario y contraseÃ±a son obligatorios.");
 
             var usernameNormalized = dto.Username.Trim();
             var usernameLower = usernameNormalized.ToLowerInvariant();
@@ -117,14 +121,13 @@ namespace DELTAAPI.Controllers
                 return NotFound("Usuario no encontrado.");
             }
 
-            // Comparación simple; en producción usar hashing
             var providedPassword = dto.Password.Trim();
-            var storedPassword = (user.Contraseña ?? string.Empty).Trim();
+            var storedPassword = (user.ContraseÃ±a ?? string.Empty).Trim();
 
-            if (storedPassword != providedPassword)
+            if (!BCrypt.Net.BCrypt.Verify(providedPassword, storedPassword))
             {
                 _logger.LogWarning("Login failed: invalid credentials for {User}", usernameNormalized);
-                return Unauthorized("Credenciales inválidas.");
+                return Unauthorized("Credenciales invÃ¡lidas.");
             }
 
             // Generar token JWT
@@ -133,7 +136,7 @@ namespace DELTAAPI.Controllers
             var audience = _configuration["Jwt:Audience"];
 
             if (string.IsNullOrWhiteSpace(key))
-                return StatusCode(500, "Configuración de JWT no encontrada.");
+                return StatusCode(500, "ConfiguraciÃ³n de JWT no encontrada.");
 
             var claims = new List<Claim>
             {
