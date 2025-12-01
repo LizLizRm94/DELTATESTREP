@@ -83,11 +83,11 @@ else
  @onclick="() => IniciarEvaluacion(usuario.IdUsuario, usuario.NombreCompleto)"
    disabled="@(iniciandoId == usuario.IdUsuario)">
  @if (iniciandoId == usuario.IdUsuario)
-         {
+     {
  <span>Iniciando...</span>
       }
     else
-        {
+    {
     <span>Inicio</span>
               }
       </button>
@@ -419,12 +419,20 @@ else
         await CargarUsuarios();
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+      {
+          return;
+   }
+ }
+
     private async Task CargarUsuarios()
     {
-     try
-        {
-    cargando = true;
-            usuarios = await Http.GetFromJsonAsync<List<UserViewModel>>("https://localhost:7287/api/usuarios");
+ try
+   {
+   cargando = true;
+         usuarios = await Http.GetFromJsonAsync<List<UserViewModel>>("https://localhost:7287/api/usuarios");
   usuariosFiltrados = usuarios ?? new List<UserViewModel>();
         }
         catch (Exception ex)
@@ -446,33 +454,37 @@ else
    return;
 
         if (string.IsNullOrWhiteSpace(searchTerm))
-        {
-            usuariosFiltrados = usuarios;
+      {
+  usuariosFiltrados = usuarios;
         }
         else
         {
-            var termoBusqueda = searchTerm.ToLower();
-          usuariosFiltrados = usuarios
-                .Where(u => u.NombreCompleto.ToLower().Contains(termoBusqueda) ||
-                  (u.Correo?.ToLower().Contains(termoBusqueda) ?? false))
+   var termoBusqueda = searchTerm.ToLower();
+     usuariosFiltrados = usuarios
+           .Where(u => u.NombreCompleto.ToLower().Contains(termoBusqueda) ||
+           (u.Correo?.ToLower().Contains(termoBusqueda) ?? false))
        .ToList();
         }
     }
 
-    private void IniciarEvaluacion(int idUsuario, string nombreUsuario)
+    private async Task IniciarEvaluacion(int idUsuario, string nombreUsuario)
     {
         iniciandoId = idUsuario;
       try
   {
-            // Navegar a la página de evaluación práctica con los parámetros del usuario
+      // Navegar a la página de evaluación práctica con los parámetros del usuario
       NavigationManager.NavigateTo($"/EvaluacionPractica/{idUsuario}/{System.Uri.EscapeDataString(nombreUsuario)}");
+    
+   // Después de navegar, recargar datos
+           await Task.Delay(500);
+   await CargarUsuarios();
   }
-        catch (Exception ex)
+  catch (Exception ex)
      {
     mostrarMensaje = true;
             esError = true;
  mensajeRespuesta = $"Error al iniciar evaluación: {ex.Message}";
-        }
+     }
       finally
         {
   iniciandoId = null;

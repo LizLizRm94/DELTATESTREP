@@ -37,8 +37,8 @@
                 else
                 {
                     <tr>
-                        <td colspan="3" class="text-center text-muted py-4">
-                            <em>Sin evaluaciones prácticas registradas</em>
+                        <td colspan="3" class="text-center text-danger py-4">
+                            <em><strong>Aun no realizó la prueba práctica</strong></em>
                         </td>
                     </tr>
                 }
@@ -139,26 +139,6 @@
                 evaluacionesPracticas = new List<EvaluacionPractica>();
             }
 
-            // Si no hay evaluaciones prácticas, agregar datos de prueba
-            if (evaluacionesPracticas?.Count == 0)
-            {
-                evaluacionesPracticas = new List<EvaluacionPractica>
-                {
-                    new EvaluacionPractica
-                    {
-                        IdEvaluacion = 1,
-                        FechaEvaluacion = DateOnly.FromDateTime(DateTime.Now.AddDays(-5)),
-                        NotaPractica = 85
-                    },
-                    new EvaluacionPractica
-                    {
-                        IdEvaluacion = 2,
-                        FechaEvaluacion = DateOnly.FromDateTime(DateTime.Now.AddDays(-2)),
-                        NotaPractica = 75
-                    }
-                };
-            }
-
             // Obtener evaluaciones teóricas
             try
             {
@@ -179,22 +159,6 @@
             {
                 Console.WriteLine($"Error cargando evaluaciones teóricas: {ex.Message}");
                 evaluacionesTeorica = new List<EvaluacionTeoricaResumen>();
-            }
-
-            // Si no hay evaluaciones teóricas, agregar datos de prueba
-            if (evaluacionesTeorica?.Count == 0)
-            {
-                evaluacionesTeorica = new List<EvaluacionTeoricaResumen>
-                {
-                    new EvaluacionTeoricaResumen
-                    {
-                        IdEvaluacion = 3,
-                        FechaEvaluacion = DateOnly.FromDateTime(DateTime.Now.AddDays(-3)),
-                        Nota = 90,
-                        EstadoEvaluacion = "Completada",
-                        CantidadPreguntas = 10
-                    }
-                };
             }
         }
         finally

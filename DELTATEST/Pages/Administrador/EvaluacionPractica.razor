@@ -764,20 +764,19 @@ var tareasSinCalificacion = modelo.Tareas
             puntuacionFinal = (int)puntuacionTotal;
 
        var request = new
-        {
+   {
        idUsuario = modelo.IdUsuario,
    nombreUsuario = modelo.NombreUsuario,
      tareas = modelo.Tareas.Select(t => new
      {
     idTarea = t.IdTarea,
-      descripcion = t.Descripcion,
-      resultadoObtenido = t.ResultadoObtenido,
+  descripcion = t.Descripcion,
+  resultadoObtenido = t.ResultadoObtenido,
     completada = t.Completada,
-         calificacion = t.Calificacion
-           }).ToList(),
+      calificacion = t.Calificacion
+      }).ToList(),
       puntuacion = puntuacionTotal
  };
-
       var response = await Http.PostAsJsonAsync(
          "https://localhost:7287/api/evaluaciones/crear-evaluacion-practica",
       request

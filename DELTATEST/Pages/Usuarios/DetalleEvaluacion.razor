@@ -8,14 +8,14 @@
 <!-- RECUADRO DE RESULTADO Y ALERTA -->
 <div class="d-flex justify-content-center mb-4">
     <div class="card border-danger" style="max-width: 500px;">
-        <div class="card-body text-center">
+   <div class="card-body text-center">
             <h5 class="card-title text-danger">Resultado: @notaObtenida / 100</h5>
-            <p class="text-muted mb-1">Fecha: 03/05/2025</p>
-            <p class="text-muted mb-1">Área: Control de Calidad</p>
+       <p class="text-muted mb-1">Fecha: 03/05/2025</p>
+       <p class="text-muted mb-1">Área: Control de Calidad</p>
             <p class="text-muted mb-3">Evaluador: Mishale Rodríguez</p>
-            <div class="alert alert-danger text-center">
-                El promedio de aprobación es <strong>80</strong>. Tienes <strong>2 oportunidades más</strong> para repetir la prueba.
-            </div>
+     <div class="alert alert-danger text-center">
+    El promedio de aprobación es <strong>80</strong>. Tienes <strong>2 oportunidades más</strong> para repetir la prueba.
+   </div>
         </div>
     </div>
 </div>
@@ -25,8 +25,8 @@
 
 <div class="d-flex justify-content-center mb-4">
     <div class="card shadow-sm border-0 p-3" style="max-width: 600px;">
-        <p><strong>Uso de Equipos:</strong> Falta conocimiento</p>
-        <p><strong>Normas de Seguridad:</strong> Confusión en protocolos</p>
+   <p><strong>Uso de Equipos:</strong> Falta conocimiento</p>
+   <p><strong>Normas de Seguridad:</strong> Confusión en protocolos</p>
         <p><strong>Resolución de Fallas:</strong> No identificó causas raíz</p>
     </div>
 </div>
@@ -36,10 +36,10 @@
     <div class="btn-group gap-3">
         @if (notaObtenida < 50)
         {
-            <button class="btn btn-orange me-2" data-bs-toggle="modal" data-bs-target="#adminModal">
-                Repetir Evaluación
-            </button>
-        }
+  <button class="btn btn-orange me-2" data-bs-toggle="modal" data-bs-target="#adminModal">
+       Repetir Evaluación
+        </button>
+ }
         <button class="btn btn-orange-outline" @onclick="VolverAlPanel">Volver al Panel</button>
     </div>
 </div>
@@ -47,30 +47,30 @@
 <!-- MODAL DE ADMINISTRADORES -->
 <div class="modal fade" id="adminModal" tabindex="-1" aria-labelledby="adminModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title text-orange" id="adminModalLabel">Contacto de Administradores</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+   <div class="modal-content">
+      <div class="modal-header">
+          <h5 class="modal-title text-orange" id="adminModalLabel">Contacto de Administradores</h5>
+ <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <div class="modal-body">
-                <ul class="list-group">
-                    <li class="list-group-item">
-                        <strong>Inspector - Mishale Rodriguez</strong><br />
-                        78965410
-                    </li>
-                    <li class="list-group-item">
-                        <strong>Inspector - Alex Tancara</strong><br />
-                        7896450
-                    </li>
-                    <li class="list-group-item">
-                        <strong>Inspector - Gerald Mollo</strong><br />
-                        7773410
-                    </li>
-                </ul>
-            </div>
+       <ul class="list-group">
+          <li class="list-group-item">
+    <strong>Inspector - Mishale Rodriguez</strong><br />
+     78965410
+   </li>
+          <li class="list-group-item">
+  <strong>Inspector - Alex Tancara</strong><br />
+     7896450
+      </li>
+   <li class="list-group-item">
+       <strong>Inspector - Gerald Mollo</strong><br />
+               7773410
+ </li>
+           </ul>
+      </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-orange-outline" data-bs-dismiss="modal">Cerrar</button>
-            </div>
+         <button type="button" class="btn btn-orange-outline" data-bs-dismiss="modal">Cerrar</button>
+        </div>
         </div>
     </div>
 </div>
@@ -83,7 +83,7 @@
 
     private void VolverAlPanel()
     {
-        NavigationManager.NavigateTo("/usuarios/evaluaciones/1");
+ NavigationManager.NavigateTo("/usuarios/evaluaciones/1");
     }
 }
 

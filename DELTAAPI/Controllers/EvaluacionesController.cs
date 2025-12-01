@@ -37,7 +37,7 @@ namespace DELTAAPI.Controllers
      return NotFound(new { mensaje = "Usuario no encontrado" });
         }
 
-       // Crear una nueva evaluación práctica
+ // Crear una nueva evaluación práctica
          var evaluacion = new Evaluacion
     {
      IdEvaluado = request.IdUsuario,
@@ -48,7 +48,7 @@ namespace DELTAAPI.Controllers
   };
 
      _context.Evaluacions.Add(evaluacion);
-          await _context.SaveChangesAsync();
+  await _context.SaveChangesAsync();
 
           return Ok(new
   {
@@ -63,20 +63,20 @@ namespace DELTAAPI.Controllers
            var innerMessage = dbEx.InnerException?.Message ?? "Sin detalles";
      return StatusCode(500, new
     {
-         mensaje = "Error de base de datos al guardar",
+       mensaje = "Error de base de datos al guardar",
      error = dbEx.Message,
-           details = innerMessage
-              });
+  details = innerMessage
+    });
         }
             catch (Exception ex)
       {
      return StatusCode(500, new
         {
-      mensaje = "Error al guardar la evaluación",
-         error = ex.Message,
+mensaje = "Error al guardar la evaluación",
+   error = ex.Message,
         innerException = ex.InnerException?.Message
           });
-            }
+        }
      }
 
         /// <summary>
@@ -310,7 +310,7 @@ mensaje = "Error de base de datos al guardar",
  /// </summary>
 public class CrearEvaluacionPracticaRequest
     {
-     public int IdUsuario { get; set; }
+   public int IdUsuario { get; set; }
         public string NombreUsuario { get; set; } = string.Empty;
      public List<TareaRequest> Tareas { get; set; } = new();
         public decimal? Puntuacion { get; set; }

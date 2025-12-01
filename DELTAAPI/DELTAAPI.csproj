@@ -23,4 +23,8 @@
     <PackageReference Include="iTextSharp" Version="5.5.13.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Migrations\" />
+  </ItemGroup>
+
 </Project>
