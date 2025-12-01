@@ -121,6 +121,7 @@ namespace DELTAAPI.Controllers
             {
              var evaluacion = await _context.Evaluacions
      .Include(e => e.IdEvaluadoNavigation)
+       .Include(e => e.IdAdministradorNavigation)
        .FirstOrDefaultAsync(e => e.IdEvaluacion == id);
 
         if (evaluacion == null)
@@ -131,6 +132,8 @@ namespace DELTAAPI.Controllers
               evaluacion.IdEvaluacion,
          evaluacion.IdEvaluado,
      NombreEvaluado = evaluacion.IdEvaluadoNavigation.NombreCompleto,
+     CiEvaluado = evaluacion.IdEvaluadoNavigation.Ci,
+     NombreAdministrador = evaluacion.IdAdministradorNavigation?.NombreCompleto ?? "N/A",
          evaluacion.FechaEvaluacion,
     evaluacion.Nota,
             evaluacion.EstadoEvaluacion,
@@ -152,14 +155,15 @@ namespace DELTAAPI.Controllers
     {
    try
        {
-  var evaluaciones = await _context.Evaluacions
- .Where(e => e.IdEvaluado == idUsuario && e.TipoEvaluacion == false)
-       .Select(e => new
+    var evaluaciones = await _context.Evaluacions
+ .Where(e => e.IdEvaluado == idUsuario)
+         .Select(e => new
 {
              e.IdEvaluacion,
- e.FechaEvaluacion,
-          NotaPractica = e.Nota,
- e.EstadoEvaluacion
+           e.FechaEvaluacion,
+          e.Nota,
+ e.EstadoEvaluacion,
+  TipoEvaluacion = e.TipoEvaluacion == true ? "Teórica" : "Práctica"
             })
      .ToListAsync();
 

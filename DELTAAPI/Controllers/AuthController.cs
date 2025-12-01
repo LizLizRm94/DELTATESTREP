@@ -5,7 +5,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
-using BCrypt.Net; // <--- ¡Importante: BCrypt.Net-Next!
+using BCrypt.Net;
 
 
 namespace DELTAAPI.Controllers
@@ -55,14 +55,13 @@ namespace DELTAAPI.Controllers
                 if (existsCi) return BadRequest("CI ya registrado.");
             }
 
-            // Normalizar rol: solo se permiten 'Inspector' y 'Usuario'
-            var roleNormalized = "Usuario"; // default
+            var roleNormalized = "Usuario"; 
             if (!string.IsNullOrWhiteSpace(dto.Role) && dto.Role.Trim().Equals("Inspector", System.StringComparison.OrdinalIgnoreCase))
             {
                 roleNormalized = "Inspector";
             }
 
-            // 🟢 CAMBIO CLAVE (REGISTRO): Hasheamos la contraseña antes de guardarla.
+
             var hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
             var usuario = new Usuario
@@ -71,7 +70,7 @@ namespace DELTAAPI.Controllers
                 Ci = dto.Ci ?? string.Empty,
                 Correo = dto.Correo,
                 Telefono = dto.Telefono,
-                Contraseña = hashedPassword, // <-- ALMACENAMOS EL HASH SEGURO
+                Contraseña = hashedPassword, 
                 Rol = roleNormalized,
                 Estado = "Activo"
             };
@@ -125,8 +124,6 @@ namespace DELTAAPI.Controllers
             var providedPassword = dto.Password.Trim();
             var storedPassword = (user.Contraseña ?? string.Empty).Trim();
 
-            // 🟢 CAMBIO CLAVE (LOGIN): Usamos BCrypt.Verify para comparar la contraseña ingresada con el hash almacenado.
-            // Si la verificación falla, las credenciales son inválidas.
             if (!BCrypt.Net.BCrypt.Verify(providedPassword, storedPassword))
             {
                 _logger.LogWarning("Login failed: invalid credentials for {User}", usernameNormalized);

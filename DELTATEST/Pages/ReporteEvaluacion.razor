@@ -1,0 +1,60 @@
+@page "/reporte-evaluacion/{IdEvaluacion:int}"
+@using DELTATEST.Services
+@inject ReporteEvaluacionService ReporteService
+@inject NavigationManager Nav
+
+@if (isLoading)
+{
+    <div class="text-center p-5">
+        <div class="spinner-border text-warning" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-3">Cargando reporte de evaluación...</p>
+    </div>
+}
+else if (evaluacion != null)
+{
+    @((MarkupString)htmlReporte)
+}
+else
+{
+    <div class="alert alert-danger text-center m-5">
+        <h4>Error al cargar la evaluación</h4>
+        <p>No se encontró la evaluación solicitada.</p>
+        <button class="btn btn-warning" @onclick="IrAtras">Volver</button>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int IdEvaluacion { get; set; }
+
+    private DetalleEvaluacionDto? evaluacion;
+    private string htmlReporte = string.Empty;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            evaluacion = await ReporteService.ObtenerEvaluacionAsync(IdEvaluacion);
+            if (evaluacion != null)
+            {
+                htmlReporte = ReporteService.GenerarHtmlReporte(evaluacion);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void IrAtras()
+    {
+        Nav.NavigateTo("/panelControlAdmin");
+    }
+}

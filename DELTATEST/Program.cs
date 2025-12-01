@@ -28,7 +28,7 @@ builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().Cre
 
 // Register application services
 builder.Services.AddScoped<AuthService>();
-
+builder.Services.AddScoped<ReporteEvaluacionService>();
 builder.Services.AddScoped<EvaluadoService>();
 
 
