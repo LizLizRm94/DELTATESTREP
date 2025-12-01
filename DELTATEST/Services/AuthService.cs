@@ -78,6 +78,10 @@ namespace DELTATEST.Services
             var response = await _http.PostAsJsonAsync("api/auth/register", payload);
             if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.Created)
             {
+                // Guardar el nombre del usuario registrado en localStorage
+                await _localStorage.SetItemAsync("userName", model.NombreCompleto);
+                await _localStorage.SetItemAsync("userRole", model.Rol);
+                
                 // Devuelve éxito, rol y nombre registrado
                 return (true, model.Rol, null, model.NombreCompleto);
             }

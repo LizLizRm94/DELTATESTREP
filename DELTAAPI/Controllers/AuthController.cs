@@ -67,7 +67,7 @@ namespace DELTAAPI.Controllers
             var usuario = new Usuario
             {
                 NombreCompleto = dto.NombreCompleto!.Trim(),
-                Ci = dto.Ci ?? string.Empty,
+                Ci = string.IsNullOrWhiteSpace(dto.Ci) ? null : dto.Ci.Trim(),
                 Correo = dto.Correo,
                 Telefono = dto.Telefono,
                 Contraseña = hashedPassword, 
