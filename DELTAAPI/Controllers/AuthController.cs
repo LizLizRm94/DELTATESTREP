@@ -1,9 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc;
 using DELTAAPI.Models;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
 using Microsoft.EntityFrameworkCore;
 using BCrypt.Net;
 
@@ -130,48 +128,69 @@ namespace DELTAAPI.Controllers
                 return Unauthorized("Credenciales inválidas.");
             }
 
-            // Generar token JWT
-            var key = _configuration["Jwt:Key"];
-            var issuer = _configuration["Jwt:Issuer"];
-            var audience = _configuration["Jwt:Audience"];
-
-            if (string.IsNullOrWhiteSpace(key))
-                return StatusCode(500, "Configuración de JWT no encontrada.");
-
+            // Crear claims para la cookie
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.NombreCompleto ?? string.Empty),
-                new Claim("IdUsuario", user.IdUsuario.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, user.IdUsuario.ToString()),
+                new Claim(ClaimTypes.Name, user.NombreCompleto ?? string.Empty),
                 new Claim(ClaimTypes.Role, user.Rol ?? "Usuario")
             };
 
             if (!string.IsNullOrWhiteSpace(user.Correo))
                 claims.Add(new Claim(ClaimTypes.Email, user.Correo));
 
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
-            var creds = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+            // Crear la identidad y principal para la cookie
+            var claimsIdentity = new ClaimsIdentity(claims, "Cookies");
+            var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
 
-            var token = new JwtSecurityToken(
-                issuer: issuer,
-                audience: audience,
-                claims: claims,
-                expires: DateTime.UtcNow.AddHours(8),
-                signingCredentials: creds
-            );
-
-            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+            // Establecer la cookie
+            await HttpContext.SignInAsync("Cookies", claimsPrincipal, new Microsoft.AspNetCore.Authentication.AuthenticationProperties
+            {
+                ExpiresUtc = DateTime.UtcNow.AddHours(8),
+                IsPersistent = true
+            });
 
             var result = new
             {
-                Token = tokenString,
                 IdUsuario = user.IdUsuario,
                 NombreCompleto = user.NombreCompleto,
-                Rol = user.Rol
+                Rol = user.Rol,
+                Mensaje = "Login exitoso"
             };
 
             _logger.LogInformation("Login successful for {User}", usernameNormalized);
 
             return Ok(result);
+        }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync("Cookies");
+            return Ok(new { mensaje = "Logout exitoso" });
+        }
+
+        [HttpGet("current-user")]
+        public async Task<IActionResult> GetCurrentUser()
+        {
+            if (!User.Identity?.IsAuthenticated ?? false)
+                return Unauthorized("No autorizado");
+
+            var idUsuarioStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(idUsuarioStr, out var idUsuario))
+                return Unauthorized("Token inválido");
+
+            var user = await _context.Usuarios.FindAsync(idUsuario);
+            if (user == null)
+                return NotFound("Usuario no encontrado");
+
+            return Ok(new
+            {
+                idUsuario = user.IdUsuario,
+                nombreCompleto = user.NombreCompleto,
+                correo = user.Correo,
+                rol = user.Rol
+            });
         }
     }
 }

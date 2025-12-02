@@ -58,11 +58,11 @@ namespace DELTATEST.Services
         }}
 
         .container {{
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             background-color: white;
             padding: 40px;
-            border-radius: 10px;
+            border-radius: 5px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }}
 
@@ -85,72 +85,72 @@ namespace DELTATEST.Services
         }}
 
         .section {{
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }}
 
         .section-title {{
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
             color: #f58220;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
             border-bottom: 2px solid #f58220;
         }}
 
         .info-grid {{
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
+            gap: 15px;
+            margin-bottom: 15px;
         }}
 
         .info-item {{
             background-color: #f9f9f9;
-            padding: 15px;
-            border-radius: 5px;
+            padding: 12px;
+            border-radius: 4px;
             border-left: 4px solid #f58220;
         }}
 
         .info-label {{
             font-weight: bold;
             color: #333;
-            font-size: 12px;
+            font-size: 11px;
             text-transform: uppercase;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }}
 
         .info-value {{
-            font-size: 16px;
+            font-size: 14px;
             color: #333;
         }}
 
         .resultado-section {{
             background: linear-gradient(135deg, #f58220 0%, #ff9c42 100%);
             color: white;
-            padding: 30px;
-            border-radius: 10px;
+            padding: 25px;
+            border-radius: 5px;
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }}
 
         .resultado-section h2 {{
-            font-size: 24px;
+            font-size: 22px;
             margin-bottom: 10px;
         }}
 
         .nota {{
-            font-size: 48px;
+            font-size: 42px;
             font-weight: bold;
-            margin: 15px 0;
+            margin: 12px 0;
         }}
 
         .estado-badge {{
             display: inline-block;
-            padding: 8px 16px;
+            padding: 6px 14px;
             border-radius: 20px;
             font-weight: bold;
-            margin-top: 10px;
-            font-size: 14px;
+            margin-top: 8px;
+            font-size: 13px;
         }}
 
         .estado-aprobado {{
@@ -161,19 +161,63 @@ namespace DELTATEST.Services
             background-color: #dc3545;
         }}
 
+        .firmas-section {{
+            margin-top: 40px;
+            padding-top: 25px;
+            border-top: 2px solid #ddd;
+        }}
+
+        .firmas-container {{
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }}
+
+        .firma-box {{
+            text-align: center;
+        }}
+
+        .firma-area {{
+            border: 1px solid #333;
+            border-radius: 2px;
+            height: 80px;
+            margin-bottom: 12px;
+            background-color: #fafafa;
+        }}
+
+        .firma-linea {{
+            border-top: 2px solid #333;
+            margin-top: 25px;
+            padding-top: 8px;
+        }}
+
+        .firma-label {{
+            font-weight: bold;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #333;
+        }}
+
+        .firma-subtext {{
+            font-size: 10px;
+            color: #666;
+            margin-top: 3px;
+        }}
+
         .pie-pagina {{
             text-align: center;
             border-top: 1px solid #ddd;
-            padding-top: 20px;
-            margin-top: 40px;
+            padding-top: 15px;
+            margin-top: 30px;
             color: #999;
-            font-size: 12px;
+            font-size: 11px;
         }}
 
         .timestamp {{
             color: #999;
-            font-size: 11px;
-            margin-top: 10px;
+            font-size: 10px;
+            margin-top: 8px;
         }}
 
         @media print {{
@@ -185,6 +229,7 @@ namespace DELTATEST.Services
             .container {{
                 box-shadow: none;
                 max-width: 100%;
+                padding: 20px;
             }}
 
             .btn-group {{
@@ -198,8 +243,8 @@ namespace DELTATEST.Services
 
         .btn-group {{
             text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
+            margin-top: 25px;
+            padding-top: 15px;
             border-top: 1px solid #ddd;
         }}
 
@@ -207,7 +252,7 @@ namespace DELTATEST.Services
             padding: 10px 20px;
             margin: 5px;
             border: none;
-            border-radius: 5px;
+            border-radius: 4px;
             cursor: pointer;
             font-size: 14px;
             font-weight: bold;
@@ -246,8 +291,8 @@ namespace DELTATEST.Services
             <h2>Resultado Final</h2>
             <div class='nota'>{notaFormato}/100</div>
             <p>Tipo de Evaluación: <strong>{tipoEvaluacion}</strong></p>
-            <span class='estado-badge {(evaluacion.Nota >= 80 ? "estado-aprobado" : "estado-desaprobado")}'>
-                {estado}
+            <span class='estado-badge {(evaluacion.Nota >= 80 ? "estado-aprobado" : "estado-desaprobado")}'
+                >{estado}
             </span>
         </div>
 
@@ -273,16 +318,60 @@ namespace DELTATEST.Services
                     <div class='info-value'>{fechaFormato}</div>
                 </div>
                 <div class='info-item'>
-                    <div class='info-label'>Estado</div>
-                    <div class='info-value'>{evaluacion.EstadoEvaluacion}</div>
+                    <div class='info-label'>Tipo de Evaluación</div>
+                    <div class='info-value'>{tipoEvaluacion}</div>
                 </div>
                 <div class='info-item'>
-                    <div class='info-label'>Evaluador</div>
-                    <div class='info-value'>{evaluacion.NombreAdministrador}</div>
+                    <div class='info-label'>Estado Evaluación</div>
+                    <div class='info-value'>{evaluacion.EstadoEvaluacion}</div>
                 </div>
                 <div class='info-item'>
                     <div class='info-label'>ID Evaluación</div>
                     <div class='info-value'>#{evaluacion.IdEvaluacion}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class='section'>
+            <div class='section-title'>Información del Evaluador</div>
+            <div class='info-grid'>
+                <div class='info-item'>
+                    <div class='info-label'>Nombre del Evaluador/Calificador</div>
+                    <div class='info-value'>{evaluacion.NombreAdministrador}</div>
+                </div>
+                <div class='info-item'>
+                    <div class='info-label'>Puntaje Obtenido</div>
+                    <div class='info-value'>{notaFormato} / 100</div>
+                </div>
+            </div>
+        </div>
+
+        <div class='section firmas-section'>
+            <div class='section-title'>Firmas y Autorizaciones</div>
+            <p style='margin-bottom: 15px; color: #666; font-size: 12px;'>
+                Este documento debe ser firmado por el evaluado y el evaluador como confirmación de la evaluación
+                realizada.
+            </p>
+
+            <div class='firmas-container'>
+                <div class='firma-box'>
+                    <div class='firma-label'>Firma del Evaluado</div>
+                    <div class='firma-area'></div>
+                    <div class='firma-linea'>
+                        <div class='firma-label'>{evaluacion.NombreEvaluado}</div>
+                        <div class='firma-subtext'>C.I.: {evaluacion.CiEvaluado}</div>
+                        <div class='firma-subtext'>Fecha: _______________</div>
+                    </div>
+                </div>
+
+                <div class='firma-box'>
+                    <div class='firma-label'>Firma del Evaluador/Calificador</div>
+                    <div class='firma-area'></div>
+                    <div class='firma-linea'>
+                        <div class='firma-label'>{evaluacion.NombreAdministrador}</div>
+                        <div class='firma-subtext'>Evaluador/Calificador</div>
+                        <div class='firma-subtext'>Fecha: _______________</div>
+                    </div>
                 </div>
             </div>
         </div>

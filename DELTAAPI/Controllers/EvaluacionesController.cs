@@ -279,14 +279,26 @@ _context.Evaluacions.Remove(evaluacion);
         return NotFound(new { mensaje = "Usuario no encontrado" });
         }
 
-       var evaluacion = new Evaluacion
-     {
- IdEvaluado = request.IdUsuario,
-           FechaEvaluacion = DateOnly.FromDateTime(DateTime.Now),
-  TipoEvaluacion = true,
-      EstadoEvaluacion = "Pendiente",
-      Nota = null
-  };
+      // Verificar que el administrador existe si se proporciona
+            if (request.IdAdministrador.HasValue && request.IdAdministrador > 0)
+            {
+                var admin = await _context.Usuarios.FindAsync(request.IdAdministrador);
+                if (admin == null)
+                {
+                    return NotFound(new { mensaje = "Administrador no encontrado" });
+                }
+            }
+
+      // Crear una nueva evaluación teórica
+   var evaluacion = new Evaluacion
+        {
+    IdEvaluado = request.IdUsuario,
+  IdAdministrador = request.IdAdministrador.HasValue && request.IdAdministrador > 0 ? request.IdAdministrador : null,
+  FechaEvaluacion = DateOnly.FromDateTime(DateTime.Now),
+     TipoEvaluacion = true, // true = teórica
+ EstadoEvaluacion = "Pendiente",
+        Nota = null // Sin calificación hasta que responda
+     };
 
   _context.Evaluacions.Add(evaluacion);
                 await _context.SaveChangesAsync();
@@ -368,18 +380,6 @@ _context.Evaluacions.Remove(evaluacion);
 
     public class CrearEvaluacionTeoricaRequest
     {
-  public int IdUsuario { get; set; }
-public List<CrearPreguntaRequest> Preguntas { get; set; } = new();
-    }
-
-    public class CrearPreguntaRequest
-    {
-        public string Texto { get; set; } = string.Empty;
- }
-
-    public class CalificarEvaluacionRequest
-    {
-        public decimal NotaCalificacion { get; set; }
-        public string? Recomendaciones { get; set; }
+        public int IdUsuario { get; set; }
     }
 }

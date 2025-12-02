@@ -28,10 +28,10 @@ namespace DELTATEST.Services
                 var result = await response.Content.ReadFromJsonAsync<LoginResponse?>();
                 if (result != null)
                 {
-                    await _localStorage.SetItemAsync("authToken", result.Token);
+                    // La cookie se mantiene automáticamente en el navegador
+                    // Guardamos información del usuario localmente para acceso rápido
                     await _localStorage.SetItemAsync("userName", result.NombreCompleto);
                     await _localStorage.SetItemAsync("userRole", result.Rol);
-                    // Store user id so other parts can access it
                     await _localStorage.SetItemAsync("userId", result.IdUsuario);
 
                     return (true, result.Rol, null, result.IdUsuario);
@@ -91,38 +91,86 @@ namespace DELTATEST.Services
             return (false, null, ex.Message, null);
         }
     }
-    public async Task<string?> GetTokenAsync() => await _localStorage.GetItemAsync<string?>("authToken");
 
-        public async Task LogoutAsync()
+    public async Task LogoutAsync()
+    {
+        try
         {
-            await _localStorage.RemoveItemAsync("authToken");
-            await _localStorage.RemoveItemAsync("userName");
-            await _localStorage.RemoveItemAsync("userRole");
-            await _localStorage.RemoveItemAsync("userId");
+            // Enviar solicitud de logout al servidor para limpiar la cookie
+            await _http.PostAsync("api/auth/logout", null);
+        }
+        catch
+        {
+            // Continuar incluso si falla la solicitud de logout remota
         }
 
-        private class LoginResponse
+        // Limpiar almacenamiento local
+        await _localStorage.RemoveItemAsync("userName");
+        await _localStorage.RemoveItemAsync("userRole");
+        await _localStorage.RemoveItemAsync("userId");
+    }
+
+    public async Task<(bool isAuthenticated, string? userName, string? userRole, int? userId)> GetCurrentUserAsync()
+    {
+        try
         {
-            [JsonPropertyName("token")]
-            public string Token { get; set; } = string.Empty;
+            var response = await _http.GetAsync("api/auth/current-user");
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<CurrentUserResponse?>();
+                if (result != null)
+                {
+                    await _localStorage.SetItemAsync("userName", result.NombreCompleto);
+                    await _localStorage.SetItemAsync("userRole", result.Rol);
+                    await _localStorage.SetItemAsync("userId", result.IdUsuario);
+                    
+                    return (true, result.NombreCompleto, result.Rol, result.IdUsuario);
+                }
+            }
 
-            [JsonPropertyName("IdUsuario")]
-            public int IdUsuario { get; set; }
-
-            [JsonPropertyName("NombreCompleto")]
-            public string NombreCompleto { get; set; } = string.Empty;
-
-            [JsonPropertyName("Rol")]
-            public string Rol { get; set; } = string.Empty;
+            return (false, null, null, null);
         }
-
-        public async Task<bool> UpdateUsuario(int id, UserViewModel model)
+        catch
         {
-            var response = await _http.PutAsJsonAsync($"api/usuarios/{id}", model);
-            return response.IsSuccessStatusCode;
+            return (false, null, null, null);
         }
+    }
 
+    private class LoginResponse
+    {
+        [JsonPropertyName("idUsuario")]
+        public int IdUsuario { get; set; }
 
+        [JsonPropertyName("nombreCompleto")]
+        public string NombreCompleto { get; set; } = string.Empty;
+
+        [JsonPropertyName("rol")]
+        public string Rol { get; set; } = string.Empty;
+
+        [JsonPropertyName("mensaje")]
+        public string? Mensaje { get; set; }
+    }
+
+    private class CurrentUserResponse
+    {
+        [JsonPropertyName("idUsuario")]
+        public int IdUsuario { get; set; }
+
+        [JsonPropertyName("nombreCompleto")]
+        public string NombreCompleto { get; set; } = string.Empty;
+
+        [JsonPropertyName("correo")]
+        public string? Correo { get; set; }
+
+        [JsonPropertyName("rol")]
+        public string Rol { get; set; } = string.Empty;
+    }
+
+    public async Task<bool> UpdateUsuario(int id, UserViewModel model)
+    {
+        var response = await _http.PutAsJsonAsync($"api/usuarios/{id}", model);
+        return response.IsSuccessStatusCode;
+    }
     }
 
 }

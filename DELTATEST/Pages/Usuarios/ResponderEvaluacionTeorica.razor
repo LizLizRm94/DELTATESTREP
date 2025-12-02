@@ -330,8 +330,8 @@ border-color: #f58220;
     private async Task CargarPreguntas()
     {
         try
-    {
-   cargando = true;
+        {
+            cargando = true;
 
      // Obtener ID del usuario desde localStorage
   try
@@ -342,22 +342,22 @@ border-color: #f58220;
   {
         mostrarMensaje = true;
          esError = true;
-      mensajeRespuesta = "No se pudo obtener la informaci?n del usuario";
+      mensajeRespuesta = "No se pudo obtener la información del usuario";
     return;
-     }
+            }
 
-      // Obtener evaluaci?n
+      // Obtener evaluación
         var responseEval = await Http.GetAsync($"api/evaluaciones/{IdEvaluacion}");
   if (!responseEval.IsSuccessStatusCode)
-   {
+      {
   mostrarMensaje = true;
   esError = true;
-    mensajeRespuesta = "La evaluaci?n no existe";
+      mensajeRespuesta = "La evaluación no existe";
          return;
- }
+        }
 
-   // Obtener preguntas de la evaluaci?n espec?fica
-       var responsePreguntas = await Http.GetAsync($"api/preguntas/evaluacion/{IdEvaluacion}");
+   // Obtener preguntas de tipo teórico desde la BD
+       var responsePreguntas = await Http.GetAsync("api/preguntas/teoricas");
       if (responsePreguntas.IsSuccessStatusCode)
 {
       var preguntasData = await responsePreguntas.Content.ReadFromJsonAsync<List<Pregunta>>();
@@ -365,14 +365,14 @@ border-color: #f58220;
               {
   IdPregunta = p.IdPregunta,
     Texto = p.Texto,
-    Respuesta = string.Empty
+        Respuesta = string.Empty
   }).ToList() ?? new List<PreguntaTeorica>();
 
       if (preguntas.Count == 0)
       {
         mostrarMensaje = true;
      esError = true;
- mensajeRespuesta = "No hay preguntas para esta evaluaci?n";
+           mensajeRespuesta = "No hay preguntas teóricas disponibles en la BD";
       }
       }
         else
@@ -384,13 +384,13 @@ border-color: #f58220;
       }
         catch (Exception ex)
         {
-mostrarMensaje = true;
+            mostrarMensaje = true;
     esError = true;
       mensajeRespuesta = $"Error al cargar: {ex.Message}";
             Console.WriteLine($"Error: {ex.Message}");
         }
       finally
-  {
+        {
    cargando = false;
         }
     }

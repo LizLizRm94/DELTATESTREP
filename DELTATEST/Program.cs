@@ -12,10 +12,10 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 // Register Blazored LocalStorage
 builder.Services.AddBlazoredLocalStorage();
 
-// Register message handler that attaches the JWT from localStorage
+// Register message handler for requests
 builder.Services.AddTransient<AuthorizationMessageHandler>();
 
-// Configure a named HttpClient for API calls and add the authorization handler
+// Configure a named HttpClient for API calls with credentials support for cookies
 // Use the local API URL for development. Change if your API runs on a different port.
 var apiBase = new Uri("https://localhost:7287/");
 builder.Services.AddHttpClient("API", client =>

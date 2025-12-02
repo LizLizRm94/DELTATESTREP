@@ -105,29 +105,52 @@ return Ok(new
         }
 
     /// <summary>
-        /// Obtiene las preguntas de una evaluación específica
+        /// Obtiene SOLO las preguntas asignadas a una evaluación teórica específica
+        /// por medio de las respuestas registradas, o las preguntas más recientes si no hay respuestas aún
         /// </summary>
     [HttpGet("evaluacion/{idEvaluacion}")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetPreguntasByEvaluacion(int idEvaluacion)
+    public async Task<IActionResult> GetPreguntasPorEvaluacion(int idEvaluacion)
     {
-try
+        try
         {
-var preguntas = await _context.Preguntas
-    .Where(p => p.IdEvaluacion == idEvaluacion)
-            .ToListAsync();
+            // Primero, intentar obtener preguntas por respuestas existentes
+            var preguntasConRespuestas = await _context.Preguntas
+                .Where(p => p.TipoEvaluacion == true &&
+                           p.Respuestas.Any(r => r.IdEvaluacion == idEvaluacion))
+                .OrderBy(p => p.IdPregunta)
+                .ToListAsync();
 
-            if (!preguntas.Any())
-{
-        return NotFound(new { mensaje = "No hay preguntas para esta evaluación" });
-}
+            if (preguntasConRespuestas.Count > 0)
+            {
+                return Ok(preguntasConRespuestas);
+            }
 
-          return Ok(preguntas);
+            // Si no hay respuestas, obtener la evaluación
+            var evaluacion = await _context.Evaluacions
+                .Include(e => e.Respuestas)
+                .FirstOrDefaultAsync(e => e.IdEvaluacion == idEvaluacion);
+
+            if (evaluacion == null)
+            {
+                return NotFound(new { mensaje = "Evaluación no encontrada" });
+            }
+
+            // Las 10 preguntas teóricas más recientes (creadas después de la evaluación)
+            // Esto asume que las preguntas se crean justo antes de la evaluación
+            var preguntasRecientes = await _context.Preguntas
+                .Where(p => p.TipoEvaluacion == true)
+                .OrderByDescending(p => p.IdPregunta)
+                .Take(10)
+                .OrderBy(p => p.IdPregunta)
+                .ToListAsync();
+
+            return Ok(preguntasRecientes);
         }
-  catch (Exception ex)
- {
-            return StatusCode(500, new { mensaje = "Error al obtener las preguntas", error = ex.Message });
-  }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { mensaje = "Error al obtener las preguntas de la evaluación", error = ex.Message });
+        }
     }
 
   /// <summary>

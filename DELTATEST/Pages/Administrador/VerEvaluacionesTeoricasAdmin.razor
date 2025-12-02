@@ -241,7 +241,7 @@ protected override async Task OnInitializedAsync()
          var nombreEvaluado = eval.ContainsKey("nombreEvaluado") ? eval["nombreEvaluado"]?.ToString() ?? "Desconocido" : "Desconocido";
           var estado = eval.ContainsKey("estadoEvaluacion") ? eval["estadoEvaluacion"]?.ToString() ?? "" : "";
 
-                if (idEval > 0 && idEvaluado > 0 && tieneRespuestas == true)
+                if (idEval > 0 && idEvaluado > 0)
     {
          var fechaObj = eval.ContainsKey("fechaEvaluacion") ? eval["fechaEvaluacion"] : null;
           DateOnly? fecha = null;
@@ -308,10 +308,17 @@ protected override async Task OnInitializedAsync()
          }
         }
       }
- }
+            else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                // Evaluación sin respuestas aún - esto es normal para evaluaciones recién creadas
+                preguntasRespuestas = new List<PreguntaRespuesta>();
+                MostrarMensaje("Esta evaluación no tiene respuestas registradas aún. El usuario debe responderla primero.", false);
+            }
+        }
         catch (Exception ex)
       {
        Console.WriteLine($"Error: {ex.Message}");
+            preguntasRespuestas = new List<PreguntaRespuesta>();
         }
     }
 

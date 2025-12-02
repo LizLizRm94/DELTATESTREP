@@ -1,28 +1,19 @@
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
-using Blazored.LocalStorage;
 
 namespace DELTATEST.Services
 {
     public class AuthorizationMessageHandler : DelegatingHandler
     {
-        private readonly ILocalStorageService _localStorage;
-
-        public AuthorizationMessageHandler(ILocalStorageService localStorage)
+        public AuthorizationMessageHandler()
         {
-            _localStorage = localStorage;
         }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            var token = await _localStorage.GetItemAsync<string?>("authToken");
-            if (!string.IsNullOrWhiteSpace(token) && request.Headers.Authorization == null)
-            {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            }
-
+            // Con autenticación por cookies, la cookie se envía automáticamente con cada solicitud
+            // Este handler ahora es principalmente un pass-through
             return await base.SendAsync(request, cancellationToken);
         }
     }

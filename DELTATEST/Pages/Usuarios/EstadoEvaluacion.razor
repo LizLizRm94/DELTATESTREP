@@ -2,6 +2,7 @@
 @using DELTATEST.Models
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @layout MainSinLayout
 
 @if (cargando)
@@ -12,19 +13,46 @@
 }
 else
 {
-    <div class="d-flex justify-content-end mb-2">
-        <p class="text-muted fw-semibold">Hola, @nombreUsuario</p>
-    </div>
 
     <h2 class="text-center text-orange text-uppercase mb-4">Mi estado de evaluación</h2>
+
+    <h2 class="text-center text-dark mb-2">Panel de Usuario</h2>
+    
+
+    <!-- BIENVENIDA CENTRADA -->
+    <p class="text-center text-dark mb-5 h5">Bienvenido <span class="text-warning fw-bold">@(!string.IsNullOrWhiteSpace(nombreUsuario) ? nombreUsuario : "Usuario")</span></p>
 
     <div class="row">
     <div class="col-md-6 d-flex flex-column align-items-center">
             <div class="d-flex flex-column align-items-center w-100" style="max-width: 420px;">
-      <div class="card shadow-sm border-0 card-orange text-center p-4 mb-3 w-100">
-      <h5 class="card-title text-orange">Promedio General</h5>
-   <p class="display-6 fw-bold text-orange">@promedio / 100</p>
-         </div>
+      
+      <!-- CUADRO DE ÚLTIMA NOTA ENTREGADA CON ESTILO NARANJA INTENSO -->
+      @if (ultimaEvaluacion != null)
+      {
+          <div class="card shadow-lg border-0 w-100" style="background: linear-gradient(135deg, #f58220 0%, #ff9c42 100%); color: white; margin-bottom: 20px;">
+              <div class="card-body text-center p-5">
+                  <h5 class="card-title mb-4" style="font-size: 18px; font-weight: 600; letter-spacing: 0.5px;">Última Nota Entregada</h5>
+                  <div class="mb-3">
+                      <p style="font-size: 72px; font-weight: bold; margin: 0; line-height: 1;">
+                          @(ultimaEvaluacion.Nota.HasValue ? ultimaEvaluacion.Nota.Value.ToString("F0") : "N/A")
+                          <span style="font-size: 36px;">/ 100</span>
+                      </p>
+                  </div>
+                  <hr style="background-color: rgba(255,255,255,0.3); margin: 20px 0;">
+                  <div class="row">
+                      <div class="col-6">
+                          <p style="font-size: 12px; opacity: 0.9; margin-bottom: 5px; font-weight: 500;">Fecha</p>
+                          <p style="font-weight: bold; font-size: 16px;">@ultimaEvaluacion.FechaEvaluacion?.ToString("dd/MM/yyyy")</p>
+                      </div>
+                      <div class="col-6">
+                          <p style="font-size: 12px; opacity: 0.9; margin-bottom: 5px; font-weight: 500;">Estado</p>
+                          <p style="font-weight: bold; font-size: 16px;">@(ultimaEvaluacion.Nota.HasValue ? "Calificado" : "Pendiente")</p>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      }
+      
     <button class="btn btn-orange mt-1" @onclick="VerEvaluaciones">
   Ver Evaluaciones
    </button>
@@ -61,15 +89,38 @@ else
     public int IdUsuario { get; set; }
 
     private string nombreUsuario = "Usuario";
-    private decimal promedio = 0;
+    private UltimaEvaluacion? ultimaEvaluacion;
     private List<NotificacionSimple>? notificaciones = new();
-  private bool cargando = true;
+    private bool cargando = true;
 
     private class NotificacionSimple
     {
-    public string TipoNotificacion { get; set; } = string.Empty;
-    public string Mensaje { get; set; } = string.Empty;
+        public string TipoNotificacion { get; set; } = string.Empty;
+        public string Mensaje { get; set; } = string.Empty;
         public DateTime? FechaEnvio { get; set; }
+    }
+
+    private class UltimaEvaluacion
+    {
+        public int IdEvaluacion { get; set; }
+        public DateOnly? FechaEvaluacion { get; set; }
+        public decimal? Nota { get; set; }
+        public string? TipoEvaluacion { get; set; }
+    }
+
+    private class EvaluacionPractica
+    {
+        public int IdEvaluacion { get; set; }
+        public DateOnly? FechaEvaluacion { get; set; }
+        public decimal? NotaPractica { get; set; }
+    }
+
+    private class EvaluacionTeorica
+    {
+        public int IdEvaluacion { get; set; }
+        public DateOnly? FechaEvaluacion { get; set; }
+        public decimal? Nota { get; set; }
+        public string? EstadoEvaluacion { get; set; }
     }
 
     protected override async Task OnInitializedAsync()
@@ -81,96 +132,110 @@ else
     {
         try
         {
-  cargando = true;
+            cargando = true;
 
-          // 1. Obtener nombre del usuario
-     try
-     {
-       var userResponse = await Http.GetAsync($"api/usuarios/{IdUsuario}");
-          if (userResponse.IsSuccessStatusCode)
-      {
-     var jsonContent = await userResponse.Content.ReadAsStringAsync();
-              var usuario = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(jsonContent);
-
-  if (usuario.ValueKind == System.Text.Json.JsonValueKind.Object &&
-          usuario.TryGetProperty("nombreCompleto", out var nombreProp))
-          {
-        nombreUsuario = nombreProp.GetString() ?? "Usuario";
-  }
-       }
-            }
-     catch (Exception ex)
-      {
-        Console.WriteLine($"Error obteniendo usuario: {ex.Message}");
-   nombreUsuario = "Usuario";
-  }
-
-      // 2. Calcular promedio de evaluaciones prácticas
+            // 1. Obtener nombre del usuario
             try
             {
-            var evalsResponse = await Http.GetAsync($"api/evaluaciones/usuario/{IdUsuario}");
-         if (evalsResponse.IsSuccessStatusCode)
-       {
-        var evals = await evalsResponse.Content.ReadFromJsonAsync<List<dynamic>>();
-          if (evals != null && evals.Count > 0)
-  {
-      decimal suma = 0;
-             int count = 0;
-
-          foreach (var eval in evals)
-{
-      try
-          {
-    var notaObj = eval?.GetType().GetProperty("NotaPractica")?.GetValue(eval);
-            if (notaObj != null)
-        {
-           if (decimal.TryParse(notaObj.ToString(), out decimal nota))
-         {
-     suma += nota;
-             count++;
-     }
+                nombreUsuario = await LocalStorage.GetItemAsync<string>("userName") ?? "Usuario";
             }
-                }
-        catch { }
-    }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al cargar nombre: {ex.Message}");
+                nombreUsuario = "Usuario";
+            }
 
-        promedio = count > 0 ? Math.Round(suma / count, 0) : 0;
-       }
+            // 2. Obtener última evaluación PRÁCTICA
+            try
+            {
+                var evalsResponse = await Http.GetAsync($"api/evaluaciones/usuario/{IdUsuario}");
+                if (evalsResponse.IsSuccessStatusCode)
+                {
+                    var evals = await evalsResponse.Content.ReadFromJsonAsync<List<EvaluacionPractica>>();
+                    if (evals != null && evals.Count > 0)
+                    {
+                        // Obtener la más reciente (última)
+                        var ultima = evals.OrderByDescending(e => e.FechaEvaluacion).FirstOrDefault();
+                        if (ultima != null && ultima.NotaPractica.HasValue)
+                        {
+                            ultimaEvaluacion = new UltimaEvaluacion
+                            {
+                                IdEvaluacion = ultima.IdEvaluacion,
+                                FechaEvaluacion = ultima.FechaEvaluacion,
+                                Nota = ultima.NotaPractica,
+                                TipoEvaluacion = "Práctica"
+                            };
+                        }
+                    }
                 }
             }
-          catch (Exception ex)
-          {
-    Console.WriteLine($"Error calculando promedio: {ex.Message}");
-      promedio = 0;
-    }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error obteniendo evaluación práctica: {ex.Message}");
+            }
 
-     // 3. Obtener notificaciones
-try
+            // 3. Si no hay evaluación práctica con nota, obtener evaluación TEÓRICA
+            if (ultimaEvaluacion == null)
             {
-     var notifResponse = await Http.GetAsync($"api/notificaciones/usuario/{IdUsuario}");
-           if (notifResponse.IsSuccessStatusCode)
-    {
-          notificaciones = await notifResponse.Content.ReadFromJsonAsync<List<NotificacionSimple>>();
-         }
-             else
+                try
+                {
+                    var teoricaResponse = await Http.GetAsync($"api/evaluacionesteoricass/usuario/{IdUsuario}");
+                    if (teoricaResponse.IsSuccessStatusCode)
+                    {
+                        var evals = await teoricaResponse.Content.ReadFromJsonAsync<List<EvaluacionTeorica>>();
+                        if (evals != null && evals.Count > 0)
+                        {
+                            // Obtener la más reciente con nota
+                            var ultima = evals.Where(e => e.Nota.HasValue)
+                                .OrderByDescending(e => e.FechaEvaluacion)
+                                .FirstOrDefault();
+                            
+                            if (ultima != null)
+                            {
+                                ultimaEvaluacion = new UltimaEvaluacion
+                                {
+                                    IdEvaluacion = ultima.IdEvaluacion,
+                                    FechaEvaluacion = ultima.FechaEvaluacion,
+                                    Nota = ultima.Nota,
+                                    TipoEvaluacion = "Teórica"
+                                };
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error obteniendo evaluación teórica: {ex.Message}");
+                }
+            }
+
+            // 4. Obtener notificaciones
+            try
             {
-      notificaciones = new List<NotificacionSimple>();
-        }
-  }
-   catch (Exception ex)
-      {
-     Console.WriteLine($"Advertencia notificaciones: {ex.Message}");
-     notificaciones = new List<NotificacionSimple>();
- }
+                var notifResponse = await Http.GetAsync($"api/notificaciones/usuario/{IdUsuario}");
+                if (notifResponse.IsSuccessStatusCode)
+                {
+                    notificaciones = await notifResponse.Content.ReadFromJsonAsync<List<NotificacionSimple>>();
+                }
+                else
+                {
+                    notificaciones = new List<NotificacionSimple>();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Advertencia notificaciones: {ex.Message}");
+                notificaciones = new List<NotificacionSimple>();
+            }
         }
         catch (Exception ex)
         {
-         Console.WriteLine($"Error general: {ex.Message}");
+            Console.WriteLine($"Error general: {ex.Message}");
         }
         finally
-   {
-         cargando = false;
-      }
+        {
+            cargando = false;
+        }
     }
 
     private void VerEvaluaciones()
