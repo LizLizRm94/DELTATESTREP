@@ -17,24 +17,27 @@ namespace DELTAAPI.Controllers
         public async Task<IActionResult> GetAll()
         {
             var list = await _context.Usuarios
-                .Select(u => new {
-                    u.IdUsuario,
-                    u.NombreCompleto,
-                    u.Correo,
-                    FechaIngreso = u.FechaIngreso,
-                    u.PuestoActual,
-                    PuestoSolicitado = u.PuestoSolicitado,
-                    Estado = u.Estado,
-                    // Obtener la última evaluación práctica (TipoEvaluacion = false)
-                    NotaPractica = u.EvaluacionIdEvaluadoNavigations
-                        .Where(e => e.TipoEvaluacion == false)
-                        .OrderByDescending(e => e.FechaEvaluacion)
-                        .Select(e => e.Nota)
-                        .FirstOrDefault()
-                })
-                .ToListAsync();
+    .Include(u => u.EvaluacionIdEvaluadoNavigations)
+    .AsNoTracking()
+     .Select(u => new {
+u.IdUsuario,
+       u.NombreCompleto,
+       u.Correo,
+   FechaIngreso = u.FechaIngreso,
+      u.PuestoActual,
+       PuestoSolicitado = u.PuestoSolicitado,
+      Estado = u.Estado,
+        u.Rol,
+         // Obtener la última evaluación práctica (TipoEvaluacion = false)
+    NotaPractica = u.EvaluacionIdEvaluadoNavigations
+         .Where(e => e.TipoEvaluacion == false)
+      .OrderByDescending(e => e.FechaEvaluacion)
+      .Select(e => e.Nota)
+            .FirstOrDefault()
+})
+            .ToListAsync();
 
-            return Ok(list);
+    return Ok(list);
         }
 
         [HttpGet("{id}")]
