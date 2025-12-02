@@ -4,67 +4,286 @@
 @layout MainSinLayout
 @inject IJSRuntime Js
 
+<h3 class="titulo-form">VER USUARIOS</h3>
+
 @if (isLoading)
 {
-    <div class="text-center py-5">
-        <div class="spinner-border text-warning" role="status"><span class="visually-hidden">Cargando...</span></div>
+    <div class="loading-container">
+      <div class="spinner"></div>
+   <p>Cargando usuarios...</p>
     </div>
 }
 else if (users == null || users.Count == 0)
 {
-    <div class="alert alert-warning text-center">No hay usuarios registrados.</div>
+    <div class="alerta alerta-info">
+        <span>No hay usuarios registrados.</span>
+    </div>
 }
 else
 {
-    <div class="table-responsive shadow-sm rounded">
-        <table class="table table-striped table-hover align-middle">
-            <thead class="table-orange">
-                <tr>
-                    <th>Id</th>
-                    <th>Nombre</th>
-                    <th>Correo</th>
-                    <th>Fecha de Ingreso</th>
-                    <th>Puesto Actual</th>
-                    <th>Puesto Solicitado</th>
-                    <th>Estado</th>
-                    <th class="text-center">Acciones</th>
-                </tr>
-            </thead>
+    <div class="table-container">
+        <table class="table-evaluacion">
+       <thead>
+              <tr>
+     <th>Id</th>
+  <th>Nombre</th>
+  <th>Correo</th>
+  <th>Fecha de Ingreso</th>
+     <th>Puesto Actual</th>
+    <th>Puesto Solicitado</th>
+   <th>Estado</th>
+      <th>Acciones</th>
+        </tr>
+    </thead>
             <tbody>
-                @foreach (var u in users)
-                {
-                    <tr>
-                        <td>@u.IdUsuario.ToString("D4")</td>
-                        <td>@u.NombreCompleto</td>
-                        <td>@u.Correo</td>
-                        <td>@(u.FechaIngreso.HasValue? u.FechaIngreso.Value.ToString("dd/MM/yyyy") : "-")</td>
-                        <td>@u.PuestoActual</td>
-                        <td>@u.PuestoSolicitado</td>
-                        <td>@u.Estado</td>
-                        <td class="text-center">
-                            <button class="btn btn-sm btn-outline-info me-1" title="Ver" @onclick="() => ViewUser(u.IdUsuario)">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-warning me-1" title="Editar" @onclick="() => EditUser(u.IdUsuario)">
-                                <i class="bi bi-pencil-square"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" title="Eliminar" @onclick="() => DeleteUser(u.IdUsuario)" disabled="@(deletingId == u.IdUsuario)">
-                                @if (deletingId == u.IdUsuario)
-                                {
-                                    <span class="spinner-border spinner-border-sm" role="status"></span>
-                                }
-                                else
-                                {
-                                    <i class="bi bi-trash"></i>
-                                }
-                            </button>
-                        </td>
-                    </tr>
-                }
-            </tbody>
+   @foreach (var u in users)
+      {
+     <tr>
+          <td>@u.IdUsuario.ToString("D4")</td>
+         <td>@u.NombreCompleto</td>
+          <td>@u.Correo</td>
+         <td>@(u.FechaIngreso.HasValue ? u.FechaIngreso.Value.ToString("dd/MM/yyyy") : "-")</td>
+             <td>@u.PuestoActual</td>
+   <td>@u.PuestoSolicitado</td>
+        <td>@u.Estado</td>
+  <td class="acciones-cell">
+       <button class="btn-accion btn-ver" title="Ver" @onclick="() => ViewUser(u.IdUsuario)">
+              <i class="bi bi-eye"></i>
+           </button>
+        <button class="btn-accion btn-editar" title="Editar" @onclick="() => EditUser(u.IdUsuario)">
+<i class="bi bi-pencil-square"></i>
+     </button>
+           <button class="btn-accion btn-eliminar" title="Eliminar" @onclick="() => DeleteUser(u.IdUsuario)" disabled="@(deletingId == u.IdUsuario)">
+      @if (deletingId == u.IdUsuario)
+          {
+    <span class="spinner-pequeno"></span>
+        }
+             else
+       {
+          <i class="bi bi-trash"></i>
+           }
+      </button>
+         </td>
+             </tr>
+           }
+    </tbody>
         </table>
     </div>
 }
+
+<style>
+    .titulo-form {
+      text-align: center;
+        margin: 20px 0 30px;
+ font-weight: 600;
+        letter-spacing: 0.5px;
+        font-size: 28px;
+      color: #1f2937;
+    }
+
+    .table-container {
+        max-width: 1200px;
+    margin: 0 auto;
+        padding: 0 16px;
+      overflow-x: auto;
+    }
+
+    .table-evaluacion {
+   width: 100%;
+        border-collapse: collapse;
+   background: white;
+        border-radius: 10px;
+        overflow: hidden;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.06);
+    }
+
+    .table-evaluacion thead {
+        background: linear-gradient(135deg, #f58220 0%, #e67e1a 100%);
+        color: white;
+    }
+
+    .table-evaluacion th {
+     padding: 16px;
+        text-align: left;
+      font-weight: 600;
+     font-size: 13px;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+    }
+
+    .table-evaluacion td {
+        padding: 14px 16px;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 14px;
+  color: #374151;
+    }
+
+  .table-evaluacion tbody tr:hover {
+        background-color: #f9fafb;
+ }
+
+    .table-evaluacion tbody tr:last-child td {
+border-bottom: none;
+    }
+
+    .acciones-cell {
+        text-align: center;
+        display: flex;
+        gap: 8px;
+     justify-content: center;
+        align-items: center;
+    }
+
+    .btn-accion {
+        padding: 8px 12px;
+        border: none;
+      border-radius: 6px;
+ cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+      justify-content: center;
+ min-width: 36px;
+        height: 36px;
+    }
+
+    .btn-ver {
+        background: #e3f2fd;
+        color: #1976d2;
+    }
+
+    .btn-ver:hover {
+   background: #1976d2;
+  color: white;
+   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+  }
+
+    .btn-editar {
+        background: #fff3e0;
+        color: #f57c00;
+    }
+
+    .btn-editar:hover {
+     background: #f57c00;
+        color: white;
+        transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(245, 124, 0, 0.3);
+    }
+
+    .btn-eliminar {
+    background: #ffebee;
+    color: #c62828;
+    }
+
+    .btn-eliminar:hover:not(:disabled) {
+        background: #c62828;
+        color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(198, 40, 40, 0.3);
+    }
+
+    .btn-eliminar:disabled {
+   opacity: 0.6;
+   cursor: not-allowed;
+    }
+
+    .spinner-pequeno {
+     display: inline-block;
+      width: 14px;
+        height: 14px;
+  border: 2px solid #c62828;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+    }
+
+    .alerta {
+        max-width: 1200px;
+        margin: 0 auto 20px;
+     padding: 16px 20px;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+      align-items: center;
+        animation: slideIn 0.3s ease-in-out;
+    }
+
+    .alerta-info {
+        background: #e7f3ff;
+        border: 1px solid #b3d9ff;
+        color: #004085;
+  }
+
+    .loading-container {
+        display: flex;
+ flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 60px 20px;
+    }
+
+    .spinner {
+        width: 50px;
+        height: 50px;
+     border: 4px solid #e5e7eb;
+      border-top-color: #f58220;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-bottom: 20px;
+    }
+
+    .loading-container p {
+        color: #666;
+        font-size: 16px;
+    }
+
+    @@keyframes slideIn {
+        from {
+            opacity: 0;
+  transform: translateY(-10px);
+        }
+ to {
+   opacity: 1;
+    transform: translateY(0);
+        }
+    }
+
+    @@keyframes spin {
+        to {
+   transform: rotate(360deg);
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .titulo-form {
+  font-size: 22px;
+       margin-bottom: 20px;
+  }
+
+        .table-evaluacion {
+      font-size: 12px;
+ }
+
+   .table-evaluacion th,
+    .table-evaluacion td {
+         padding: 10px 8px;
+  }
+
+        .btn-accion {
+            padding: 6px 8px;
+    font-size: 12px;
+       min-width: 32px;
+ height: 32px;
+        }
+
+        .acciones-cell {
+ flex-direction: column;
+          gap: 4px;
+}
+ }
+</style>
 
 @code {
     private List<DELTATEST.Models.UserViewModel>? users;
@@ -74,17 +293,19 @@ else
     protected override async Task OnInitializedAsync()
     {
         try
-        {
-            users = await Http.GetFromJsonAsync<List<DELTATEST.Models.UserViewModel>>("api/usuarios");
+    {
+     users = await Http.GetFromJsonAsync<List<DELTATEST.Models.UserViewModel>>("api/usuarios");
+            // Filtrar solo usuarios con rol "Usuario" (excluir Administrador e Inspector)
+  users = users?.Where(u => u.Rol == "Usuario").ToList();
         }
         catch (Exception ex)
-        {
+  {
             Console.Error.WriteLine(ex.Message);
         }
         finally
         {
-            isLoading = false;
-        }
+  isLoading = false;
+ }
     }
 
     void ViewUser(int id) => NavigationManager.NavigateTo($"/verRegistroUsuario/{id}");
@@ -92,34 +313,32 @@ else
 
     async Task DeleteUser(int id)
     {
-        var ok = await Js.InvokeAsync<bool>("confirm", "¿Seguro que quieres eliminar este usuario?");
+  var ok = await Js.InvokeAsync<bool>("confirm", "¿Seguro que quieres eliminar este usuario?");
         if (!ok) return;
 
         deletingId = id;
-        try
+  try
         {
-            var resp = await Http.DeleteAsync($"api/usuarios/{id}");
+     var resp = await Http.DeleteAsync($"api/usuarios/{id}");
             if (resp.IsSuccessStatusCode || resp.StatusCode == System.Net.HttpStatusCode.NoContent)
             {
                 users = users?.Where(u => u.IdUsuario != id).ToList();
-                StateHasChanged();
-                await Js.InvokeVoidAsync("alert", "Usuario eliminado correctamente.");
-            }
-            else
-            {
-                var text = await resp.Content.ReadAsStringAsync();
-                await Js.InvokeVoidAsync("alert", $"Error al eliminar: {resp.StatusCode}. {text}");
-            }
+           StateHasChanged();
+            await Js.InvokeVoidAsync("alert", "Usuario eliminado correctamente.");
         }
+          else
+       {
+     var text = await resp.Content.ReadAsStringAsync();
+    await Js.InvokeVoidAsync("alert", $"Error al eliminar: {resp.StatusCode}. {text}");
+            }
+     }
         catch (Exception ex)
-        {
-            await Js.InvokeVoidAsync("alert", $"Error en la petición: {ex.Message}");
+  {
+        await Js.InvokeVoidAsync("alert", $"Error en la petición: {ex.Message}");
         }
-        finally
+finally
         {
-            deletingId = null;
+      deletingId = null;
         }
     }
-
-
 }

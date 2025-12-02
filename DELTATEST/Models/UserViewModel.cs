@@ -10,5 +10,6 @@ namespace DELTATEST.Models
         public string? PuestoSolicitado { get; set; }
         public string? Estado { get; set; } // uso para "Ingreso con"
         public decimal? NotaPractica { get; set; } // Última calificación de evaluación práctica
+        public string? Rol { get; set; } // Rol del usuario
     }
 }

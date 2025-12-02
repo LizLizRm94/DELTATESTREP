@@ -115,6 +115,9 @@ public partial class DeltaTestContext : DbContext
                 .HasColumnType("decimal(5, 2)")
                 .HasColumnName("nota");
             entity.Property(e => e.TipoEvaluacion).HasColumnName("tipo_evaluacion");
+            entity.Property(e => e.Recomendaciones)
+                .HasColumnType("nvarchar(max)")
+                .HasColumnName("recomendaciones");
             
                
 
@@ -255,6 +258,11 @@ public partial class DeltaTestContext : DbContext
                 .HasMaxLength(500)
                 .HasColumnName("texto");
             entity.Property(e => e.TipoEvaluacion).HasColumnName("tipo_evaluacion");
+            entity.Property(e => e.IdEvaluacion).HasColumnName("id_evaluacion");
+
+            entity.HasOne(d => d.IdEvaluacionNavigation).WithMany(p => p.Preguntas)
+                .HasForeignKey(d => d.IdEvaluacion)
+                .HasConstraintName("FK_Pregunta_Evaluacion");
         });
 
         modelBuilder.Entity<Respuesta>(entity =>

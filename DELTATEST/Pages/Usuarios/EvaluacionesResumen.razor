@@ -125,7 +125,17 @@
                 var responsePractica = await Http.GetAsync($"api/evaluaciones/usuario/{IdUsuario}");
                 if (responsePractica.IsSuccessStatusCode)
                 {
-                    evaluacionesPracticas = await responsePractica.Content.ReadFromJsonAsync<List<EvaluacionPractica>>();
+                    var todasLasEvaluaciones = await responsePractica.Content.ReadFromJsonAsync<List<EvaluacionPracticaDto>>();
+                    // Filtrar solo las evaluaciones prácticas
+                    evaluacionesPracticas = todasLasEvaluaciones?
+                        .Where(e => e.TipoEvaluacion == "Práctica")
+                        .Select(e => new EvaluacionPractica
+                        {
+                            IdEvaluacion = e.IdEvaluacion,
+                            FechaEvaluacion = e.FechaEvaluacion,
+                            NotaPractica = e.Nota
+                        })
+                        .ToList() ?? new List<EvaluacionPractica>();
                 }
                 else
                 {
@@ -142,12 +152,21 @@
             // Obtener evaluaciones teóricas
             try
             {
-                var responseTeoria = await Http.GetAsync($"api/evaluacionesteoricass/usuario/{IdUsuario}");
+                var responseTeoria = await Http.GetAsync($"api/evaluaciones/usuario/{IdUsuario}");
                 if (responseTeoria.IsSuccessStatusCode)
                 {
-                    var todasLasEvaluaciones = await responseTeoria.Content.ReadFromJsonAsync<List<EvaluacionTeoricaResumen>>();
-                    // Mostrar todas las evaluaciones teóricas del usuario (con o sin calificación)
-                    evaluacionesTeorica = todasLasEvaluaciones ?? new List<EvaluacionTeoricaResumen>();
+                    var todasLasEvaluaciones = await responseTeoria.Content.ReadFromJsonAsync<List<EvaluacionPracticaDto>>();
+                    // Filtrar solo las evaluaciones teóricas
+                    evaluacionesTeorica = todasLasEvaluaciones?
+                        .Where(e => e.TipoEvaluacion == "Teórica")
+                        .Select(e => new EvaluacionTeoricaResumen
+                        {
+                            IdEvaluacion = e.IdEvaluacion,
+                            FechaEvaluacion = e.FechaEvaluacion,
+                            Nota = e.Nota,
+                            EstadoEvaluacion = e.EstadoEvaluacion
+                        })
+                        .ToList() ?? new List<EvaluacionTeoricaResumen>();
                 }
                 else
                 {
@@ -187,6 +206,15 @@
         public int IdEvaluacion { get; set; }
         public DateOnly? FechaEvaluacion { get; set; }
         public decimal? NotaPractica { get; set; }
+    }
+
+    public class EvaluacionPracticaDto
+    {
+        public int IdEvaluacion { get; set; }
+        public DateOnly? FechaEvaluacion { get; set; }
+        public string TipoEvaluacion { get; set; } = null!;
+        public decimal? Nota { get; set; }
+        public string? EstadoEvaluacion { get; set; }
     }
 
     public class EvaluacionTeoricaResumen

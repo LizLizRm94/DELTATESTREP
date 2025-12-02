@@ -116,78 +116,61 @@ mensajeRespuesta = $"Error al cargar usuarios: {ex.Message}";
         }
 
         cargando = true;
-        try
+  try
         {
             var preguntasValidas = modelo.Preguntas
-            .Where(p => !string.IsNullOrWhiteSpace(p.Texto))
+   .Where(p => !string.IsNullOrWhiteSpace(p.Texto))
           .ToList();
 
       if (preguntasValidas.Count == 0)
    {
      mostrarMensaje = true;
-      esError = true;
+   esError = true;
      mensajeRespuesta = "Debe ingresar al menos una pregunta";
       cargando = false;
-      return;
-       }
+  return;
+    }
 
      // Limitar a máximo 10 preguntas
-            preguntasValidas = preguntasValidas.Take(10).ToList();
+          preguntasValidas = preguntasValidas.Take(10).ToList();
 
-            // 1. Guardar las preguntas
-            var requestPreguntas = new
-    {
-  preguntas = preguntasValidas.Select(p => new
-        {
-        texto = p.Texto,
-        tipoEvaluacion = p.TipoEvaluacion
-      }).ToList()
-        };
-
-    var responsePregunta = await Http.PostAsJsonAsync("api/preguntas/crear-evaluacion-teorica", requestPreguntas);
-
-      if (!responsePregunta.IsSuccessStatusCode)
-         {
-              mostrarMensaje = true;
-   esError = true;
-          mensajeRespuesta = $"Error al guardar preguntas: {responsePregunta.StatusCode}";
-    cargando = false;
-    return;
-        }
-
-      // 2. Crear la evaluación teórica para el usuario
- var requestEvaluacion = new
-            {
+    // Crear la evaluación teórica con las preguntas en un solo paso
+  var requestEvaluacion = new
+          {
        idUsuario = idUsuarioSeleccionado,
-    tipoEvaluacion = true // true = teórica
-            };
+    preguntas = preguntasValidas.Select(p => new
+    {
+        texto = p.Texto
+    }).ToList()
+     };
 
      var responseEvaluacion = await Http.PostAsJsonAsync("api/evaluaciones/crear-evaluacion-teorica", requestEvaluacion);
 
-            if (responseEvaluacion.IsSuccessStatusCode)
+ if (responseEvaluacion.IsSuccessStatusCode)
     {
  mostrarMensaje = true;
-        esError = false;
-                mensajeRespuesta = "¡Evaluación teórica creada exitosamente!";
+   esError = false;
+     var responseContent = await responseEvaluacion.Content.ReadAsStringAsync();
+          mensajeRespuesta = "¡Evaluación teórica creada exitosamente!";
 await Task.Delay(2000);
-     // Reinicializar para crear otra evaluación con 10 preguntas
-                OnCancel();
+     // Reinicializar para crear otra evaluación
+            OnCancel();
  }
-            else
-            {
+  else
+       {
          var contenidoError = await responseEvaluacion.Content.ReadAsStringAsync();
-                mostrarMensaje = true;
+              mostrarMensaje = true;
 esError = true;
-   mensajeRespuesta = $"Error al crear evaluación: {responseEvaluacion.StatusCode}";
+   mensajeRespuesta = $"Error al crear evaluación: {responseEvaluacion.StatusCode} - {contenidoError}";
       }
         }
    catch (Exception ex)
-        {
+      {
          mostrarMensaje = true;
         esError = true;
             mensajeRespuesta = $"Error: {ex.Message}";
         }
-        finally
+  finally
         {
      cargando = false;
         }

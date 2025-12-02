@@ -8,29 +8,29 @@
 <div class="container-evaluacion">
     <h3 class="titulo-evaluacion">EVALUACION PRACTICA</h3>
 
- @if (mostrarMensaje)
+    @if (mostrarMensaje)
     {
-  <div class="alerta @(esError ? "alerta-error" : "alerta-exito")">
-   <span>@mensajeRespuesta</span>
-  <button type="button" class="btn-cerrar" @onclick="CerrarMensaje">&times;</button>
-   </div>
+       <div class="alerta @(esError ? "alerta-error" : "alerta-exito")">
+          <span>@mensajeRespuesta</span>
+          <button type="button" class="btn-cerrar" @onclick="CerrarMensaje">&times;</button>
+       </div>
     }
 
-  @if (!mostrarResultado)
+    @if (!mostrarResultado)
     {
         <div class="evaluado-info">
-        <p>Evaluad(a): <strong>@NombreUsuario</strong></p>
-   </div>
+          <p>Evaluad(a): <strong>@NombreUsuario</strong></p>
+        </div>
 
-   @if (cargando)
-        {
-            <div class="loading-container">
-<div class="spinner"></div>
-     <p>Cargando evaluación...</p>
-            </div>
-        }
-        else if (modelo == null || modelo.Tareas == null || modelo.Tareas.Count == 0)
-        {
+    @if (cargando)
+    {
+       <div class="loading-container">
+           <div class="spinner"></div>
+           <p>Cargando evaluación...</p>
+       </div>
+    }
+    else if (modelo == null || modelo.Tareas == null || modelo.Tareas.Count == 0)
+    {
      <div class="alerta alerta-info">
     <span>No hay tareas disponibles para esta evaluación</span>
      </div>
@@ -38,13 +38,35 @@
         else
         {
        <div class="tarea-card">
+  <!-- Menú desplegable de instrumentos -->
+    <div class="instrumentos-section">
+        <label class="label-instrumento">Seleccione el instrumento utilizado:</label>
+        <select class="select-instrumento" @bind="instrumentoSeleccionado">
+          <option value="">-- Seleccionar instrumento --</option>
+ <option value="Balanza Analítica Mettler Toledo MS204S/01">Balanza Analítica Mettler Toledo MS204S/01</option>
+  <option value="Balanza Analítica Mettler Toledo MS204TS/00">Balanza Analítica Mettler Toledo MS204TS/00</option>
+       <option value="Balanza de Precisión Mettler Toledo ICS425SF1AUM0A00B1">Balanza de Precisión Mettler Toledo ICS425SF1AUM0A00B1</option>
+    <option value="Balanza de Precisión Mettler Toledo PG503">Balanza de Precisión Mettler Toledo PG503</option>
+          <option value="Balanza de Humedad Mettler Toledo HC103">Balanza de Humedad Mettler Toledo HC103</option>
+  <option value="Balanza de Humedad Mettler Toledo HG53">Balanza de Humedad Mettler Toledo HG53</option>
+        <option value="Balanza de Humedad Mettler Toledo HB43-S HALOGEN">Balanza de Humedad Mettler Toledo HB43-S HALOGEN</option>
+  <option value="Cámara de Estabilidad Thermolab TS0000400G">Cámara de Estabilidad Thermolab TS0000400G</option>
+  <option value="Espectrofotómetro IR Jasco FT/IR-4700">Espectrofotómetro IR Jasco FT/IR-4700</option>
+         <option value="Disolutor Hanson SR8-PLUS">Disolutor Hanson SR8-PLUS</option>
+         <option value="Disolutor Hanson VISIONELITE 8">Disolutor Hanson VISIONELITE 8</option>
+         <option value="pHmetro Multiparámetro METTLER TOLEDO">pHmetro Multiparámetro METTLER TOLEDO</option>
+    <option value="Titulador Karl Fischer SI ANALYTICS TitroLine®7500 KF">Titulador Karl Fischer SI ANALYTICS TitroLine®7500 KF</option>
+     <option value="Desintegrador PHARMA TEST PTZ - 2E">Desintegrador PHARMA TEST PTZ - 2E</option>
+        </select>
+    </div>
+
             <!-- Información de progreso -->
-            <div class="progreso-section">
+        <div class="progreso-section">
         <p class="contador-progreso">Tarea <strong>@(indiceActual + 1)</strong> de <strong>@modelo.Tareas.Count</strong></p>
            <div class="barra-progreso">
        <div class="barra-progreso-fill" style="width: @((indiceActual + 1) * 100 / modelo.Tareas.Count)%"></div>
-        </div>
-         </div>
+     </div>
+</div>
 
       <!-- Pregunta actual -->
       <div class="pregunta-section">
@@ -182,19 +204,57 @@
     margin-bottom: 40px;
     }
 
-    .contador-tareas {
-        font-size: 18px;
-        color: #1f2937;
+  .contador-tareas {
+   font-size: 18px;
+ color: #1f2937;
         margin: 0;
-        font-weight: 500;
+      font-weight: 500;
         letter-spacing: 0.3px;
   }
+
+  .instrumentos-section {
+ margin-bottom: 40px;
+      text-align: center;
+    }
+
+    .label-instrumento {
+   display: block;
+        font-size: 14px;
+ font-weight: 600;
+    color: #374151;
+        margin-bottom: 12px;
+    }
+
+    .select-instrumento {
+   width: 100%;
+      max-width: 500px;
+        padding: 12px 16px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+    font-size: 14px;
+ background: white;
+        color: #374151;
+        cursor: pointer;
+        transition: all 0.3s ease;
+  }
+
+    .select-instrumento:focus {
+        outline: none;
+        border-color: #f58220;
+  box-shadow: 0 0 0 3px rgba(245, 130, 32, 0.1);
+    }
+
+    .select-instrumento option {
+  padding: 8px;
+color: #374151;
+        background: white;
+    }
 
   .estrellas-container {
    display: flex;
         justify-content: center;
         gap: 20px;
-        margin-bottom: 40px;
+      margin-bottom: 40px;
         flex-wrap: wrap;
 }
 
@@ -671,9 +731,10 @@ padding: 20px;
     private bool mostrarMensaje = false;
     private bool mostrarResultado = false;
     private string mensajeRespuesta = string.Empty;
-    private bool esError = false;
+ private bool esError = false;
     private int indiceActual = 0;
     private int puntuacionFinal = 0;
+    private string instrumentoSeleccionado = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -732,14 +793,15 @@ if (indiceActual < modelo?.Tareas?.Count)
         if (indiceActual < modelo?.Tareas?.Count - 1)
      {
   indiceActual++;
-        }
+ instrumentoSeleccionado = string.Empty;
+ }
     }
 
     private async Task Finalizar()
     {
         if (modelo == null) return;
 
-        cargandoSubmit = true;
+   cargandoSubmit = true;
 try
         {
 // Validar que TODAS las tareas tengan calificación
@@ -748,10 +810,10 @@ var tareasSinCalificacion = modelo.Tareas
  .ToList();
 
           if (tareasSinCalificacion.Count > 0)
-      {
+ {
     mostrarMensaje = true;
     esError = true;
-         mensajeRespuesta = $"Debe calificar todas las tareas. Faltan {tareasSinCalificacion.Count} por calificar.";
+  mensajeRespuesta = $"Debe calificar todas las tareas. Faltan {tareasSinCalificacion.Count} por calificar.";
      cargandoSubmit = false;
      return;
           }
@@ -761,48 +823,51 @@ var tareasSinCalificacion = modelo.Tareas
             .Where(t => t.Calificacion.HasValue)
        .Sum(t => t.Calificacion.Value);
 
-            puntuacionFinal = (int)puntuacionTotal;
+    puntuacionFinal = (int)puntuacionTotal;
 
        var request = new
    {
-       idUsuario = modelo.IdUsuario,
+   idUsuario = modelo.IdUsuario,
    nombreUsuario = modelo.NombreUsuario,
      tareas = modelo.Tareas.Select(t => new
-     {
+ {
     idTarea = t.IdTarea,
   descripcion = t.Descripcion,
   resultadoObtenido = t.ResultadoObtenido,
-    completada = t.Completada,
+  completada = t.Completada,
       calificacion = t.Calificacion
       }).ToList(),
-      puntuacion = puntuacionTotal
+      puntuacion = puntuacionTotal,
+      recomendaciones = string.Join("\n", modelo.Tareas
+        .Where(t => !string.IsNullOrWhiteSpace(t.ResultadoObtenido))
+     .Select((t, i) => $"Tarea {i + 1}: {t.ResultadoObtenido}"))
  };
       var response = await Http.PostAsJsonAsync(
-         "https://localhost:7287/api/evaluaciones/crear-evaluacion-practica",
+      "https://localhost:7287/api/evaluaciones/crear-evaluacion-practica",
       request
      );
 
       if (response.IsSuccessStatusCode)
  {
       mostrarMensaje = true;
-             esError = false;
+     esError = false;
    mensajeRespuesta = $"¡Evaluación práctica guardada exitosamente!";
     
-   // Redirigir después de 2 segundos
+   // Redirigir después de 2 segundos a la lista de evaluaciones
        await Task.Delay(2000);
-    NavigationManager.NavigateTo("/EvaluacionPracticaLista");
-            }
-            else
+  NavigationManager.NavigateTo("/EvaluacionPracticaLista", forceLoad: true);
+}
+          else
    {
  var contenidoError = await response.Content.ReadAsStringAsync();
-      mostrarMensaje = true;
-         esError = true;
+  mostrarMensaje = true;
+   esError = true;
      mensajeRespuesta = $"Error al guardar: {response.StatusCode}";
   }
      }
-        catch (Exception ex)
-        {
-          mostrarMensaje = true;
+ catch (Exception ex)
+{
+    mostrarMensaje = true;
    esError = true;
     mensajeRespuesta = $"Error: {ex.Message}";
         }

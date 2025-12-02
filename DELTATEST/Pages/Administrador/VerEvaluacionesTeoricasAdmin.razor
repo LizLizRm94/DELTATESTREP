@@ -78,8 +78,8 @@
 
        <!-- CALIFICACIÓN GLOBAL -->
           <hr />
-         <div class="form-group mt-4">
-            <label for="calificacionGlobal" class="form-label fw-bold text-orange">Calificación Global (0-100)</label>
+     <div class="form-group mt-4">
+  <label for="calificacionGlobal" class="form-label fw-bold text-orange">Calificación Global (0-100)</label>
      <div class="input-group">
       <input type="number" 
     class="form-control form-control-lg" 
@@ -92,15 +92,15 @@
          </div>
     </div>
 
-       <!-- COMENTARIOS -->
+       <!-- COMENTARIOS / RECOMENDACIONES -->
      <div class="form-group mt-3">
-             <label for="comentarios" class="form-label fw-bold text-orange">Comentarios (Opcional)</label>
+          <label for="comentarios" class="form-label fw-bold text-orange">Recomendaciones para Mejorar</label>
      <textarea class="form-control" 
-     id="comentarios"
+   id="comentarios"
          @bind="comentarios" 
       rows="4"
-      placeholder="Ingrese comentarios sobre la evaluación..."></textarea>
-                  </div>
+      placeholder="Ingrese sus recomendaciones y observaciones para que el evaluado pueda mejorar..."></textarea>
+               </div>
 
                <!-- BOTONES -->
        <div class="d-flex gap-2 justify-content-end mt-4">
@@ -319,7 +319,7 @@ protected override async Task OnInitializedAsync()
     {
         if (evalSeleccionada == null || calificacionGlobal < 0 || calificacionGlobal > 100)
         {
-     MostrarMensaje("La calificación debe estar entre 0 y 100", true);
+  MostrarMensaje("La calificación debe estar entre 0 y 100", true);
      return;
         }
 
@@ -328,32 +328,33 @@ protected override async Task OnInitializedAsync()
     {
             var request = new
             {
-       idEvaluacion = evalSeleccionada.IdEvaluacion,
+    idEvaluacion = evalSeleccionada.IdEvaluacion,
         nota = calificacionGlobal,
-             estado = calificacionGlobal >= 80 ? "Aprobada" : "Reprobada"
+        recomendaciones = comentarios,
+           estado = calificacionGlobal >= 80 ? "Aprobada" : "Reprobada"
  };
 
     var response = await Http.PutAsJsonAsync($"api/evaluaciones/{evalSeleccionada.IdEvaluacion}", request);
 
-            if (response.IsSuccessStatusCode)
+    if (response.IsSuccessStatusCode)
 {
-             MostrarMensaje($"Calificación guardada exitosamente: {calificacionGlobal}/100", false);
+   MostrarMensaje($"Calificación guardada exitosamente: {calificacionGlobal}/100", false);
    await Task.Delay(1500);
-         LimpiarSeleccion();
+   LimpiarSeleccion();
         await CargarEvaluacionesPendientes();
             }
-            else
+  else
         {
           MostrarMensaje("Error al guardar la calificación", true);
     }
-        }
-        catch (Exception ex)
+   }
+   catch (Exception ex)
         {
 MostrarMensaje($"Error: {ex.Message}", true);
  }
         finally
         {
-            cargandoGuardar = false;
+cargandoGuardar = false;
         }
     }
 

@@ -4,6 +4,7 @@
 @inject IJSRuntime JS
 @inject NavigationManager NavigationManager
 @layout MainSinLayout
+@implements IAsyncDisposable
 
 <h3 class="titulo-form">EVALUACION PRACTICA</h3>
 
@@ -413,96 +414,107 @@ else
     private string mensajeRespuesta = string.Empty;
     private bool esError = false;
     private int? iniciandoId = null;
+ private string ultimaUrl = string.Empty;
 
-    protected override async Task OnInitializedAsync()
+protected override async Task OnInitializedAsync()
     {
-        await CargarUsuarios();
+        ultimaUrl = NavigationManager.Uri;
+        NavigationManager.LocationChanged += OnLocationChanged;
+  await CargarUsuarios();
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
-        if (firstRender)
-      {
-          return;
-   }
- }
+        // Verificar si regresamos a esta página
+        if (e.Location.Contains("/EvaluacionPracticaLista"))
+        {
+            // Recargar datos cuando regresamos
+  await CargarUsuarios();
+ await InvokeAsync(StateHasChanged);
+        }
+    }
 
     private async Task CargarUsuarios()
     {
- try
-   {
-   cargando = true;
-         usuarios = await Http.GetFromJsonAsync<List<UserViewModel>>("https://localhost:7287/api/usuarios");
-  usuariosFiltrados = usuarios ?? new List<UserViewModel>();
-        }
-        catch (Exception ex)
-   {
- mostrarMensaje = true;
+        try
+        {
+    cargando = true;
+    usuarios = await Http.GetFromJsonAsync<List<UserViewModel>>("https://localhost:7287/api/usuarios");
+            // Filtrar solo usuarios con rol "Usuario" (excluir Administrador e Inspector)
+            usuarios = usuarios?.Where(u => u.Rol == "Usuario").ToList() ?? new List<UserViewModel>();
+  usuariosFiltrados = usuarios;
+  }
+      catch (Exception ex)
+      {
+          mostrarMensaje = true;
             esError = true;
-            mensajeRespuesta = $"Error al cargar usuarios: {ex.Message}";
-          Console.WriteLine($"Error: {ex.Message}");
+     mensajeRespuesta = $"Error al cargar usuarios: {ex.Message}";
+            Console.WriteLine($"Error: {ex.Message}");
         }
       finally
-        {
-   cargando = false;
+   {
+            cargando = false;
         }
     }
 
     private void OnSearch()
-    {
-        if (usuarios == null)
-   return;
+  {
+  if (usuarios == null)
+  return;
 
         if (string.IsNullOrWhiteSpace(searchTerm))
-      {
-  usuariosFiltrados = usuarios;
-        }
-        else
         {
-   var termoBusqueda = searchTerm.ToLower();
-     usuariosFiltrados = usuarios
-           .Where(u => u.NombreCompleto.ToLower().Contains(termoBusqueda) ||
-           (u.Correo?.ToLower().Contains(termoBusqueda) ?? false))
-       .ToList();
-        }
+            usuariosFiltrados = new List<UserViewModel>(usuarios);
+ }
+        else
+      {
+  var termoBusqueda = searchTerm.ToLower();
+            usuariosFiltrados = usuarios
+     .Where(u => u.NombreCompleto.ToLower().Contains(termoBusqueda) ||
+        (u.Correo?.ToLower().Contains(termoBusqueda) ?? false))
+ .ToList();
+      }
     }
 
     private async Task IniciarEvaluacion(int idUsuario, string nombreUsuario)
-    {
-        iniciandoId = idUsuario;
-      try
   {
-      // Navegar a la página de evaluación práctica con los parámetros del usuario
-      NavigationManager.NavigateTo($"/EvaluacionPractica/{idUsuario}/{System.Uri.EscapeDataString(nombreUsuario)}");
-    
-   // Después de navegar, recargar datos
-           await Task.Delay(500);
-   await CargarUsuarios();
-  }
-  catch (Exception ex)
-     {
-    mostrarMensaje = true;
-            esError = true;
- mensajeRespuesta = $"Error al iniciar evaluación: {ex.Message}";
-     }
-      finally
+ iniciandoId = idUsuario;
+        try
         {
-  iniciandoId = null;
+   // Navegar a la página de evaluación práctica con los parámetros del usuario
+            NavigationManager.NavigateTo($"/EvaluacionPractica/{idUsuario}/{System.Uri.EscapeDataString(nombreUsuario)}");
         }
-    }
+        catch (Exception ex)
+     {
+       mostrarMensaje = true;
+esError = true;
+            mensajeRespuesta = $"Error al iniciar evaluación: {ex.Message}";
+ }
+     finally
+     {
+         iniciandoId = null;
+        }
+ }
 
     private void CerrarMensaje()
     {
         mostrarMensaje = false;
     }
 
- private string ObtenerClaseNota(decimal nota)
+    private string ObtenerClaseNota(decimal nota)
     {
-     if (nota >= 80)
-   return "excelente";
-      else if (nota >= 51)
-         return "bien";
-  else
-         return "reprobado";
+        if (nota >= 80)
+    return "excelente";
+        else if (nota >= 51)
+  return "bien";
+        else
+  return "reprobado";
+  }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        // Desuscribirse del evento cuando el componente se destruye
+        NavigationManager.LocationChanged -= OnLocationChanged;
+        await ValueTask.CompletedTask;
     }
 }

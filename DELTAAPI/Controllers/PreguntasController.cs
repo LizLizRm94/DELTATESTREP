@@ -104,6 +104,32 @@ return Ok(new
      }
         }
 
+    /// <summary>
+        /// Obtiene las preguntas de una evaluación específica
+        /// </summary>
+    [HttpGet("evaluacion/{idEvaluacion}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetPreguntasByEvaluacion(int idEvaluacion)
+    {
+try
+        {
+var preguntas = await _context.Preguntas
+    .Where(p => p.IdEvaluacion == idEvaluacion)
+            .ToListAsync();
+
+            if (!preguntas.Any())
+{
+        return NotFound(new { mensaje = "No hay preguntas para esta evaluación" });
+}
+
+          return Ok(preguntas);
+        }
+  catch (Exception ex)
+ {
+            return StatusCode(500, new { mensaje = "Error al obtener las preguntas", error = ex.Message });
+  }
+    }
+
   /// <summary>
         /// Obtiene una pregunta específica por ID
         /// </summary>

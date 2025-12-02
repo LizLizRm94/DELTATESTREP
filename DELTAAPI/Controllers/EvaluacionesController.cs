@@ -9,343 +9,377 @@ namespace DELTAAPI.Controllers
     [Route("api/[controller]")]
     public class EvaluacionesController : ControllerBase
     {
-        private readonly DeltaTestContext _context;
+      private readonly DeltaTestContext _context;
 
         public EvaluacionesController(DeltaTestContext context)
         {
-         _context = context;
- }
+     _context = context;
+        }
 
-        /// <summary>
-        /// Guarda una evaluación práctica con las tareas completadas por el evaluado
-        /// </summary>
         [HttpPost("crear-evaluacion-practica")]
         [AllowAnonymous]
         public async Task<IActionResult> CrearEvaluacionPractica([FromBody] CrearEvaluacionPracticaRequest request)
-        {
-   if (request == null || request.IdUsuario <= 0)
-     {
-              return BadRequest(new { mensaje = "El ID del usuario es requerido" });
-   }
-
-  try
-            {
-       // Verificar que el usuario existe
-    var usuario = await _context.Usuarios.FindAsync(request.IdUsuario);
-       if (usuario == null)
-    {
-     return NotFound(new { mensaje = "Usuario no encontrado" });
-        }
-
- // Crear una nueva evaluación práctica
-         var evaluacion = new Evaluacion
-    {
-     IdEvaluado = request.IdUsuario,
-     FechaEvaluacion = DateOnly.FromDateTime(DateTime.Now),
-   TipoEvaluacion = false, // false = práctica, true = teórica
-        EstadoEvaluacion = "Completada",
-     Nota = CalcularCalificacion(request.Tareas)
-  };
-
-     _context.Evaluacions.Add(evaluacion);
-  await _context.SaveChangesAsync();
-
-          return Ok(new
-  {
-    mensaje = "Evaluación práctica guardada exitosamente",
-     idEvaluacion = evaluacion.IdEvaluacion,
-     cantidadTareas = request.Tareas?.Count ?? 0,
-        calificacion = evaluacion.Nota
- });
-            }
-       catch (DbUpdateException dbEx)
-            {
-           var innerMessage = dbEx.InnerException?.Message ?? "Sin detalles";
-     return StatusCode(500, new
-    {
-       mensaje = "Error de base de datos al guardar",
-     error = dbEx.Message,
-  details = innerMessage
-    });
-        }
-            catch (Exception ex)
       {
-     return StatusCode(500, new
-        {
-mensaje = "Error al guardar la evaluación",
-   error = ex.Message,
-        innerException = ex.InnerException?.Message
-          });
-        }
-     }
-
-        /// <summary>
-        /// Obtiene todas las evaluaciones
-        /// </summary>
-        [HttpGet]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetEvaluaciones()
-    {
-        try
-   {
-      var evaluaciones = await _context.Evaluacions
-       .Include(e => e.IdEvaluadoNavigation)
-  .Select(e => new
-     {
-        e.IdEvaluacion,
-             e.IdEvaluado,
-           NombreEvaluado = e.IdEvaluadoNavigation.NombreCompleto,
-          e.FechaEvaluacion,
-             e.Nota,
-  e.EstadoEvaluacion,
-   TipoEvaluacion = e.TipoEvaluacion == true ? "Teórica" : "Práctica"
-    })
-           .ToListAsync();
-
-                return Ok(evaluaciones);
- }
-            catch (Exception ex)
-    {
-            return StatusCode(500, new { mensaje = "Error al obtener las evaluaciones", error = ex.Message });
-  }
-        }
-
-        /// <summary>
-      /// Obtiene una evaluación específica por ID
-   /// </summary>
-        [HttpGet("{id}")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetEvaluacionById(int id)
-        {
-            try
-            {
-             var evaluacion = await _context.Evaluacions
-     .Include(e => e.IdEvaluadoNavigation)
-       .Include(e => e.IdAdministradorNavigation)
-       .FirstOrDefaultAsync(e => e.IdEvaluacion == id);
-
-        if (evaluacion == null)
-       return NotFound(new { mensaje = "Evaluación no encontrada" });
-
-   return Ok(new
-   {
-              evaluacion.IdEvaluacion,
-         evaluacion.IdEvaluado,
-     NombreEvaluado = evaluacion.IdEvaluadoNavigation.NombreCompleto,
-     CiEvaluado = evaluacion.IdEvaluadoNavigation.Ci,
-     NombreAdministrador = evaluacion.IdAdministradorNavigation?.NombreCompleto ?? "N/A",
-         evaluacion.FechaEvaluacion,
-    evaluacion.Nota,
-            evaluacion.EstadoEvaluacion,
-    TipoEvaluacion = evaluacion.TipoEvaluacion == true ? "Teórica" : "Práctica"
-       });
-  }
-    catch (Exception ex)
-      {
-                return StatusCode(500, new { mensaje = "Error al obtener la evaluación", error = ex.Message });
-            }
-        }
-
-     /// <summary>
-        /// Obtiene las evaluaciones de un usuario específico
-        /// </summary>
-      [HttpGet("usuario/{idUsuario}")]
-   [AllowAnonymous]
- public async Task<IActionResult> GetEvaluacionesByUsuario(int idUsuario)
-    {
-   try
+            if (request == null || request.IdUsuario <= 0)
        {
-    var evaluaciones = await _context.Evaluacions
- .Where(e => e.IdEvaluado == idUsuario)
-         .Select(e => new
-{
-             e.IdEvaluacion,
-           e.FechaEvaluacion,
-          e.Nota,
- e.EstadoEvaluacion,
-  TipoEvaluacion = e.TipoEvaluacion == true ? "Teórica" : "Práctica"
-            })
-     .ToListAsync();
+        return BadRequest(new { mensaje = "El ID del usuario es requerido" });
+        }
 
-        return Ok(evaluaciones);
+      try
+         {
+   var usuario = await _context.Usuarios.FindAsync(request.IdUsuario);
+            if (usuario == null)
+            {
+                    return NotFound(new { mensaje = "Usuario no encontrado" });
+                }
+
+      var evaluacion = new Evaluacion
+          {
+      IdEvaluado = request.IdUsuario,
+    FechaEvaluacion = DateOnly.FromDateTime(DateTime.Now),
+      TipoEvaluacion = false,
+    EstadoEvaluacion = "Completada",
+         Nota = CalcularCalificacion(request.Tareas),
+       Recomendaciones = request.Recomendaciones
+           };
+
+    _context.Evaluacions.Add(evaluacion);
+await _context.SaveChangesAsync();
+
+  return Ok(new
+       {
+         mensaje = "Evaluación práctica guardada exitosamente",
+       idEvaluacion = evaluacion.IdEvaluacion,
+      cantidadTareas = request.Tareas?.Count ?? 0,
+             calificacion = evaluacion.Nota
+        });
+            }
+  catch (DbUpdateException dbEx)
+         {
+                var innerMessage = dbEx.InnerException?.Message ?? "Sin detalles";
+          return StatusCode(500, new
+      {
+        mensaje = "Error de base de datos al guardar",
+    error = dbEx.Message,
+   details = innerMessage
+                });
       }
-  catch (Exception ex)
- {
-    return StatusCode(500, new { mensaje = "Error al obtener las evaluaciones", error = ex.Message });
+       catch (Exception ex)
+  {
+          return StatusCode(500, new
+       {
+  mensaje = "Error al guardar la evaluación",
+      error = ex.Message,
+    innerException = ex.InnerException?.Message
+        });
          }
         }
 
-   /// <summary>
-        /// Actualiza una evaluación existente
-    /// </summary>
-        [HttpPut("{id}")]
+   [HttpGet]
         [AllowAnonymous]
+        public async Task<IActionResult> GetEvaluaciones()
+        {
+            try
+            {
+           var evaluaciones = await _context.Evaluacions
+            .Include(e => e.IdEvaluadoNavigation)
+        .Select(e => new
+       {
+         e.IdEvaluacion,
+          e.IdEvaluado,
+            NombreEvaluado = e.IdEvaluadoNavigation.NombreCompleto,
+    e.FechaEvaluacion,
+    e.Nota,
+                 e.EstadoEvaluacion,
+      TipoEvaluacion = e.TipoEvaluacion == true ? "Teórica" : "Práctica"
+             })
+        .ToListAsync();
+
+         return Ok(evaluaciones);
+      }
+         catch (Exception ex)
+       {
+                return StatusCode(500, new { mensaje = "Error al obtener las evaluaciones", error = ex.Message });
+}
+        }
+
+        [HttpGet("{id}")]
+[AllowAnonymous]
+        public async Task<IActionResult> GetEvaluacionById(int id)
+     {
+    try
+            {
+     var evaluacion = await _context.Evaluacions
+   .Include(e => e.IdEvaluadoNavigation)
+        .Include(e => e.IdAdministradorNavigation)
+    .FirstOrDefaultAsync(e => e.IdEvaluacion == id);
+
+  if (evaluacion == null)
+                    return NotFound(new { mensaje = "Evaluación no encontrada" });
+
+           return Ok(new
+         {
+               evaluacion.IdEvaluacion,
+         evaluacion.IdEvaluado,
+       NombreEvaluado = evaluacion.IdEvaluadoNavigation.NombreCompleto,
+          CiEvaluado = evaluacion.IdEvaluadoNavigation.Ci,
+            NombreAdministrador = evaluacion.IdAdministradorNavigation?.NombreCompleto ?? "N/A",
+    evaluacion.FechaEvaluacion,
+    evaluacion.Nota,
+    evaluacion.EstadoEvaluacion,
+      TipoEvaluacion = evaluacion.TipoEvaluacion == true ? "Teórica" : "Práctica",
+     evaluacion.Recomendaciones
+     });
+            }
+        catch (Exception ex)
+    {
+                return StatusCode(500, new { mensaje = "Error al obtener la evaluación", error = ex.Message });
+ }
+        }
+
+        [HttpGet("usuario/{idUsuario}")]
+   [AllowAnonymous]
+        public async Task<IActionResult> GetEvaluacionesByUsuario(int idUsuario)
+        {
+      try
+{
+       var evaluaciones = await _context.Evaluacions
+          .Where(e => e.IdEvaluado == idUsuario)
+           .Select(e => new
+     {
+               e.IdEvaluacion,
+       e.FechaEvaluacion,
+          e.Nota,
+             e.EstadoEvaluacion,
+                TipoEvaluacion = e.TipoEvaluacion == true ? "Teórica" : "Práctica"
+       })
+         .ToListAsync();
+
+         return Ok(evaluaciones);
+       }
+catch (Exception ex)
+  {
+ return StatusCode(500, new { mensaje = "Error al obtener las evaluaciones", error = ex.Message });
+        }
+        }
+
+    [HttpGet("ultima-practica/{idUsuario}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetUltimaPracticaByUsuario(int idUsuario)
+        {
+   try
+            {
+       var ultimaEvaluacion = await _context.Evaluacions
+           .Where(e => e.IdEvaluado == idUsuario && e.TipoEvaluacion == false)
+     .OrderByDescending(e => e.FechaEvaluacion)
+          .FirstOrDefaultAsync();
+
+      if (ultimaEvaluacion == null)
+       {
+  return Ok(new { nota = (decimal?)null });
+              }
+
+                return Ok(new
+ {
+  idEvaluacion = ultimaEvaluacion.IdEvaluacion,
+         fecha = ultimaEvaluacion.FechaEvaluacion,
+         nota = ultimaEvaluacion.Nota,
+         estado = ultimaEvaluacion.EstadoEvaluacion
+    });
+     }
+catch (Exception ex)
+      {
+    return StatusCode(500, new { mensaje = "Error al obtener la última evaluación práctica", error = ex.Message });
+            }
+        }
+
+        [HttpPut("{id}")]
+    [AllowAnonymous]
         public async Task<IActionResult> UpdateEvaluacion(int id, [FromBody] UpdateEvaluacionRequest request)
         {
-     try
-        {
- var evaluacion = await _context.Evaluacions.FindAsync(id);
+            try
+         {
+      var evaluacion = await _context.Evaluacions.FindAsync(id);
      if (evaluacion == null)
     return NotFound(new { mensaje = "Evaluación no encontrada" });
 
-    if (!string.IsNullOrWhiteSpace(request.EstadoEvaluacion))
-    evaluacion.EstadoEvaluacion = request.EstadoEvaluacion;
+       if (!string.IsNullOrWhiteSpace(request.EstadoEvaluacion))
+       evaluacion.EstadoEvaluacion = request.EstadoEvaluacion;
 
-    if (request.Nota.HasValue)
-        evaluacion.Nota = request.Nota.Value;
+ if (request.Nota.HasValue)
+    evaluacion.Nota = request.Nota.Value;
 
-           _context.Evaluacions.Update(evaluacion);
-       await _context.SaveChangesAsync();
+         if (!string.IsNullOrWhiteSpace(request.Recomendaciones))
+  evaluacion.Recomendaciones = request.Recomendaciones;
 
-    return Ok(new { mensaje = "Evaluación actualizada exitosamente" });
-         }
-            catch (Exception ex)
-         {
-       return StatusCode(500, new { mensaje = "Error al actualizar la evaluación", error = ex.Message });
-          }
-        }
-
-        /// <summary>
-        /// Elimina una evaluación
-        /// </summary>
-        [HttpDelete("{id}")]
-        [AllowAnonymous]
-   public async Task<IActionResult> DeleteEvaluacion(int id)
-    {
-            try
-            {
-    var evaluacion = await _context.Evaluacions.FindAsync(id);
-     if (evaluacion == null)
-   return NotFound(new { mensaje = "Evaluación no encontrada" });
-
-              _context.Evaluacions.Remove(evaluacion);
+     _context.Evaluacions.Update(evaluacion);
      await _context.SaveChangesAsync();
 
-      return Ok(new { mensaje = "Evaluación eliminada exitosamente" });
-    }
-            catch (Exception ex)
-   {
-         return StatusCode(500, new { mensaje = "Error al eliminar la evaluación", error = ex.Message });
+     return Ok(new { mensaje = "Evaluación actualizada exitosamente" });
+            }
+  catch (Exception ex)
+            {
+         return StatusCode(500, new { mensaje = "Error al actualizar la evaluación", error = ex.Message });
    }
         }
 
-        /// <summary>
-     /// Calcula la calificación basada en las tareas completadas
-  /// </summary>
-      private decimal CalcularCalificacion(List<TareaRequest>? tareas)
+      [HttpDelete("{id}")]
+        [AllowAnonymous]
+  public async Task<IActionResult> DeleteEvaluacion(int id)
+        {
+       try
+      {
+    var evaluacion = await _context.Evaluacions.FindAsync(id);
+      if (evaluacion == null)
+ return NotFound(new { mensaje = "Evaluación no encontrada" });
+
+_context.Evaluacions.Remove(evaluacion);
+                await _context.SaveChangesAsync();
+
+   return Ok(new { mensaje = "Evaluación eliminada exitosamente" });
+            }
+    catch (Exception ex)
+        {
+     return StatusCode(500, new { mensaje = "Error al eliminar la evaluación", error = ex.Message });
+}
+        }
+
+        private decimal CalcularCalificacion(List<TareaRequest>? tareas)
         {
             if (tareas == null || tareas.Count == 0)
-  return 0;
+      return 0;
 
-       // Sumar todas las calificaciones de las tareas
-          var sumaCalificaciones = tareas
-     .Where(t => t.Calificacion.HasValue && t.Calificacion.Value > 0)
-     .Sum(t => t.Calificacion.Value);
+            var sumaCalificaciones = tareas
+                .Where(t => t.Calificacion.HasValue && t.Calificacion.Value > 0)
+       .Sum(t => t.Calificacion.Value);
 
-            return sumaCalificaciones;
-     }
+            if (tareas.Count > 0)
+            {
+  var promedio = (decimal)sumaCalificaciones / tareas.Count;
+    return promedio * 10;
+        }
 
-    /// <summary>
- /// Crea una evaluación teórica para un usuario
-     /// </summary>
-        [HttpPost("crear-evaluacion-teorica")]
-   [AllowAnonymous]
-public async Task<IActionResult> CrearEvaluacionTeorica([FromBody] CrearEvaluacionTeoricaRequest request)
+          return 0;
+        }
+
+      [HttpPost("crear-evaluacion-teorica")]
+        [AllowAnonymous]
+     public async Task<IActionResult> CrearEvaluacionTeorica([FromBody] CrearEvaluacionTeoricaRequest request)
+        {
+ if (request == null || request.IdUsuario <= 0)
      {
-     if (request == null || request.IdUsuario <= 0)
-        {
-  return BadRequest(new { mensaje = "El ID del usuario es requerido" });
- }
+    return BadRequest(new { mensaje = "El ID del usuario es requerido" });
+            }
 
-     try
-  {
-    // Verificar que el usuario existe
-        var usuario = await _context.Usuarios.FindAsync(request.IdUsuario);
-    if (usuario == null)
-    {
-      return NotFound(new { mensaje = "Usuario no encontrado" });
-          }
-
-      // Crear una nueva evaluación teórica
-   var evaluacion = new Evaluacion
+            try
+ {
+           var usuario = await _context.Usuarios.FindAsync(request.IdUsuario);
+     if (usuario == null)
         {
-    IdEvaluado = request.IdUsuario,
-  FechaEvaluacion = DateOnly.FromDateTime(DateTime.Now),
-     TipoEvaluacion = true, // true = teórica
- EstadoEvaluacion = "Pendiente",
-        Nota = null // Sin calificación hasta que responda
-     };
+        return NotFound(new { mensaje = "Usuario no encontrado" });
+        }
+
+       var evaluacion = new Evaluacion
+     {
+ IdEvaluado = request.IdUsuario,
+           FechaEvaluacion = DateOnly.FromDateTime(DateTime.Now),
+  TipoEvaluacion = true,
+      EstadoEvaluacion = "Pendiente",
+      Nota = null
+  };
 
   _context.Evaluacions.Add(evaluacion);
-   await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
 
-  return Ok(new
-          {
-     mensaje = "Evaluación teórica creada exitosamente",
-    idEvaluacion = evaluacion.IdEvaluacion,
-         idUsuario = usuario.IdUsuario,
- nombreUsuario = usuario.NombreCompleto
-    });
-    }
-    catch (DbUpdateException dbEx)
-       {
- var innerMessage = dbEx.InnerException?.Message ?? "Sin detalles";
-    return StatusCode(500, new
-   {
-mensaje = "Error de base de datos al guardar",
-  error = dbEx.Message,
-   details = innerMessage
-      });
-        }
- catch (Exception ex)
-  {
-      return StatusCode(500, new
+  if (request.Preguntas != null && request.Preguntas.Count > 0)
       {
-      mensaje = "Error al crear la evaluación",
-          error = ex.Message,
-        innerException = ex.InnerException?.Message
-     });
-          }
- }
-  }
+          var preguntasValidas = request.Preguntas
+                .Where(p => !string.IsNullOrWhiteSpace(p.Texto))
+              .ToList();
 
-    /// <summary>
-    /// Modelo para crear una evaluación práctica
- /// </summary>
-public class CrearEvaluacionPracticaRequest
+           foreach (var preguntaDto in preguntasValidas)
+        {
+ var pregunta = new Pregunta
+       {
+    Texto = preguntaDto.Texto,
+                  TipoEvaluacion = true,
+    IdEvaluacion = evaluacion.IdEvaluacion
+            };
+      _context.Preguntas.Add(pregunta);
+        }
+     await _context.SaveChangesAsync();
+       }
+
+                return Ok(new
+            {
+         mensaje = "Evaluación teórica creada exitosamente",
+          idEvaluacion = evaluacion.IdEvaluacion,
+         idUsuario = usuario.IdUsuario,
+         nombreUsuario = usuario.NombreCompleto,
+      cantidadPreguntas = request.Preguntas?.Count ?? 0
+              });
+         }
+            catch (DbUpdateException dbEx)
+ {
+       var innerMessage = dbEx.InnerException?.Message ?? "Sin detalles";
+                return StatusCode(500, new
+           {
+        mensaje = "Error de base de datos al guardar",
+   error = dbEx.Message,
+     details = innerMessage
+  });
+  }
+        catch (Exception ex)
+     {
+          return StatusCode(500, new
+                {
+          mensaje = "Error al crear la evaluación",
+    error = ex.Message,
+                innerException = ex.InnerException?.Message
+    });
+       }
+        }
+    }
+
+    public class CrearEvaluacionPracticaRequest
     {
-   public int IdUsuario { get; set; }
-        public string NombreUsuario { get; set; } = string.Empty;
-     public List<TareaRequest> Tareas { get; set; } = new();
+      public int IdUsuario { get; set; }
+  public string NombreUsuario { get; set; } = string.Empty;
+   public List<TareaRequest> Tareas { get; set; } = new();
         public decimal? Puntuacion { get; set; }
+        public string? Recomendaciones { get; set; }
     }
 
-    /// <summary>
-    /// Modelo para una tarea en la evaluación práctica
-    /// </summary>
-public class TareaRequest
+    public class TareaRequest
     {
-   public int IdTarea { get; set; }
-        public string Descripcion { get; set; } = string.Empty;
-        public string? ResultadoObtenido { get; set; }
-  public bool Completada { get; set; }
-   public int? Calificacion { get; set; }
+        public int IdTarea { get; set; }
+   public string Descripcion { get; set; } = string.Empty;
+    public string? ResultadoObtenido { get; set; }
+        public bool Completada { get; set; }
+        public int? Calificacion { get; set; }
   }
 
-    /// <summary>
- /// Modelo para actualizar una evaluación
-    /// </summary>
-  public class UpdateEvaluacionRequest
+    public class UpdateEvaluacionRequest
     {
-   public string? EstadoEvaluacion { get; set; }
-      public decimal? Nota { get; set; }
+        public string? EstadoEvaluacion { get; set; }
+        public decimal? Nota { get; set; }
+        public string? Recomendaciones { get; set; }
     }
 
-    /// <summary>
-    /// Modelo para crear una evaluación teórica
-    /// </summary>
     public class CrearEvaluacionTeoricaRequest
     {
-        public int IdUsuario { get; set; }
+  public int IdUsuario { get; set; }
+public List<CrearPreguntaRequest> Preguntas { get; set; } = new();
+    }
+
+    public class CrearPreguntaRequest
+    {
+        public string Texto { get; set; } = string.Empty;
+ }
+
+    public class CalificarEvaluacionRequest
+    {
+        public decimal NotaCalificacion { get; set; }
+        public string? Recomendaciones { get; set; }
     }
 }
