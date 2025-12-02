@@ -1,89 +1,224 @@
 ﻿@page "/detalle-evaluacion/{IdEvaluacion:int}"
 @using DELTATEST.Models
-@layout MainSinLayout
+@using System.Net.Http.Json
+@inject HttpClient Http
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@layout MainSinLayout
 
-<h2 class="text-center text-orange text-uppercase mb-4">Detalle de Evaluación: Manejo de Equipos</h2>
-
-<!-- RECUADRO DE RESULTADO Y ALERTA -->
-<div class="d-flex justify-content-center mb-4">
-    <div class="card border-danger" style="max-width: 500px;">
-   <div class="card-body text-center">
-            <h5 class="card-title text-danger">Resultado: @notaObtenida / 100</h5>
-       <p class="text-muted mb-1">Fecha: 03/05/2025</p>
-       <p class="text-muted mb-1">Área: Control de Calidad</p>
-            <p class="text-muted mb-3">Evaluador: Mishale Rodríguez</p>
-     <div class="alert alert-danger text-center">
-    El promedio de aprobación es <strong>80</strong>. Tienes <strong>2 oportunidades más</strong> para repetir la prueba.
-   </div>
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center align-items-center" style="height: 100vh;">
+        <div class="text-center">
+            <div class="spinner-border text-warning mb-3" role="status"></div>
+            <p>Cargando detalles de la evaluación...</p>
         </div>
     </div>
-</div>
+}
+else if (evaluacion != null)
+{
+    <div class="container py-5" style="max-width: 900px;">
+        <!-- TÍTULO DINÁMICO -->
+        <h2 class="text-center text-uppercase mb-5" style="color: #f58220; font-weight: bold;">
+            Detalles de Evaluación
+        </h2>
 
-<!-- COMENTARIOS DEL EXAMEN PRÁCTICO -->
-<h4 class="text-center text-orange mb-3">Comentarios del Examen Práctico</h4>
+        <!-- RECUADRO DE RESULTADO -->
+        <div class="d-flex justify-content-center mb-5">
+            <div class="card border-0 shadow-lg" style="max-width: 600px; width: 100%; background: linear-gradient(135deg, #f58220 0%, #ff9c42 100%); color: white;">
+                <div class="card-body text-center p-5">
+                    <h5 class="card-title mb-4" style="font-size: 20px;">Resultado de Evaluación</h5>
+                    
+                    <div class="mb-4">
+                        <p style="font-size: 48px; font-weight: bold; margin: 0;">
+                            @(evaluacion.Nota.HasValue ? evaluacion.Nota.Value.ToString("F0") : "N/A")
+                            <span style="font-size: 24px;">/ 100</span>
+                        </p>
+                    </div>
 
-<div class="d-flex justify-content-center mb-4">
-    <div class="card shadow-sm border-0 p-3" style="max-width: 600px;">
-   <p><strong>Uso de Equipos:</strong> Falta conocimiento</p>
-   <p><strong>Normas de Seguridad:</strong> Confusión en protocolos</p>
-        <p><strong>Resolución de Fallas:</strong> No identificó causas raíz</p>
-    </div>
-</div>
+                    <hr style="background-color: rgba(255,255,255,0.3); margin: 20px 0;">
 
-<!-- BOTONES -->
-<div class="text-center mt-5">
-    <div class="btn-group gap-3">
-        @if (notaObtenida < 50)
-        {
-  <button class="btn btn-orange me-2" data-bs-toggle="modal" data-bs-target="#adminModal">
-       Repetir Evaluación
-        </button>
- }
-        <button class="btn btn-orange-outline" @onclick="VolverAlPanel">Volver al Panel</button>
-    </div>
-</div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <p style="font-size: 12px; opacity: 0.9; margin-bottom: 5px;">FECHA DE EVALUACIÓN</p>
+                            <p style="font-weight: bold; font-size: 16px;">@evaluacion.FechaEvaluacion?.ToString("dd/MM/yyyy")</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <p style="font-size: 12px; opacity: 0.9; margin-bottom: 5px;">TIPO</p>
+                            <p style="font-weight: bold; font-size: 16px;">@evaluacion.TipoEvaluacion</p>
+                        </div>
+                    </div>
 
-<!-- MODAL DE ADMINISTRADORES -->
-<div class="modal fade" id="adminModal" tabindex="-1" aria-labelledby="adminModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-   <div class="modal-content">
-      <div class="modal-header">
-          <h5 class="modal-title text-orange" id="adminModalLabel">Contacto de Administradores</h5>
- <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <p style="font-size: 12px; opacity: 0.9; margin-bottom: 5px;">ESTADO</p>
+                            <p style="font-weight: bold; font-size: 16px;">@evaluacion.EstadoEvaluacion</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <p style="font-size: 12px; opacity: 0.9; margin-bottom: 5px;">EVALUADOR</p>
+                            <p style="font-weight: bold; font-size: 16px;">@(!string.IsNullOrEmpty(evaluacion.NombreAdministrador) ? evaluacion.NombreAdministrador : "No asignado")</p>
+                        </div>
+                    </div>
+
+                    <!-- ALERTA DE ESTADO -->
+                    @if (evaluacion.Nota.HasValue)
+                    {
+                        <div class="alert @(evaluacion.Nota >= 80 ? "alert-success" : "alert-danger") mt-4 mb-0">
+                            @if (evaluacion.Nota >= 80)
+                            {
+                                <strong>✓ Evaluación Aprobada</strong><br />
+                                <small>Felicidades, has superado el promedio de aprobación.</small>
+                            }
+                            else
+                            {
+                                <strong>⚠ Evaluación Reprobada</strong><br />
+                                <small>El promedio de aprobación es 80. Tienes oportunidades adicionales para repetir.</small>
+                            }
+                        </div>
+                    }
+                </div>
             </div>
-            <div class="modal-body">
-       <ul class="list-group">
-          <li class="list-group-item">
-    <strong>Inspector - Mishale Rodriguez</strong><br />
-     78965410
-   </li>
-          <li class="list-group-item">
-  <strong>Inspector - Alex Tancara</strong><br />
-     7896450
-      </li>
-   <li class="list-group-item">
-       <strong>Inspector - Gerald Mollo</strong><br />
-               7773410
- </li>
-           </ul>
-      </div>
-            <div class="modal-footer">
-         <button type="button" class="btn btn-orange-outline" data-bs-dismiss="modal">Cerrar</button>
         </div>
+
+        <!-- INFORMACIÓN ADICIONAL -->
+        @if (!string.IsNullOrEmpty(evaluacion.NombreEvaluado))
+        {
+            <div class="card mb-4 shadow-sm border-0">
+                <div class="card-header bg-light border-0 py-3">
+                    <h5 class="mb-0" style="color: #333;">
+                        <i class="bi bi-person"></i> Información del Evaluado
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Nombre:</strong> @evaluacion.NombreEvaluado</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Cédula:</strong> @(!string.IsNullOrEmpty(evaluacion.CiEvaluado) ? evaluacion.CiEvaluado : "N/A")</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- BOTONES DE ACCIÓN -->
+        <div class="text-center mt-5">
+            <button class="btn btn-lg" style="background-color: #f58220; color: white; border: none;" @onclick="VolverAlPanel">
+                <i class="bi bi-arrow-left"></i> Volver al Panel
+            </button>
         </div>
     </div>
-</div>
+}
+else
+{
+    <div class="container py-5">
+        <div class="alert alert-danger text-center">
+            <h4>Error al cargar la evaluación</h4>
+            <p>No se encontraron los detalles de la evaluación solicitada.</p>
+            <button class="btn btn-warning" @onclick="VolverAlPanel">Volver al Panel</button>
+        </div>
+    </div>
+}
 
 @code {
-    [Parameter] public int IdEvaluacion { get; set; }
+    [Parameter] 
+    public int IdEvaluacion { get; set; }
 
-    // Datos estáticos de ejemplo
-    private int notaObtenida = 50;
+    private EvaluacionDetalle? evaluacion;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDetalleEvaluacion();
+    }
+
+    private async Task CargarDetalleEvaluacion()
+    {
+        try
+        {
+            isLoading = true;
+            
+            var response = await Http.GetAsync($"api/evaluaciones/{IdEvaluacion}");
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Response: {jsonContent}");
+                
+                evaluacion = await response.Content.ReadFromJsonAsync<EvaluacionDetalle>();
+            }
+            else
+            {
+                Console.WriteLine($"Error: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
 
     private void VolverAlPanel()
     {
- NavigationManager.NavigateTo("/usuarios/evaluaciones/1");
+        NavigationManager.NavigateTo("/", forceLoad: true);
+    }
+
+    public class EvaluacionDetalle
+    {
+        public int IdEvaluacion { get; set; }
+        public int IdEvaluado { get; set; }
+        public string? NombreEvaluado { get; set; }
+        public string? CiEvaluado { get; set; }
+        public string? NombreAdministrador { get; set; }
+        public DateOnly? FechaEvaluacion { get; set; }
+        public decimal? Nota { get; set; }
+        public string? EstadoEvaluacion { get; set; }
+        public string? TipoEvaluacion { get; set; }
     }
 }
+
+<style>
+    .alert-success {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+    }
+
+    .card {
+        border-radius: 10px;
+        transition: transform 0.2s;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+    }
+
+    .btn-lg {
+        padding: 12px 40px;
+        font-size: 16px;
+        font-weight: bold;
+        border-radius: 25px;
+        transition: all 0.3s;
+    }
+
+    .btn-lg:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(245, 130, 32, 0.3);
+    }
+
+    .btn-warning {
+        background-color: #f58220 !important;
+        color: white !important;
+    }
+</style>
 

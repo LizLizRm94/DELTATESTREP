@@ -328,70 +328,70 @@ border-color: #f58220;
     }
 
     private async Task CargarPreguntas()
- {
+    {
         try
-      {
+        {
             cargando = true;
 
-     // Obtener ID del usuario desde localStorage
-  try
-     {
-      idUsuario = await JS.InvokeAsync<int>("parseInt", await JS.InvokeAsync<string>("localStorage.getItem", "userId"));
-         }
-    catch
-  {
-        mostrarMensaje = true;
-         esError = true;
-      mensajeRespuesta = "No se pudo obtener la información del usuario";
-    return;
+            // Obtener ID del usuario desde localStorage
+            try
+            {
+                idUsuario = await JS.InvokeAsync<int>("parseInt", await JS.InvokeAsync<string>("localStorage.getItem", "userId"));
+            }
+            catch
+            {
+                mostrarMensaje = true;
+                esError = true;
+                mensajeRespuesta = "No se pudo obtener la información del usuario";
+                return;
             }
 
-      // Obtener evaluación
-        var responseEval = await Http.GetAsync($"api/evaluaciones/{IdEvaluacion}");
-  if (!responseEval.IsSuccessStatusCode)
-      {
-  mostrarMensaje = true;
-  esError = true;
-      mensajeRespuesta = "La evaluación no existe";
-         return;
+            // Obtener evaluación
+            var responseEval = await Http.GetAsync($"api/evaluaciones/{IdEvaluacion}");
+            if (!responseEval.IsSuccessStatusCode)
+            {
+                mostrarMensaje = true;
+                esError = true;
+                mensajeRespuesta = "La evaluación no existe";
+                return;
+            }
+
+            // Obtener SOLO las preguntas de esta evaluación específica
+            var responsePreguntas = await Http.GetAsync($"api/preguntas/evaluacion/{IdEvaluacion}");
+            if (responsePreguntas.IsSuccessStatusCode)
+            {
+                var preguntasData = await responsePreguntas.Content.ReadFromJsonAsync<List<Pregunta>>();
+                preguntas = preguntasData?.Select(p => new PreguntaTeorica
+                {
+                    IdPregunta = p.IdPregunta,
+                    Texto = p.Texto,
+                    Respuesta = string.Empty
+                }).ToList() ?? new List<PreguntaTeorica>();
+
+                if (preguntas.Count == 0)
+                {
+                    mostrarMensaje = true;
+                    esError = true;
+                    mensajeRespuesta = "No hay preguntas asignadas a esta evaluación";
+                }
+            }
+            else
+            {
+                mostrarMensaje = true;
+                esError = true;
+                mensajeRespuesta = $"Error al cargar preguntas: {responsePreguntas.StatusCode}";
+            }
         }
-
-   // Obtener preguntas de tipo teórico desde la BD
-       var responsePreguntas = await Http.GetAsync("api/preguntas/teoricas");
-      if (responsePreguntas.IsSuccessStatusCode)
-{
-      var preguntasData = await responsePreguntas.Content.ReadFromJsonAsync<List<Pregunta>>();
-     preguntas = preguntasData?.Select(p => new PreguntaTeorica
-              {
-  IdPregunta = p.IdPregunta,
-    Texto = p.Texto,
-        Respuesta = string.Empty
-  }).ToList() ?? new List<PreguntaTeorica>();
-
-      if (preguntas.Count == 0)
-      {
-        mostrarMensaje = true;
-     esError = true;
-           mensajeRespuesta = "No hay preguntas teóricas disponibles en la BD";
-      }
-      }
-        else
- {
-  mostrarMensaje = true;
-  esError = true;
-  mensajeRespuesta = $"Error al cargar preguntas: {responsePreguntas.StatusCode}";
-      }
-      }
         catch (Exception ex)
         {
             mostrarMensaje = true;
-    esError = true;
-      mensajeRespuesta = $"Error al cargar: {ex.Message}";
+            esError = true;
+            mensajeRespuesta = $"Error al cargar: {ex.Message}";
             Console.WriteLine($"Error: {ex.Message}");
         }
-      finally
+        finally
         {
-   cargando = false;
+            cargando = false;
         }
     }
 

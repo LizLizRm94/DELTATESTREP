@@ -362,7 +362,8 @@ public async Task<IActionResult> GetEvaluacionesPendientesCalificacion()
    .Where(e => e.TipoEvaluacion == true && 
              (e.EstadoEvaluacion == "Respondida" || 
   e.EstadoEvaluacion == "Pendiente" ||
-            e.Nota == null))
+            e.Nota == null ||
+            e.EstadoEvaluacion == "Completada"))
 .Include(e => e.IdEvaluadoNavigation)
       .Include(e => e.Respuestas)
  .Select(e => new

@@ -3,121 +3,170 @@
 @inject HttpClient Http
 @inject IJSRuntime JS
 @inject NavigationManager NavigationManager
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @layout MainSinLayout
 
-<h2 class="text-center text-orange text-uppercase mb-4">Resumen de Evaluaciones</h2>
+<div class="container-fluid d-flex justify-content-center align-items-center min-vh-100 bg-light">
+    <div class="w-100" style="max-width: 1200px; padding: 30px 20px;">
+        <h3 class="fw-bold text-center mb-2 text-dark">Panel de Usuario</h3>
 
-<div class="row">
-    <div class="col-md-6">
-        <h4 class="text-orange text-center mb-3">Evaluaciones Prácticas</h4>
-        <table class="table table-bordered table-hover">
-            <thead class="table-light">
-                <tr>
-                    <th class="text-center">Puntaje</th>
-                    <th class="text-center">Fecha</th>
-                    <th class="text-center">Detalles</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (evaluacionesPracticas != null && evaluacionesPracticas.Count > 0)
-                {
-                    @foreach (var eval in evaluacionesPracticas)
-                    {
-                        <tr>
-                            <td class="text-center"><strong>@eval.NotaPractica / 100</strong></td>
-                            <td class="text-center">@eval.FechaEvaluacion?.ToString("dd/MM/yyyy")</td>
-                            <td class="text-center">
-                                <button class="btn btn-sm btn-orange" @onclick="() => VerDetallePractica(eval.IdEvaluacion)" title="Ver detalles de la evaluación">
-                                    <i class="bi bi-eye"></i> Ver Detalles
-                                </button>
-                            </td>
-                        </tr>
-                    }
-                }
-                else
-                {
-                    <tr>
-                        <td colspan="3" class="text-center text-danger py-4">
-                            <em><strong>Aun no realizó la prueba práctica</strong></em>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-    <div class="col-md-6">
-        <h4 class="text-orange text-center mb-3">Evaluaciones Teóricas</h4>
-        <table class="table table-bordered table-hover">
-            <thead class="table-light">
-                <tr>
-                    <th class="text-center">Fecha</th>
-                    <th class="text-center">Puntaje</th>
-                    <th class="text-center">Detalles</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (evaluacionesTeorica != null && evaluacionesTeorica.Count > 0)
-                {
-                    @foreach (var eval in evaluacionesTeorica)
-                    {
-                        <tr>
-                            <td class="text-center">@eval.FechaEvaluacion?.ToString("dd/MM/yyyy")</td>
-                            <td class="text-center">
-                                <strong>
-                                    @(eval.Nota.HasValue ? eval.Nota.Value.ToString("F0") : "Sin responder") / 100
-                                </strong>
-                            </td>
-                            <td class="text-center">
-                                @if (eval.Nota.HasValue)
-                                {
-                                    <button class="btn btn-sm btn-orange" @onclick="() => VerDetalleTeorica(eval.IdEvaluacion)" title="Ver detalles de la evaluación">
-                                        <i class="bi bi-eye"></i> Ver Detalles
-                                    </button>
-                                }
-                                else if (eval.EstadoEvaluacion == "Respondida")
-                                {
-                                    <span class="badge bg-warning text-dark">Pendiente Calificación</span>
-                                }
-                                else
-                                {
-                                    <button class="btn btn-sm btn-orange" @onclick="() => ResponderEvaluacion(eval.IdEvaluacion)" title="Responder la evaluación">
-                                        <i class="bi bi-pencil"></i> Responder
-                                    </button>
-                                }
-                            </td>
-                        </tr>
-                    }
-                }
-                else
-                {
-                    <tr>
-                        <td colspan="3" class="text-center text-muted py-4">
-                            <em>Sin evaluaciones teóricas registradas</em>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        <!-- EVALUACIONES TABLAS -->
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-warning text-dark fw-bold py-3">
+                        <i class="bi bi-hammer"></i> Evaluaciones Prácticas
+                    </div>
+                    <div class="card-body p-0">
+                        @if (evaluacionesPracticas != null && evaluacionesPracticas.Count > 0)
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="text-center">Puntaje</th>
+                                            <th class="text-center">Fecha</th>
+                                            <th class="text-center">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var eval in evaluacionesPracticas)
+                                        {
+                                            <tr>
+                                                <td class="text-center"><strong class="text-warning">@eval.NotaPractica?.ToString("F0") / 100</strong></td>
+                                                <td class="text-center">@eval.FechaEvaluacion?.ToString("dd/MM/yyyy")</td>
+                                                <td class="text-center">
+                                                    <button class="btn btn-sm btn-warning" @onclick="() => VerDetallePractica(eval.IdEvaluacion)" title="Ver detalles">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="p-4 text-center text-muted">
+                                <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                                <p class="mt-2">Aún no realizó prueba práctica</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-info text-white fw-bold py-3">
+                        <i class="bi bi-book"></i> Evaluaciones Teóricas
+                    </div>
+                    <div class="card-body p-0">
+                        @if (evaluacionesTeorica != null && evaluacionesTeorica.Count > 0)
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="text-center">Fecha</th>
+                                            <th class="text-center">Puntaje</th>
+                                            <th class="text-center">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var eval in evaluacionesTeorica)
+                                        {
+                                            <tr>
+                                                <td class="text-center">@eval.FechaEvaluacion?.ToString("dd/MM/yyyy")</td>
+                                                <td class="text-center">
+                                                    @if (eval.Nota.HasValue)
+                                                    {
+                                                        <strong class="text-info">@eval.Nota.Value.ToString("F0") / 100</strong>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">Sin responder</span>
+                                                    }
+                                                </td>
+                                                <td class="text-center">
+                                                    @if (eval.Nota.HasValue)
+                                                    {
+                                                        <button class="btn btn-sm btn-info" @onclick="() => VerDetalleTeorica(eval.IdEvaluacion)" title="Ver detalles">
+                                                            <i class="bi bi-eye"></i>
+                                                        </button>
+                                                    }
+                                                    else if (eval.EstadoEvaluacion == "Respondida")
+                                                    {
+                                                        <span class="badge bg-warning text-dark">Pendiente</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <button class="btn btn-sm btn-info" @onclick="() => ResponderEvaluacion(eval.IdEvaluacion)" title="Responder">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </button>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="p-4 text-center text-muted">
+                                <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                                <p class="mt-2">Sin evaluaciones teóricas</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTÓN VOLVER -->
+        <div class="text-center mt-4">
+            <button class="btn btn-secondary" @onclick="IrAtras">
+                <i class="bi bi-arrow-left"></i> Volver
+            </button>
+        </div>
     </div>
 </div>
 
 @code {
-    [Parameter] public int IdUsuario { get; set; }
+    [Parameter] 
+    public int IdUsuario { get; set; }
 
     private List<EvaluacionPractica>? evaluacionesPracticas;
     private List<EvaluacionTeoricaResumen>? evaluacionesTeorica;
-    private bool cargando = true;
+    private string? nombreUsuario;
+    private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
+        await CargarNombreUsuario();
         await CargarEvaluaciones();
+    }
+
+    private async Task CargarNombreUsuario()
+    {
+        try
+        {
+            nombreUsuario = await LocalStorage.GetItemAsync<string>("userName");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar nombre: {ex.Message}");
+            nombreUsuario = "Usuario";
+        }
     }
 
     private async Task CargarEvaluaciones()
     {
         try
         {
-            cargando = true;
+            isLoading = true;
 
             // Obtener evaluaciones prácticas
             try
@@ -129,13 +178,12 @@
                 }
                 else
                 {
-                    Console.WriteLine($"Error prácticas: {responsePractica.StatusCode}");
                     evaluacionesPracticas = new List<EvaluacionPractica>();
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error cargando evaluaciones prácticas: {ex.Message}");
+                Console.WriteLine($"Error prácticas: {ex.Message}");
                 evaluacionesPracticas = new List<EvaluacionPractica>();
             }
 
@@ -146,24 +194,22 @@
                 if (responseTeoria.IsSuccessStatusCode)
                 {
                     var todasLasEvaluaciones = await responseTeoria.Content.ReadFromJsonAsync<List<EvaluacionTeoricaResumen>>();
-                    // Mostrar todas las evaluaciones teóricas del usuario (con o sin calificación)
                     evaluacionesTeorica = todasLasEvaluaciones ?? new List<EvaluacionTeoricaResumen>();
                 }
                 else
                 {
-                    Console.WriteLine($"Error teóricas: {responseTeoria.StatusCode}");
                     evaluacionesTeorica = new List<EvaluacionTeoricaResumen>();
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error cargando evaluaciones teóricas: {ex.Message}");
+                Console.WriteLine($"Error teóricas: {ex.Message}");
                 evaluacionesTeorica = new List<EvaluacionTeoricaResumen>();
             }
         }
         finally
         {
-            cargando = false;
+            isLoading = false;
         }
     }
 
@@ -182,6 +228,11 @@
         NavigationManager.NavigateTo($"/responder-evaluacion-teorica/{idEvaluacion}");
     }
 
+    private void IrAtras()
+    {
+        NavigationManager.NavigateTo($"/estado/{IdUsuario}");
+    }
+
     public class EvaluacionPractica
     {
         public int IdEvaluacion { get; set; }
@@ -196,24 +247,58 @@
         public decimal? Nota { get; set; }
         public string? EstadoEvaluacion { get; set; }
         public int CantidadPreguntas { get; set; }
+        public string? TipoEvaluacion { get; set; }
     }
 }
 
 <style>
+    .min-vh-100 {
+        min-height: 100vh;
+    }
+
     .table-hover tbody tr:hover {
         background-color: #f8f9fa;
     }
 
-    .btn-orange {
+    .btn-warning {
         background-color: #f58220;
+        border-color: #f58220;
         color: white;
-        border: none;
-        transition: all 0.3s ease;
     }
 
-    .btn-orange:hover {
+    .btn-warning:hover {
         background-color: #e67e1a;
         transform: translateY(-2px);
         box-shadow: 0 2px 8px rgba(245, 130, 32, 0.3);
+    }
+
+    .btn-info:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(23, 162, 184, 0.3);
+    }
+
+    .card-header {
+        border-bottom: 3px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .bg-warning {
+        background-color: #f58220 !important;
+    }
+
+    .text-warning {
+        color: #f58220 !important;
+    }
+
+    .nota-grande {
+        animation: pulse 2s infinite;
+    }
+
+    @@keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.8;
+        }
     }
 </style>
