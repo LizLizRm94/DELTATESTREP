@@ -7,14 +7,14 @@
     <div class="p-5 w-75">
    <h3 class="fw-bold text-center mb-2 text-dark">Panel de Control de Administrador</h3>
 
-        <!-- Greeting -->
-        @if (isLoading)
+   <!-- Greeting -->
+  @if (isLoading)
         {
-            <p class="text-center text-muted mb-4">Cargando...</p>
-        }
+    <p class="text-center text-muted mb-4">Cargando...</p>
+    }
         else
         {
-            <p class="text-center text-dark mb-4 h5">Bienvenido @(!string.IsNullOrWhiteSpace(userName) ? userName : "Administrador")</p>
+      <p class="text-center text-dark mb-4 h5">Bienvenido @(!string.IsNullOrWhiteSpace(userName) ? userName : "Administrador")</p>
         }
 
         <!-- FILA SUPERIOR -->
@@ -88,17 +88,17 @@
     .dashboard-card {
         cursor: pointer;
      transition: transform 0.2s, box-shadow 0.2s;
-     border-radius: 15px;
-    }
+   border-radius: 15px;
+ }
 
         .dashboard-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+       box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
         }
 
-    .icon-circle {
+  .icon-circle {
         width: 80px;
-        height: 80px;
+     height: 80px;
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -108,7 +108,7 @@
     .icon-img {
         width: 50%;
    height: 50%;
-        object-fit: contain;
+      object-fit: contain;
     }
 </style>
 

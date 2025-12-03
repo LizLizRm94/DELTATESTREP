@@ -114,43 +114,33 @@ return Ok(new
     {
         try
         {
-            // Primero, intentar obtener preguntas por respuestas existentes
-            var preguntasConRespuestas = await _context.Preguntas
-                .Where(p => p.TipoEvaluacion == true &&
-                           p.Respuestas.Any(r => r.IdEvaluacion == idEvaluacion))
-                .OrderBy(p => p.IdPregunta)
-                .ToListAsync();
+       // Obtener preguntas directamente asociadas a esta evaluación
+       var preguntas = await _context.Preguntas
+      .Where(p => p.IdEvaluacion == idEvaluacion)
+    .OrderBy(p => p.IdPregunta)
+       .Select(p => new
+      {
+     p.IdPregunta,
+ p.Texto,
+  p.TipoEvaluacion,
+   p.Opciones,
+       p.RespuestaCorrectaIndex,
+            p.Puntos
+      })
+        .ToListAsync();
 
-            if (preguntasConRespuestas.Count > 0)
-            {
-                return Ok(preguntasConRespuestas);
-            }
+     if (preguntas.Count == 0)
+   {
+    return NotFound(new { mensaje = "No hay preguntas para esta evaluación" });
+   }
 
-            // Si no hay respuestas, obtener la evaluación
-            var evaluacion = await _context.Evaluacions
-                .Include(e => e.Respuestas)
-                .FirstOrDefaultAsync(e => e.IdEvaluacion == idEvaluacion);
-
-            if (evaluacion == null)
-            {
-                return NotFound(new { mensaje = "Evaluación no encontrada" });
-            }
-
-            // Las 10 preguntas teóricas más recientes (creadas después de la evaluación)
-            // Esto asume que las preguntas se crean justo antes de la evaluación
-            var preguntasRecientes = await _context.Preguntas
-                .Where(p => p.TipoEvaluacion == true)
-                .OrderByDescending(p => p.IdPregunta)
-                .Take(10)
-                .OrderBy(p => p.IdPregunta)
-                .ToListAsync();
-
-            return Ok(preguntasRecientes);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { mensaje = "Error al obtener las preguntas de la evaluación", error = ex.Message });
-        }
+        return Ok(preguntas);
+  }
+      catch (Exception ex)
+    {
+   Console.WriteLine($"Error en GetPreguntasPorEvaluacion: {ex.Message}");
+   return StatusCode(500, new { mensaje = "Error al obtener las preguntas de la evaluación", error = ex.Message });
+     }
     }
 
   /// <summary>

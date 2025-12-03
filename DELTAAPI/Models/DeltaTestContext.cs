@@ -259,6 +259,14 @@ public partial class DeltaTestContext : DbContext
                 .HasColumnName("texto");
             entity.Property(e => e.TipoEvaluacion).HasColumnName("tipo_evaluacion");
             entity.Property(e => e.IdEvaluacion).HasColumnName("id_evaluacion");
+            entity.Property(e => e.Opciones)
+                .HasColumnType("nvarchar(max)")
+                .HasColumnName("opciones");
+            entity.Property(e => e.RespuestaCorrectaIndex)
+                .HasColumnName("respuesta_correcta_index");
+            entity.Property(e => e.Puntos)
+                .HasColumnName("puntos")
+                .HasDefaultValue(0);
 
             entity.HasOne(d => d.IdEvaluacionNavigation).WithMany(p => p.Preguntas)
                 .HasForeignKey(d => d.IdEvaluacion)

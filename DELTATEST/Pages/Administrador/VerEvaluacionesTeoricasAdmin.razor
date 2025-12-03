@@ -5,164 +5,188 @@
 @inject NavigationManager NavigationManager
 @layout MainSinLayout
 
-<div class="container-admin mt-5">
+  <div class="container-admin mt-5">
     <h2 class="text-orange text-center text-uppercase mb-4">Evaluaciones Teóricas - Panel de Admin</h2>
 
     @if (cargando)
     {
-        <div class="text-center">
-          <div class="spinner-border text-orange" role="status">
-    <span class="visually-hidden">Cargando...</span>
-   </div>
-        </div>
+      <div class="text-center">
+            <div class="spinner-border text-orange" role="status">
+            <span class="visually-hidden">Cargando...</span>
+      </div>
+      </div>
     }
     else if (evaluacionesPendientes == null || evaluacionesPendientes.Count == 0)
     {
-    <div class="alert alert-info text-center">
+        <div class="alert alert-info text-center">
             No hay evaluaciones teóricas pendientes de calificación.
         </div>
     }
     else
-{
-        <div class="row">
-   <div class="col-md-4">
-      <h5 class="text-orange mb-3">Evaluaciones Pendientes</h5>
-       <div class="list-group">
-   @foreach (var eval in evaluacionesPendientes)
-         {
-     <button type="button" 
- class="list-group-item list-group-item-action @(evalSeleccionada?.IdEvaluacion == eval.IdEvaluacion ? "active" : "")"
-         @onclick="() => SeleccionarEvaluacion(eval)">
-   <div class="d-flex justify-content-between align-items-start">
-    <div>
-              <h6 class="mb-1">@eval.NombreUsuario</h6>
-    <small class="text-muted">@eval.FechaEvaluacion?.ToString("dd/MM/yyyy")</small>
-         </div>
-             <span class="badge bg-warning text-dark">Pendiente</span>
-   </div>
-         </button>
-      }
-         </div>
-     </div>
-
-  <div class="col-md-8">
-           @if (evalSeleccionada != null)
     {
-        <div class="card shadow-sm">
-              <div class="card-header bg-orange text-white">
-         <h5 class="mb-0">Calificar: @evalSeleccionada.NombreUsuario</h5>
-           </div>
-     <div class="card-body">
-    <!-- PREGUNTAS Y RESPUESTAS -->
-   <h6 class="text-orange mb-3">Preguntas y Respuestas</h6>
-       @if (preguntasRespuestas != null && preguntasRespuestas.Count > 0)
-        {
+      <div class="row">
+          <div class="col-md-4">
+              <h5 class="text-orange mb-3">Evaluaciones Pendientes</h5>
+             <div class="list-group">
+               @foreach (var eval in evaluacionesPendientes)
+               {
+               <button type="button" 
+                 class="list-group-item list-group-item-action @(evalSeleccionada?.IdEvaluacion == eval.IdEvaluacion ? "active" : "")"
+                 @onclick="() => SeleccionarEvaluacion(eval)">
+                  <div class="d-flex justify-content-between align-items-start">
+                     <div>
+                        <h6 class="mb-1">@eval.NombreUsuario</h6>
+                        <small class="text-muted">@eval.FechaEvaluacion?.ToString("dd/MM/yyyy")</small>
+                     </div>
+                     <span class="badge bg-warning text-dark">Pendiente</span>
+                  </div>
+               </button>
+               }
+             </div>
+          </div>
+
+      <div class="col-md-8">
+      @if (evalSeleccionada != null)
+      {
+         <div class="card shadow-sm">
+            <div class="card-header bg-orange text-white">
+               <h5 class="mb-0">Calificar: @evalSeleccionada.NombreUsuario</h5>
+            </div>
+         <div class="card-body">
+           <!-- PREGUNTAS Y RESPUESTAS -->
+         <h6 class="text-orange mb-3">Preguntas y Respuestas</h6>
+         @if (preguntasRespuestas != null && preguntasRespuestas.Count > 0)
+         {
          @foreach (var item in preguntasRespuestas)
+         {
+            <div class="mb-4 p-3 bg-light rounded @(item.EsOpcionMultiple && !item.RespuestaEsCorrecta ? "border-danger" : item.EsOpcionMultiple && item.RespuestaEsCorrecta ? "border-success" : "")">
+                <div class="mb-2">
+                   <strong class="text-orange">Pregunta:</strong>
+                   <p class="mb-0">@item.Pregunta</p>
+                </div>
+            <div class="mb-3">
+            <strong class="text-orange">@(item.EsOpcionMultiple ? "Respuesta Seleccionada:" : "Respuesta:")</strong>
+            <p class="mb-0 bg-white p-2 rounded @(item.EsOpcionMultiple && !item.RespuestaEsCorrecta ? "text-danger" : item.EsOpcionMultiple && item.RespuestaEsCorrecta ? "text-success fw-bold" : "")">
+            @if (item.EsOpcionMultiple && !item.RespuestaEsCorrecta)
             {
-    <div class="mb-4 p-3 bg-light rounded">
-      <div class="mb-2">
-    <strong class="text-orange">Pregunta:</strong>
-             <p class="mb-0">@item.Pregunta</p>
-               </div>
-   <div>
-     <strong class="text-orange">Respuesta:</strong>
-         <p class="mb-0 bg-white p-2 rounded">@item.Respuesta</p>
-  </div>
-           </div>
-         }
-     }
-          else
-   {
-          <div class="alert alert-info">No hay respuestas disponibles.</div>
-  }
-
-       <!-- CALIFICACIÓN GLOBAL -->
-          <hr />
-     <div class="form-group mt-4">
-  <label for="calificacionGlobal" class="form-label fw-bold text-orange">Calificación Global (0-100)</label>
-     <div class="input-group">
-      <input type="number" 
-    class="form-control form-control-lg" 
-       id="calificacionGlobal"
-  @bind="calificacionGlobal" 
-     min="0" 
-          max="100"
-    placeholder="Ingrese calificación">
-      <span class="input-group-text fw-bold">/100</span>
-         </div>
-    </div>
-
-       <!-- COMENTARIOS / RECOMENDACIONES -->
-     <div class="form-group mt-3">
-          <label for="comentarios" class="form-label fw-bold text-orange">Recomendaciones para Mejorar</label>
-     <textarea class="form-control" 
-   id="comentarios"
-         @bind="comentarios" 
-      rows="4"
-      placeholder="Ingrese sus recomendaciones y observaciones para que el evaluado pueda mejorar..."></textarea>
-               </div>
-
-               <!-- BOTONES -->
-       <div class="d-flex gap-2 justify-content-end mt-4">
-        <button type="button" class="btn btn-secondary" @onclick="LimpiarSeleccion">
-        Cancelar
-      </button>
-           <button type="button" 
-                class="btn btn-orange" 
-    @onclick="GuardarCalificacion"
-       disabled="@(cargandoGuardar || calificacionGlobal < 0 || calificacionGlobal > 100)">
-          @if (cargandoGuardar)
- {
-         <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-        <span>Guardando...</span>
+              <span class="badge bg-danger me-2">? Incorrecta</span>
             }
-       else
-     {
-       <span>Guardar Calificación</span>
-      }
-        </button>
+            else if (item.EsOpcionMultiple && item.RespuestaEsCorrecta)
+            {
+                <span class="badge bg-success me-2">? Correcta</span>
+            }
+            @((MarkupString)item.Respuesta.Replace("\n", "<br/>"))
+        </p>
+       </div>
+       <div class="row">
+       <div class="col-md-6">
+            <label class="form-label fw-bold text-orange">Puntos para esta pregunta:</label>
+            <div class="input-group">
+             <input type="number" 
+              class="form-control" 
+              @bind="item.Puntos"
+              min="0"
+              placeholder="0"
+              readonly>
+              <span class="input-group-text">pts</span>
+            </div>
+        </div>
+        </div>
+        </div>
+             }
+         }
+            else
+                {
+ <div class="alert alert-info">No hay respuestas disponibles.</div>
+   }
+
+          <!-- CALIFICACIÓN GLOBAL -->
+      <hr />
+       <div class="form-group mt-4">
+         <label for="calificacionGlobal" class="form-label fw-bold text-orange">Calificación Global (0-100)</label>
+       <div class="input-group">
+         <input type="number" 
+                 class="form-control form-control-lg" 
+       id="calificacionGlobal"
+     @bind="calificacionGlobal" 
+      min="0" 
+  max="100"
+      placeholder="Ingrese calificación">
+         <span class="input-group-text fw-bold">/100</span>
     </div>
  </div>
-       </div>
+
+           <!-- COMENTARIOS / RECOMENDACIONES -->
+    <div class="form-group mt-3">
+      <label for="comentarios" class="form-label fw-bold text-orange">Recomendaciones para Mejorar</label>
+        <textarea class="form-control" 
+       id="comentarios"
+    @bind="comentarios" 
+ rows="4"
+      placeholder="Ingrese sus recomendaciones y observaciones para que el evaluado pueda mejorar..."></textarea>
+ </div>
+
+ <!-- BOTONES -->
+      <div class="d-flex gap-2 justify-content-end mt-4">
+  <button type="button" class="btn btn-secondary" @onclick="LimpiarSeleccion">
+  Cancelar
+                 </button>
+  <button type="button" 
+     class="btn btn-orange" 
+              @onclick="GuardarCalificacion"
+      disabled="@(cargandoGuardar || calificacionGlobal < 0 || calificacionGlobal > 100)">
+          @if (cargandoGuardar)
+  {
+      <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+  <span>Guardando...</span>
+     }
+      else
+    {
+         <span>Guardar Calificación</span>
        }
-     </div>
-        </div>
+     </button>
+           </div>
+           </div>
+                  </div>
+      }
+    </div>
+   </div>
     }
 
-    @if (mensajeMostrar)
- {
-        <div class="alert alert-@(esError ? "danger" : "success") alert-dismissible fade show mt-4" role="alert">
-            @mensajeRespuesta
-            <button type="button" class="btn-close" @onclick="CerrarMensaje"></button>
+  @if (mensajeMostrar)
+    {
+   <div class="alert alert-@(esError ? "danger" : "success") alert-dismissible fade show mt-4" role="alert">
+        @mensajeRespuesta
+       <button type="button" class="btn-close" @onclick="CerrarMensaje"></button>
         </div>
     }
 </div>
 
 <style>
     .container-admin {
-   max-width: 1200px;
+        max-width: 1200px;
         margin: 0 auto;
         padding: 20px;
     }
 
     .text-orange {
-     color: #f58220;
+        color: #f58220;
     }
 
     .bg-orange {
-        background-color: #f58220;
+     background-color: #f58220;
     }
 
     .btn-orange {
         background-color: #f58220;
-    border-color: #f58220;
-    color: white;
+        border-color: #f58220;
+     color: white;
     }
 
     .btn-orange:hover {
- background-color: #e67e1a;
-        border-color: #e67e1a;
-        color: white;
+        background-color: #e67e1a;
+   border-color: #e67e1a;
+     color: white;
     }
 
     .btn-orange:disabled {
@@ -178,13 +202,38 @@
 
     .form-control:focus {
         border-color: #f58220;
-  box-shadow: 0 0 0 0.2rem rgba(245, 130, 32, 0.25);
+        box-shadow: 0 0 0 0.2rem rgba(245, 130, 32, 0.25);
+    }
+
+    /* Estilos para respuestas de opción múltiple */
+  .border-danger {
+        border: 2px solid #dc3545 !important;
+    }
+
+    .border-success {
+        border: 2px solid #28a745 !important;
+    }
+
+    .bg-light.border-danger {
+        background-color: #f8d7da !important;
+    }
+
+    .bg-light.border-success {
+        background-color: #d4edda !important;
+    }
+
+    .text-danger {
+        color: #dc3545;
+    }
+
+    .text-success {
+        color: #28a745;
     }
 </style>
 
 @code {
     private List<EvaluacionTeoricaAdmin>? evaluacionesPendientes;
-  private EvaluacionTeoricaAdmin? evalSeleccionada;
+    private EvaluacionTeoricaAdmin? evalSeleccionada;
     private List<PreguntaRespuesta>? preguntasRespuestas;
     private int calificacionGlobal = 0;
     private string comentarios = string.Empty;
@@ -194,189 +243,291 @@
     private bool esError = false;
     private string mensajeRespuesta = string.Empty;
 
-protected override async Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
-      await CargarEvaluacionesPendientes();
+        await CargarEvaluacionesPendientes();
     }
 
     private async Task CargarEvaluacionesPendientes()
     {
-   try
-        {
-            cargando = true;
+        try
+    {
+  cargando = true;
             var response = await Http.GetAsync("api/evaluacionesteoricass/pendientes");
 
             if (response.IsSuccessStatusCode)
-     {
-      var contenido = await response.Content.ReadAsStringAsync();
-    var todas = System.Text.Json.JsonSerializer.Deserialize<List<Dictionary<string, object>>>(contenido);
+      {
+ var contenido = await response.Content.ReadAsStringAsync();
+  var todas = System.Text.Json.JsonSerializer.Deserialize<List<Dictionary<string, object>>>(contenido);
 
-     evaluacionesPendientes = new List<EvaluacionTeoricaAdmin>();
+   evaluacionesPendientes = new List<EvaluacionTeoricaAdmin>();
 
-       if (todas != null && todas.Count > 0)
+  if (todas != null && todas.Count > 0)
+      {
+           foreach (var eval in todas)
+            {
+   try
        {
-      foreach (var eval in todas)
-   {
-        try
-       {
-  int idEval = 0;
-   int idEvaluado = 0;
-    bool tieneRespuestas = false;
+           int idEval = 0;
+      int idEvaluado = 0;
+             bool tieneRespuestas = false;
 
-               if (eval.ContainsKey("idEvaluacion") && eval["idEvaluacion"] is JsonElement je1)
-                  {
-    idEval = je1.GetInt32();
+       if (eval.ContainsKey("idEvaluacion") && eval["idEvaluacion"] is JsonElement je1)
+  {
+           idEval = je1.GetInt32();
+       }
+
+       if (eval.ContainsKey("idEvaluado") && eval["idEvaluado"] is JsonElement je2)
+      {
+                idEvaluado = je2.GetInt32();
+                     }
+
+                if (eval.ContainsKey("tieneRespuestas") && eval["tieneRespuestas"] is JsonElement je3)
+       {
+tieneRespuestas = je3.GetBoolean();
   }
 
-        if (eval.ContainsKey("idEvaluado") && eval["idEvaluado"] is JsonElement je2)
-      {
-     idEvaluado = je2.GetInt32();
-          }
+    var nombreEvaluado = eval.ContainsKey("nombreEvaluado") ? eval["nombreEvaluado"]?.ToString() ?? "Desconocido" : "Desconocido";
+     var estado = eval.ContainsKey("estadoEvaluacion") ? eval["estadoEvaluacion"]?.ToString() ?? "" : "";
 
-  if (eval.ContainsKey("tieneRespuestas") && eval["tieneRespuestas"] is JsonElement je3)
+          if (idEval > 0 && idEvaluado > 0)
         {
-       tieneRespuestas = je3.GetBoolean();
-              }
-
-         var nombreEvaluado = eval.ContainsKey("nombreEvaluado") ? eval["nombreEvaluado"]?.ToString() ?? "Desconocido" : "Desconocido";
-          var estado = eval.ContainsKey("estadoEvaluacion") ? eval["estadoEvaluacion"]?.ToString() ?? "" : "";
-
-                if (idEval > 0 && idEvaluado > 0)
-    {
-         var fechaObj = eval.ContainsKey("fechaEvaluacion") ? eval["fechaEvaluacion"] : null;
-          DateOnly? fecha = null;
-         if (fechaObj != null)
-          {
-               try
-          {
-    fecha = DateOnly.Parse(fechaObj.ToString());
-              }
-     catch { }
-     }
-
-       evaluacionesPendientes.Add(new EvaluacionTeoricaAdmin
-            {
-     IdEvaluacion = idEval,
-    IdEvaluado = idEvaluado,
-      NombreUsuario = nombreEvaluado,
-      FechaEvaluacion = fecha,
-      Estado = estado
-         });
+      var fechaObj = eval.ContainsKey("fechaEvaluacion") ? eval["fechaEvaluacion"] : null;
+             DateOnly? fecha = null;
+      if (fechaObj != null)
+         {
+     try
+      {
+          fecha = DateOnly.Parse(fechaObj.ToString());
           }
- }
-   catch { }
+       catch { }
+               }
+
+  evaluacionesPendientes.Add(new EvaluacionTeoricaAdmin
+     {
+              IdEvaluacion = idEval,
+            IdEvaluado = idEvaluado,
+                NombreUsuario = nombreEvaluado,
+       FechaEvaluacion = fecha,
+            Estado = estado
+           });
+                }
+           }
+     catch { }
          }
          }
-     }
-      }
+       }
+   }
         catch (Exception ex)
         {
-   Console.WriteLine($"Error: {ex.Message}");
-     }
+            Console.WriteLine($"Error: {ex.Message}");
+        }
         finally
-  {
-            cargando = false;
-  }
+        {
+    cargando = false;
+    }
     }
 
     private async Task SeleccionarEvaluacion(EvaluacionTeoricaAdmin eval)
-    {
+  {
         evalSeleccionada = eval;
-        calificacionGlobal = 0;
-        comentarios = string.Empty;
-        preguntasRespuestas = new List<PreguntaRespuesta>();
+calificacionGlobal = 0;
+  comentarios = string.Empty;
+    preguntasRespuestas = new List<PreguntaRespuesta>();
 
         try
         {
-            var response = await Http.GetAsync($"api/evaluacionesteoricass/respuestas/{eval.IdEvaluado}/{eval.IdEvaluacion}");
-            if (response.IsSuccessStatusCode)
-    {
-         var contenido = await response.Content.ReadAsStringAsync();
-    var respuestas = System.Text.Json.JsonSerializer.Deserialize<List<Dictionary<string, object>>>(contenido);
-       if (respuestas != null)
-   {
-        foreach (var resp in respuestas)
-          {
-         var pregunta = resp.ContainsKey("pregunta") ? resp["pregunta"]?.ToString() ?? "Sin pregunta" : "Sin pregunta";
-             var textoRespuesta = resp.ContainsKey("textoRespuesta") ? resp["textoRespuesta"]?.ToString() ?? "Sin respuesta" : "Sin respuesta";
+            Console.WriteLine($"Cargando evaluación {eval.IdEvaluacion}");
+    var response = await Http.GetAsync($"api/evaluacionesteoricass/calificar/{eval.IdEvaluacion}");
+            Console.WriteLine($"Response status: {response.StatusCode}");
 
-       preguntasRespuestas.Add(new PreguntaRespuesta
-   {
-          Pregunta = pregunta,
-                 Respuesta = textoRespuesta
-                   });
-         }
-        }
-      }
-            else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            if (response.IsSuccessStatusCode)
             {
-                // Evaluación sin respuestas aún - esto es normal para evaluaciones recién creadas
-                preguntasRespuestas = new List<PreguntaRespuesta>();
-                MostrarMensaje("Esta evaluación no tiene respuestas registradas aún. El usuario debe responderla primero.", false);
+   var contenido = await response.Content.ReadAsStringAsync();
+      Console.WriteLine($"Contenido recibido: {contenido}");
+
+    var evaluacionCompleta = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(contenido);
+
+  if (evaluacionCompleta != null && evaluacionCompleta.ContainsKey("preguntas"))
+       {
+    Console.WriteLine($"Se encontraron preguntas");
+        var preguntasJson = evaluacionCompleta["preguntas"];
+         if (preguntasJson is JsonElement je)
+     {
+   Console.WriteLine($"Preguntas JSON: {je.GetRawText()}");
+        var preguntas = System.Text.Json.JsonSerializer.Deserialize<List<Dictionary<string, object>>>(je.GetRawText());
+       if (preguntas != null)
+        {
+               Console.WriteLine($"Total preguntas: {preguntas.Count}");
+              preguntasRespuestas = new List<PreguntaRespuesta>();
+           foreach (var preg in preguntas)
+  {
+         var pregunta = preg.ContainsKey("pregunta") ? preg["pregunta"]?.ToString() ?? "Sin pregunta" : "Sin pregunta";
+     var respuestaTexto = preg.ContainsKey("respuesta") ? preg["respuesta"]?.ToString() ?? "Sin respuesta" : "Sin respuesta";
+   Console.WriteLine($"Pregunta: {pregunta}, Respuesta: {respuestaTexto}");
+
+      var tipoEvaluacion = false;
+         var opciones = "";
+    var respuestaCorrectaIndex = -1;
+var puntos = 0;
+
+     // Obtener tipo de evaluación
+            if (preg.ContainsKey("tipoEvaluacion") && preg["tipoEvaluacion"] is JsonElement jeTipo)
+       {
+        tipoEvaluacion = jeTipo.GetBoolean();
+          }
+
+    // Obtener opciones (para opción múltiple)
+     if (preg.ContainsKey("opciones") && preg["opciones"] != null)
+        {
+opciones = preg["opciones"].ToString() ?? "";
+        }
+
+   // Obtener índice de respuesta correcta
+         if (preg.ContainsKey("respuestaCorrectaIndex") && preg["respuestaCorrectaIndex"] is JsonElement jeCorrecta)
+        {
+       respuestaCorrectaIndex = jeCorrecta.GetInt32();
+    }
+
+// Obtener puntos
+   if (preg.ContainsKey("puntos") && preg["puntos"] is JsonElement jePuntos)
+  {
+    puntos = jePuntos.GetInt32();
+      }
+
+   // Procesar la respuesta según el tipo
+ string respuestaFormateada = respuestaTexto;
+
+       // Si es opción múltiple, resolver qué opción seleccionó el usuario
+    if (!tipoEvaluacion && !string.IsNullOrEmpty(opciones) && int.TryParse(respuestaTexto, out int indiceSeleccionado))
+   {
+       try
+  {
+    var opcionesLista = System.Text.Json.JsonSerializer.Deserialize<List<Dictionary<string, object>>>(opciones);
+  if (opcionesLista != null && indiceSeleccionado >= 0 && indiceSeleccionado < opcionesLista.Count)
+       {
+     var opcionSeleccionada = opcionesLista[indiceSeleccionado];
+var textoOpcion = opcionSeleccionada.ContainsKey("texto") ? opcionSeleccionada["texto"]?.ToString() ?? "" : "";
+      respuestaFormateada = $"{(char)('A' + indiceSeleccionado)}. {textoOpcion}";
+
+  // Si hay respuesta correcta, mostrar si es correcta o no
+            if (respuestaCorrectaIndex >= 0 && respuestaCorrectaIndex != indiceSeleccionado)
+   {
+    if (opcionesLista.Count > respuestaCorrectaIndex)
+    {
+     var opcionCorrecta = opcionesLista[respuestaCorrectaIndex];
+       var textoCorrecta = opcionCorrecta.ContainsKey("texto") ? opcionCorrecta["texto"]?.ToString() ?? "" : "";
+      respuestaFormateada += $"\n\n? RESPUESTA CORRECTA: {(char)('A' + respuestaCorrectaIndex)}. {textoCorrecta}";
+  }
+        }
+   }
+     }
+       catch (Exception ex)
+        {
+Console.WriteLine($"Error procesando opción múltiple: {ex.Message}");
+  }
+        }
+
+      preguntasRespuestas.Add(new PreguntaRespuesta
+         {
+         IdPregunta = preg.ContainsKey("idPregunta") && preg["idPregunta"] is JsonElement jeId ? jeId.GetInt32() : 0,
+              Pregunta = pregunta,
+    Respuesta = respuestaFormateada,
+EsOpcionMultiple = !tipoEvaluacion,
+         RespuestaEsCorrecta = respuestaCorrectaIndex >= 0 && int.TryParse(respuestaTexto, out int idx) && idx == respuestaCorrectaIndex,
+Puntos = puntos
+});
+       }
+  Console.WriteLine($"Total respuestas procesadas: {preguntasRespuestas.Count}");
+        }
+                    }
+     else
+        {
+          Console.WriteLine($"No es JsonElement: {preguntasJson.GetType()}");
+     }
+                }
+    else
+      {
+    Console.WriteLine($"No contiene 'preguntas' en la respuesta");
+  }
+            }
+  else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+        preguntasRespuestas = new List<PreguntaRespuesta>();
+        MostrarMensaje("Esta evaluación no tiene respuestas registradas aún. El usuario debe responderla primero.", false);
+       }
+          else
+{
+           var contenidoError = await response.Content.ReadAsStringAsync();
+       Console.WriteLine($"Error response: {contenidoError}");
+          MostrarMensaje($"Error al cargar: {response.StatusCode}", true);
             }
         }
-        catch (Exception ex)
-      {
-       Console.WriteLine($"Error: {ex.Message}");
-            preguntasRespuestas = new List<PreguntaRespuesta>();
+   catch (Exception ex)
+        {
+    Console.WriteLine($"Error completo: {ex.Message}");
+            Console.WriteLine($"Stack: {ex.StackTrace}");
+ preguntasRespuestas = new List<PreguntaRespuesta>();
+            MostrarMensaje($"Error: {ex.Message}", true);
         }
     }
 
     private async Task GuardarCalificacion()
     {
-        if (evalSeleccionada == null || calificacionGlobal < 0 || calificacionGlobal > 100)
+      if (evalSeleccionada == null || calificacionGlobal < 0 || calificacionGlobal > 100)
         {
-  MostrarMensaje("La calificación debe estar entre 0 y 100", true);
-     return;
-        }
-
-        cargandoGuardar = true;
-   try
-    {
-            var request = new
-            {
-    idEvaluacion = evalSeleccionada.IdEvaluacion,
-        nota = calificacionGlobal,
-        recomendaciones = comentarios,
-           estado = calificacionGlobal >= 80 ? "Aprobada" : "Reprobada"
- };
-
-    var response = await Http.PutAsJsonAsync($"api/evaluaciones/{evalSeleccionada.IdEvaluacion}", request);
-
-    if (response.IsSuccessStatusCode)
-{
-   MostrarMensaje($"Calificación guardada exitosamente: {calificacionGlobal}/100", false);
-   await Task.Delay(1500);
-   LimpiarSeleccion();
-        await CargarEvaluacionesPendientes();
-            }
-  else
-        {
-          MostrarMensaje("Error al guardar la calificación", true);
-    }
+       MostrarMensaje("La calificación debe estar entre 0 y 100", true);
+return;
    }
-   catch (Exception ex)
-        {
-MostrarMensaje($"Error: {ex.Message}", true);
+
+ cargandoGuardar = true;
+      try
+  {
+     var request = new
+   {
+      nota = calificacionGlobal,
+  recomendaciones = comentarios
+         };
+
+         var response = await Http.PutAsJsonAsync($"api/evaluacionesteoricass/calificar/{evalSeleccionada.IdEvaluacion}", request);
+
+ if (response.IsSuccessStatusCode)
+   {
+     MostrarMensaje($"Calificación guardada exitosamente: {calificacionGlobal}/100", false);
+    await Task.Delay(1500);
+  LimpiarSeleccion();
+      await CargarEvaluacionesPendientes();
+         }
+    else
+      {
+      var contenidoError = await response.Content.ReadAsStringAsync();
+      Console.WriteLine($"Error: {contenidoError}");
+ MostrarMensaje("Error al guardar la calificación", true);
  }
-        finally
-        {
-cargandoGuardar = false;
+}
+     catch (Exception ex)
+      {
+ Console.WriteLine($"Error: {ex.Message}");
+  MostrarMensaje($"Error: {ex.Message}", true);
         }
+ finally
+    {
+     cargandoGuardar = false;
+    }
     }
 
     private void LimpiarSeleccion()
     {
-      evalSeleccionada = null;
-        preguntasRespuestas = null;
-        calificacionGlobal = 0;
-        comentarios = string.Empty;
+        evalSeleccionada = null;
+      preguntasRespuestas = null;
+      calificacionGlobal = 0;
+      comentarios = string.Empty;
     }
 
     private void MostrarMensaje(string mensaje, bool error)
     {
         mensajeRespuesta = mensaje;
-        esError = error;
+esError = error;
         mensajeMostrar = true;
     }
 
@@ -385,18 +536,30 @@ cargandoGuardar = false;
       mensajeMostrar = false;
     }
 
+    private void ActualizarPuntos(PreguntaRespuesta pregunta, int nuevosPuntos)
+    {
+    if (pregunta != null)
+      {
+         pregunta.Puntos = nuevosPuntos;
+      }
+    }
+
     private class EvaluacionTeoricaAdmin
     {
-      public int IdEvaluacion { get; set; }
-        public int IdEvaluado { get; set; }
-        public string NombreUsuario { get; set; } = string.Empty;
-     public DateOnly? FechaEvaluacion { get; set; }
+        public int IdEvaluacion { get; set; }
+    public int IdEvaluado { get; set; }
+     public string NombreUsuario { get; set; } = string.Empty;
+        public DateOnly? FechaEvaluacion { get; set; }
         public string Estado { get; set; } = string.Empty;
     }
 
     private class PreguntaRespuesta
     {
- public string Pregunta { get; set; } = string.Empty;
-        public string Respuesta { get; set; } = string.Empty;
-    }
+      public int IdPregunta { get; set; } = 0;
+      public string Pregunta { get; set; } = string.Empty;
+     public string Respuesta { get; set; } = string.Empty;
+  public bool EsOpcionMultiple { get; set; } = false;
+     public bool RespuestaEsCorrecta { get; set; } = false;
+        public int Puntos { get; set; } = 0;
+ }
 }
