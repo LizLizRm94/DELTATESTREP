@@ -1,0 +1,80 @@
+﻿@page "/contacto"
+
+<div class="container my-5">
+    <div class="row g-4">
+
+        <!-- Información de contacto -->
+        <div class="col-lg-6">
+
+            <!-- Dirección -->
+            <div class="mb-4">
+                <h2 class="fs-4 fw-bold text-uppercase mb-3 text-orange">Dirección</h2>
+                <div class="card p-4 border-0 rounded-4 shadow-lg bg-white">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-geo-alt-fill fs-2 me-3 text-orange"></i>
+                        <div class="address-details">
+                            <p class="mb-0 fw-medium">Calle Presbitero Medina esq. Psje. Taltal No2, Ciudad La Paz</p>
+                            <p class="mb-0 fw-medium">Bolivia</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- En línea -->
+            <div class="mb-4">
+                <h2 class="fs-4 fw-bold text-uppercase mb-3 text-orange">En línea</h2>
+                <div class="card p-4 border-0 rounded-4 shadow-lg bg-white">
+                    <div class="d-flex flex-column">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="bi bi-telephone-fill fs-4 me-3 text-orange"></i>
+                            <span class="fw-medium">+591 77221461</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-envelope-fill fs-4 me-3 text-orange"></i>
+                            <span class="fw-medium">consultas@laboratoriosdelta.net</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Mapa -->
+        <div class="col-lg-6">
+            <h2 class="fs-4 fw-bold text-uppercase mb-3 text-orange">En un mapa</h2>
+            <div class="map-placeholder border-0 rounded-4 overflow-hidden shadow-lg" style="height: 380px;">
+                <iframe src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d1912.605071556657!2d-68.12710365476991!3d-16.515485305086198!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x915f20899d18d543%3A0x66d47456cbbf3306!2sLaboratorios%20Delta%20S.A.!5e0!3m2!1ses-419!2sbo!4v1764778408433!5m2!1ses-419!2sbo"
+                        width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    body {
+        font-family: 'Segoe UI', sans-serif;
+        margin: 0;
+        padding: 0;
+        color: #444;
+        background-color: #f5f5f5; 
+    }
+
+    .text-orange {
+        color: #ff6b00;
+    }
+
+    .card {
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 25px rgba(0, 0, 0, 0.2);
+        }
+
+    .fw-medium {
+        font-weight: 500;
+    }
+</style>
