@@ -3,89 +3,473 @@
 @layout MainSinLayout
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
-@inject IJSRuntime JS
 
-<h2 class="text-center text-orange text-uppercase mb-4">Detalle de Evaluación: Manejo de Equipos</h2>
+<div class="detalle-container">
+    <h1 class="titulo-principal">DETALLE DE EVALUACIÓN</h1>
 
-<!-- RECUADRO DE RESULTADO Y ALERTA -->
-<div class="d-flex justify-content-center mb-4">
-    <div class="card border-danger" style="max-width: 500px;">
-   <div class="card-body text-center">
-            <h5 class="card-title text-danger">Resultado: @notaObtenida / 100</h5>
-       <p class="text-muted mb-1">Fecha: 03/05/2025</p>
-       <p class="text-muted mb-1">Área: Control de Calidad</p>
-            <p class="text-muted mb-3">Evaluador: Mishale Rodríguez</p>
-     <div class="alert alert-danger text-center">
-    El promedio de aprobación es <strong>80</strong>. Tienes <strong>2 oportunidades más</strong> para repetir la prueba.
-   </div>
+    @if (cargando)
+    {
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Cargando evaluación...</p>
         </div>
-    </div>
-</div>
-
-<!-- COMENTARIOS DEL EXAMEN PRÁCTICO -->
-<h4 class="text-center text-orange mb-3">Comentarios del Examen Práctico</h4>
-
-<div class="d-flex justify-content-center mb-4">
-    <div class="card shadow-sm border-0 p-3" style="max-width: 600px;">
-   <p><strong>Uso de Equipos:</strong> Falta conocimiento</p>
-   <p><strong>Normas de Seguridad:</strong> Confusión en protocolos</p>
-        <p><strong>Resolución de Fallas:</strong> No identificó causas raíz</p>
-    </div>
-</div>
-
-<!-- BOTONES -->
-<div class="text-center mt-5">
-    <div class="btn-group gap-3">
-        @if (notaObtenida < 50)
-        {
-  <button class="btn btn-orange me-2" data-bs-toggle="modal" data-bs-target="#adminModal">
-       Repetir Evaluación
-        </button>
- }
-        <button class="btn btn-orange-outline" @onclick="VolverAlPanel">Volver al Panel</button>
-    </div>
-</div>
-
-<!-- MODAL DE ADMINISTRADORES -->
-<div class="modal fade" id="adminModal" tabindex="-1" aria-labelledby="adminModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-   <div class="modal-content">
-      <div class="modal-header">
-          <h5 class="modal-title text-orange" id="adminModalLabel">Contacto de Administradores</h5>
- <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+    }
+    else if (mostrarError)
+    {
+        <div class="error-mensaje">
+            <p>Error al cargar la evaluación: @mensajeError</p>
+        </div>
+    }
+    else if (evaluacion != null)
+    {
+        <div class="detalle-card">
+            <!-- Información del evaluado -->
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>EVALUADO:</label>
+                    <p class="valor">@evaluacion.NombreEvaluado</p>
+                </div>
+                <div class="info-item">
+                    <label>CI:</label>
+                    <p class="valor">@evaluacion.CiEvaluado</p>
+                </div>
             </div>
-            <div class="modal-body">
-       <ul class="list-group">
-          <li class="list-group-item">
-    <strong>Inspector - Mishale Rodriguez</strong><br />
-     78965410
-   </li>
-          <li class="list-group-item">
-  <strong>Inspector - Alex Tancara</strong><br />
-     7896450
-      </li>
-   <li class="list-group-item">
-       <strong>Inspector - Gerald Mollo</strong><br />
-               7773410
- </li>
-           </ul>
-      </div>
-            <div class="modal-footer">
-         <button type="button" class="btn btn-orange-outline" data-bs-dismiss="modal">Cerrar</button>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>FECHA DE EVALUACIÓN:</label>
+                    <p class="valor">@evaluacion.FechaEvaluacion?.ToString("dd/MM/yyyy")</p>
+                </div>
+                <div class="info-item">
+                    <label>TIPO:</label>
+                    <p class="valor">@evaluacion.TipoEvaluacion</p>
+                </div>
+            </div>
+
+            <!-- Resultado -->
+            <div class="resultado-seccion">
+                <h3>Resultado</h3>
+                <div class="nota-box @ObtenerClaseNota(evaluacion.Nota)">
+                    <div class="nota-numero">@((int)(evaluacion.Nota ?? 0)) / 100</div>
+                    <div class="nota-estado">@ObtenerEstadoNota(evaluacion.Nota)</div>
+                </div>
+            </div>
+
+            <!-- Recomendaciones -->
+            <div class="recomendaciones-seccion">
+                <h3>Recomendaciones para Mejorar</h3>
+                @if (!string.IsNullOrWhiteSpace(evaluacion.Recomendaciones))
+                {
+                    <div class="recomendaciones-lista">
+                        @foreach (var linea in evaluacion.Recomendaciones.Split(new[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
+                        {
+                            <p><span class="check-icon">✓</span> @linea</p>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="sin-recomendaciones">No hay recomendaciones disponibles</p>
+                }
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="botones-container">
+                @if (evaluacion.Nota.HasValue && evaluacion.Nota < 80)
+                {
+                    <button class="btn btn-solicitar" @onclick="SolicitarRepetir">
+                        Solicitar Repetir Evaluación
+                    </button>
+                }
+                <button class="btn btn-volver" @onclick="VolverEvaluaciones">
+                    Volver a Evaluaciones
+                </button>
+            </div>
         </div>
-        </div>
-    </div>
+    }
 </div>
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    .detalle-container {
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 30px 20px;
+        background: #ffffff;
+        min-height: 100vh;
+    }
+
+    .titulo-principal {
+        text-align: center;
+        font-size: 28px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 40px;
+        letter-spacing: 0.5px;
+    }
+
+    .detalle-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 40px;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-bottom: 30px;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .info-item label {
+        font-size: 11px;
+        font-weight: 600;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    .info-item .valor {
+        font-size: 15px;
+        color: #1f2937;
+        font-weight: 500;
+    }
+
+    .resultado-seccion {
+        text-align: center;
+        margin: 50px 0;
+        padding: 30px 0;
+        border-top: 1px solid #e5e7eb;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .resultado-seccion h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 30px;
+    }
+
+    .nota-box {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 180px;
+        height: 180px;
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .nota-box.excelente {
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    }
+
+    .nota-box.bueno {
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    }
+
+    .nota-box.reprobado {
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    }
+
+    .nota-numero {
+        font-size: 42px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .nota-box.excelente .nota-numero {
+        color: #059669;
+    }
+
+    .nota-box.bueno .nota-numero {
+        color: #2563eb;
+    }
+
+    .nota-box.reprobado .nota-numero {
+        color: #dc2626;
+    }
+
+    .nota-estado {
+        font-size: 15px;
+        font-weight: 600;
+    }
+
+    .nota-box.excelente .nota-estado {
+        color: #047857;
+    }
+
+    .nota-box.bueno .nota-estado {
+        color: #1e40af;
+    }
+
+    .nota-box.reprobado .nota-estado {
+        color: #b91c1c;
+    }
+
+    .recomendaciones-seccion {
+        margin: 30px 0;
+    }
+
+    .recomendaciones-seccion h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 20px;
+    }
+
+    .recomendaciones-lista {
+        background: #ffffff;
+        border-left: 4px solid #f59e0b;
+        padding: 20px 20px 20px 30px;
+        border-radius: 4px;
+    }
+
+    .recomendaciones-lista p {
+        margin: 12px 0;
+        color: #4b5563;
+        font-size: 14px;
+        line-height: 1.6;
+        display: flex;
+        align-items: flex-start;
+    }
+
+    .check-icon {
+        color: #10b981;
+        margin-right: 10px;
+        font-weight: 700;
+    }
+
+    .sin-recomendaciones {
+        text-align: center;
+        color: #9ca3af;
+        font-style: italic;
+        padding: 30px;
+    }
+
+    .botones-container {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 40px;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 12px 28px;
+        border-radius: 25px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+        min-width: 200px;
+    }
+
+    .btn-solicitar {
+        background: #f59e0b;
+        color: white;
+    }
+
+    .btn-solicitar:hover {
+        background: #d97706;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+    }
+
+    .btn-volver {
+        background: white;
+        color: #f59e0b;
+        border: 2px solid #f59e0b;
+    }
+
+    .btn-volver:hover {
+        background: #f59e0b;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+    }
+
+    .loading {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid #e5e7eb;
+        border-top-color: #f59e0b;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin: 0 auto 20px;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .error-mensaje {
+        background: #fee2e2;
+        border: 1px solid #fca5a5;
+        color: #dc2626;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    @@media (max-width: 768px) {
+        .detalle-container {
+            padding: 20px 15px;
+        }
+
+        .titulo-principal {
+            font-size: 22px;
+            margin-bottom: 30px;
+        }
+
+        .detalle-card {
+            padding: 25px;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .nota-box {
+            width: 150px;
+            height: 150px;
+        }
+
+        .nota-numero {
+            font-size: 36px;
+        }
+
+        .botones-container {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+</style>
 
 @code {
-    [Parameter] public int IdEvaluacion { get; set; }
+    [Parameter]
+    public int IdEvaluacion { get; set; }
 
-    // Datos estáticos de ejemplo
-    private int notaObtenida = 50;
+    private EvaluacionDetailDto? evaluacion;
+    private bool cargando = true;
+    private bool mostrarError = false;
+    private string mensajeError = "";
 
-    private void VolverAlPanel()
+    protected override async Task OnInitializedAsync()
     {
- NavigationManager.NavigateTo("/usuarios/evaluaciones/1");
+        await CargarEvaluacion();
+    }
+
+    private async Task CargarEvaluacion()
+    {
+        try
+        {
+            cargando = true;
+            Console.WriteLine($"Cargando evaluación con ID: {IdEvaluacion}");
+            
+            var response = await Http.GetAsync($"api/evaluaciones/{IdEvaluacion}");
+
+            Console.WriteLine($"Status Code: {response.StatusCode}");
+            Console.WriteLine($"Is Success: {response.IsSuccessStatusCode}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                evaluacion = await response.Content.ReadFromJsonAsync<EvaluacionDetailDto>();
+                if (evaluacion == null)
+                {
+                    mostrarError = true;
+                    mensajeError = "No se encontró la evaluación";
+                    Console.WriteLine("Evaluación nula después de deserializar");
+                }
+                else
+                {
+                    Console.WriteLine($"Evaluación cargada: {evaluacion.NombreEvaluado}");
+                }
+            }
+            else
+            {
+                mostrarError = true;
+                var content = await response.Content.ReadAsStringAsync();
+                mensajeError = $"Error {response.StatusCode}: {content}";
+                Console.WriteLine($"Error response: {content}");
+            }
+        }
+        catch (Exception ex)
+        {
+            mostrarError = true;
+            mensajeError = ex.Message;
+            Console.WriteLine($"Exception: {ex.Message}");
+            Console.WriteLine($"Stack: {ex.StackTrace}");
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private string ObtenerClaseNota(decimal? nota)
+    {
+        if (!nota.HasValue) return "reprobado";
+        if (nota >= 80) return "excelente";
+        if (nota >= 51) return "bueno";
+        return "reprobado";
+    }
+
+    private string ObtenerEstadoNota(decimal? nota)
+    {
+        if (!nota.HasValue) return "Sin calificación";
+        if (nota >= 80) return "Excelente";
+        if (nota >= 51) return "Bueno";
+        return "Reprobado";
+    }
+
+    private void SolicitarRepetir()
+    {
+        // Navegar a la página para solicitar repetir evaluación
+        NavigationManager.NavigateTo("/admin/evaluaciones-teoricas");
+    }
+
+    private void VolverEvaluaciones()
+    {
+        NavigationManager.NavigateTo($"/usuarios/evaluaciones/{evaluacion?.IdEvaluado ?? 1}");
+    }
+
+    public class EvaluacionDetailDto
+    {
+        public int IdEvaluacion { get; set; }
+        public int IdEvaluado { get; set; }
+        public string? NombreEvaluado { get; set; }
+        public string? CiEvaluado { get; set; }
+        public string? NombreAdministrador { get; set; }
+        public DateOnly? FechaEvaluacion { get; set; }
+        public decimal? Nota { get; set; }
+        public string? EstadoEvaluacion { get; set; }
+        public string? TipoEvaluacion { get; set; }
+        public string? Recomendaciones { get; set; }
     }
 }
 

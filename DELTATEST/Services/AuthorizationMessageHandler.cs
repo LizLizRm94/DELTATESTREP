@@ -1,6 +1,7 @@
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Components.WebAssembly.Http;
 
 namespace DELTATEST.Services
 {
@@ -12,8 +13,9 @@ namespace DELTATEST.Services
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            // Con autenticación por cookies, la cookie se envía automáticamente con cada solicitud
-            // Este handler ahora es principalmente un pass-through
+            // Configurar para enviar cookies con cada solicitud
+            request.SetBrowserRequestCredentials(BrowserRequestCredentials.Include);
+            
             return await base.SendAsync(request, cancellationToken);
         }
     }

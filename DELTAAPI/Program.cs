@@ -57,6 +57,7 @@ builder.Services.AddAuthentication(options =>
     options.Cookie.Name = "DeltaAuth";
     options.Cookie.HttpOnly = true;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // true en producción
+    options.Cookie.SameSite = SameSiteMode.None; // Importante para cross-origin con cookies
 });
 
 builder.Services.AddAuthorization();

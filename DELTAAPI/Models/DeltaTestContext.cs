@@ -115,11 +115,11 @@ public partial class DeltaTestContext : DbContext
                 .HasColumnType("decimal(5, 2)")
                 .HasColumnName("nota");
             entity.Property(e => e.TipoEvaluacion).HasColumnName("tipo_evaluacion");
+            
+            // Configuración de Recomendaciones - AHORA HABILITADO
             entity.Property(e => e.Recomendaciones)
                 .HasColumnType("nvarchar(max)")
                 .HasColumnName("recomendaciones");
-            
-               
 
             entity.HasOne(d => d.IdAdministradorNavigation).WithMany(p => p.EvaluacionIdAdministradorNavigations)
                 .HasForeignKey(d => d.IdAdministrador)

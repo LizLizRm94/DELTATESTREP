@@ -1,0 +1,70 @@
+-- Script completo para agregar todas las columnas necesarias a las tablas EVALUACION
+
+USE DeltaTest;
+
+-- 1. Agregar columna 'recomendaciones' a EVALUACION
+IF NOT EXISTS (
+    SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS 
+    WHERE TABLE_NAME = 'EVALUACION' AND COLUMN_NAME = 'recomendaciones'
+)
+BEGIN
+    ALTER TABLE EVALUACION
+    ADD recomendaciones nvarchar(max) NULL;
+    PRINT 'Columna recomendaciones agregada a EVALUACION';
+END
+ELSE
+BEGIN
+    PRINT 'Columna recomendaciones ya existe en EVALUACION';
+END
+
+-- 2. Verificar columnas en PREGUNTA
+IF NOT EXISTS (
+    SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS 
+    WHERE TABLE_NAME = 'PREGUNTA' AND COLUMN_NAME = 'id_evaluacion'
+)
+BEGIN
+    ALTER TABLE PREGUNTA
+    ADD id_evaluacion INT NULL;
+    PRINT 'Columna id_evaluacion agregada a PREGUNTA';
+END
+ELSE
+BEGIN
+    PRINT 'Columna id_evaluacion ya existe en PREGUNTA';
+END
+
+-- 3. Verificar columnas en RESPUESTA
+IF NOT EXISTS (
+    SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS 
+    WHERE TABLE_NAME = 'RESPUESTA' AND COLUMN_NAME = 'id_evaluacion'
+)
+BEGIN
+    ALTER TABLE RESPUESTA
+    ADD id_evaluacion INT NULL;
+    PRINT 'Columna id_evaluacion agregada a RESPUESTA';
+END
+ELSE
+BEGIN
+    PRINT 'Columna id_evaluacion ya existe en RESPUESTA';
+END
+
+-- 4. Mostrar todas las columnas actuales
+PRINT '';
+PRINT '=== EVALUACION ===';
+SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'EVALUACION'
+ORDER BY ORDINAL_POSITION;
+
+PRINT '';
+PRINT '=== PREGUNTA ===';
+SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'PREGUNTA'
+ORDER BY ORDINAL_POSITION;
+
+PRINT '';
+PRINT '=== RESPUESTA ===';
+SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'RESPUESTA'
+ORDER BY ORDINAL_POSITION;

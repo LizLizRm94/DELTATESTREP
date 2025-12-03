@@ -81,60 +81,72 @@ await _context.SaveChangesAsync();
         {
             try
             {
-           var evaluaciones = await _context.Evaluacions
-            .Include(e => e.IdEvaluadoNavigation)
-        .Select(e => new
-       {
-         e.IdEvaluacion,
-          e.IdEvaluado,
-            NombreEvaluado = e.IdEvaluadoNavigation.NombreCompleto,
-    e.FechaEvaluacion,
-    e.Nota,
-                 e.EstadoEvaluacion,
-      TipoEvaluacion = e.TipoEvaluacion == true ? "Teórica" : "Práctica"
-             })
-        .ToListAsync();
+                var evaluaciones = await _context.Evaluacions
+                    .Include(e => e.IdEvaluadoNavigation)
+                    .Select(e => new
+                    {
+                        e.IdEvaluacion,
+                        e.IdEvaluado,
+                        NombreEvaluado = e.IdEvaluadoNavigation != null ? e.IdEvaluadoNavigation.NombreCompleto : "Sin evaluado",
+                        e.FechaEvaluacion,
+                        e.Nota,
+                        e.EstadoEvaluacion,
+                        TipoEvaluacion = e.TipoEvaluacion == true ? "Teórica" : "Práctica"
+                    })
+                    .ToListAsync();
 
-         return Ok(evaluaciones);
-      }
-         catch (Exception ex)
-       {
+                return Ok(evaluaciones);
+            }
+            catch (Exception ex)
+            {
                 return StatusCode(500, new { mensaje = "Error al obtener las evaluaciones", error = ex.Message });
 }
         }
 
         [HttpGet("{id}")]
-[AllowAnonymous]
+        [AllowAnonymous]
         public async Task<IActionResult> GetEvaluacionById(int id)
-     {
-    try
+        {
+            try
             {
-     var evaluacion = await _context.Evaluacions
-   .Include(e => e.IdEvaluadoNavigation)
-        .Include(e => e.IdAdministradorNavigation)
-    .FirstOrDefaultAsync(e => e.IdEvaluacion == id);
+                var evaluacion = await _context.Evaluacions
+                    .Include(e => e.IdEvaluadoNavigation)
+                    .Include(e => e.IdAdministradorNavigation)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e => e.IdEvaluacion == id);
 
-  if (evaluacion == null)
+                if (evaluacion == null)
                     return NotFound(new { mensaje = "Evaluación no encontrada" });
 
-           return Ok(new
-         {
-               evaluacion.IdEvaluacion,
-         evaluacion.IdEvaluado,
-       NombreEvaluado = evaluacion.IdEvaluadoNavigation.NombreCompleto,
-          CiEvaluado = evaluacion.IdEvaluadoNavigation.Ci,
-            NombreAdministrador = evaluacion.IdAdministradorNavigation?.NombreCompleto ?? "N/A",
-    evaluacion.FechaEvaluacion,
-    evaluacion.Nota,
-    evaluacion.EstadoEvaluacion,
-      TipoEvaluacion = evaluacion.TipoEvaluacion == true ? "Teórica" : "Práctica",
-     evaluacion.Recomendaciones
-     });
+                // Validar que el usuario evaluado existe
+                if (evaluacion.IdEvaluadoNavigation == null)
+                    return StatusCode(500, new { mensaje = "Error: Usuario evaluado no encontrado en la base de datos" });
+
+                return Ok(new
+                {
+                    evaluacion.IdEvaluacion,
+                    evaluacion.IdEvaluado,
+                    NombreEvaluado = evaluacion.IdEvaluadoNavigation?.NombreCompleto ?? "Sin nombre",
+                    CiEvaluado = evaluacion.IdEvaluadoNavigation?.Ci ?? "Sin CI",
+                    NombreAdministrador = evaluacion.IdAdministradorNavigation?.NombreCompleto ?? "N/A",
+                    evaluacion.FechaEvaluacion,
+                    evaluacion.Nota,
+                    evaluacion.EstadoEvaluacion,
+                    TipoEvaluacion = evaluacion.TipoEvaluacion == true ? "Teórica" : "Práctica",
+                    Recomendaciones = evaluacion.Recomendaciones ?? string.Empty
+                });
             }
-        catch (Exception ex)
-    {
-                return StatusCode(500, new { mensaje = "Error al obtener la evaluación", error = ex.Message });
- }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en GetEvaluacionById: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return StatusCode(500, new
+                {
+                    mensaje = "Error al obtener la evaluación",
+                    error = ex.Message,
+                    stackTrace = ex.StackTrace
+                });
+            }
         }
 
         [HttpGet("usuario/{idUsuario}")]
