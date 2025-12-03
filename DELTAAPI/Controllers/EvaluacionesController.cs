@@ -381,5 +381,12 @@ _context.Evaluacions.Remove(evaluacion);
     public class CrearEvaluacionTeoricaRequest
     {
         public int IdUsuario { get; set; }
+        public int? IdAdministrador { get; set; }
+        public List<PreguntaRequest> Preguntas { get; set; } = new();
+    }
+
+    public class PreguntaRequest
+    {
+        public string Texto { get; set; } = string.Empty;
     }
 }
