@@ -275,92 +275,106 @@ _context.Evaluacions.Remove(evaluacion);
         }
 
       [HttpPost("crear-evaluacion-teorica")]
-        [AllowAnonymous]
+   [AllowAnonymous]
      public async Task<IActionResult> CrearEvaluacionTeorica([FromBody] CrearEvaluacionTeoricaRequest request)
-        {
+ {
  if (request == null || request.IdUsuario <= 0)
      {
-    return BadRequest(new { mensaje = "El ID del usuario es requerido" });
-            }
+return BadRequest(new { mensaje = "El ID del usuario es requerido" });
+     }
 
-            try
+  try
  {
-           var usuario = await _context.Usuarios.FindAsync(request.IdUsuario);
+     var usuario = await _context.Usuarios.FindAsync(request.IdUsuario);
      if (usuario == null)
         {
         return NotFound(new { mensaje = "Usuario no encontrado" });
         }
 
-      // Verificar que el administrador existe si se proporciona
-            if (request.IdAdministrador.HasValue && request.IdAdministrador > 0)
-            {
-                var admin = await _context.Usuarios.FindAsync(request.IdAdministrador);
-                if (admin == null)
-                {
-                    return NotFound(new { mensaje = "Administrador no encontrado" });
-                }
-            }
+      // Validar que hay preguntas
+    if (request.Preguntas == null || request.Preguntas.Count == 0)
+      {
+      return BadRequest(new { mensaje = "Debe proporcionar al menos una pregunta" });
+  }
 
-      // Crear una nueva evaluación teórica
+   // Crear una nueva evaluación teórica
    var evaluacion = new Evaluacion
         {
-    IdEvaluado = request.IdUsuario,
-  IdAdministrador = request.IdAdministrador.HasValue && request.IdAdministrador > 0 ? request.IdAdministrador : null,
+  IdEvaluado = request.IdUsuario,
+  IdAdministrador = null,
   FechaEvaluacion = DateOnly.FromDateTime(DateTime.Now),
-     TipoEvaluacion = true, // true = teórica
+TipoEvaluacion = true, // true = teórica
  EstadoEvaluacion = "Pendiente",
-        Nota = null // Sin calificación hasta que responda
+    Nota = null // Sin calificación hasta que responda
      };
 
   _context.Evaluacions.Add(evaluacion);
-                await _context.SaveChangesAsync();
+     await _context.SaveChangesAsync();
 
   if (request.Preguntas != null && request.Preguntas.Count > 0)
-      {
-          var preguntasValidas = request.Preguntas
-                .Where(p => !string.IsNullOrWhiteSpace(p.Texto))
-              .ToList();
+    {
+    var preguntasValidas = request.Preguntas
+.Where(p => !string.IsNullOrWhiteSpace(p.Texto))
+ .ToList();
 
-           foreach (var preguntaDto in preguntasValidas)
-        {
+   foreach (var preguntaDto in preguntasValidas)
+    {
+  // Encontrar el índice de la opción correcta (si es múltiple)
+      int? respuestaCorrectaIndex = null;
+ if (!preguntaDto.TipoEvaluacion && preguntaDto.OpcionesConCorrecta != null && preguntaDto.OpcionesConCorrecta.Count > 0)
+    {
+    respuestaCorrectaIndex = preguntaDto.OpcionesConCorrecta
+      .FindIndex(o => o.EsCorrecta);
+  if (respuestaCorrectaIndex == -1)
+   respuestaCorrectaIndex = null;
+   }
+
  var pregunta = new Pregunta
-       {
-    Texto = preguntaDto.Texto,
-                  TipoEvaluacion = true,
-    IdEvaluacion = evaluacion.IdEvaluacion
-            };
-      _context.Preguntas.Add(pregunta);
-        }
-     await _context.SaveChangesAsync();
+   {
+     Texto = preguntaDto.Texto,
+   TipoEvaluacion = preguntaDto.TipoEvaluacion, // true=abierta, false=múltiple
+IdEvaluacion = evaluacion.IdEvaluacion,
+      Opciones = preguntaDto.Opciones, // Guardar opciones como JSON (ya serializado desde el cliente)
+RespuestaCorrectaIndex = respuestaCorrectaIndex,
+Puntos = preguntaDto.Puntos // Guardar puntos
+   };
+  _context.Preguntas.Add(pregunta);
+}
+   await _context.SaveChangesAsync();
        }
 
-                return Ok(new
-            {
-         mensaje = "Evaluación teórica creada exitosamente",
-          idEvaluacion = evaluacion.IdEvaluacion,
-         idUsuario = usuario.IdUsuario,
-         nombreUsuario = usuario.NombreCompleto,
-      cantidadPreguntas = request.Preguntas?.Count ?? 0
-              });
-         }
-            catch (DbUpdateException dbEx)
+return Ok(new
  {
-       var innerMessage = dbEx.InnerException?.Message ?? "Sin detalles";
-                return StatusCode(500, new
-           {
-        mensaje = "Error de base de datos al guardar",
+mensaje = "Evaluación teórica creada exitosamente",
+     idEvaluacion = evaluacion.IdEvaluacion,
+    idUsuario = usuario.IdUsuario,
+   nombreUsuario = usuario.NombreCompleto,
+      cantidadPreguntas = request.Preguntas?.Count ?? 0
+       });
+ }
+      catch (DbUpdateException dbEx)
+ {
+     var innerMessage = dbEx.InnerException?.Message ?? "Sin detalles";
+      Console.WriteLine($"DbUpdateException: {dbEx.Message}");
+       Console.WriteLine($"Inner Exception: {innerMessage}");
+      Console.WriteLine($"Stack Trace: {dbEx.StackTrace}");
+      return StatusCode(500, new
+ {
+ mensaje = "Error de base de datos al guardar",
    error = dbEx.Message,
-     details = innerMessage
+  details = innerMessage
   });
   }
-        catch (Exception ex)
-     {
-          return StatusCode(500, new
-                {
-          mensaje = "Error al crear la evaluación",
-    error = ex.Message,
-                innerException = ex.InnerException?.Message
-    });
+  catch (Exception ex)
+ {
+      Console.WriteLine($"Exception: {ex.Message}");
+      Console.WriteLine($"StackTrace: {ex.StackTrace}");
+       return StatusCode(500, new
+  {
+ mensaje = "Error al crear la evaluación",
+  error = ex.Message,
+        innerException = ex.InnerException?.Message
+  });
        }
         }
     }
@@ -399,6 +413,16 @@ _context.Evaluacions.Remove(evaluacion);
 
     public class PreguntaRequest
     {
+   public string Texto { get; set; } = string.Empty;
+   public bool TipoEvaluacion { get; set; } // true=abierta, false=múltiple
+     public string? Opciones { get; set; } // JSON serializado con las opciones
+   public int Puntos { get; set; } = 0; // Puntos para esta pregunta
+      public List<OpcionConCorrecta> OpcionesConCorrecta { get; set; } = new(); // Para procesar cuál es correcta
+    }
+
+    public class OpcionConCorrecta
+    {
         public string Texto { get; set; } = string.Empty;
+        public bool EsCorrecta { get; set; } = false;
     }
 }

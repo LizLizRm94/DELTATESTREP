@@ -18,22 +18,22 @@ namespace DELTAAPI.Controllers
         {
             var list = await _context.Usuarios
     .Include(u => u.EvaluacionIdEvaluadoNavigations)
-    .AsNoTracking()
-     .Select(u => new {
-u.IdUsuario,
-       u.NombreCompleto,
-       u.Correo,
+ .AsNoTracking()
+ .Select(u => new UserViewModel {
+IdUsuario = u.IdUsuario,
+ NombreCompleto = u.NombreCompleto,
+       Correo = u.Correo,
    FechaIngreso = u.FechaIngreso,
-      u.PuestoActual,
+      PuestoActual = u.PuestoActual,
        PuestoSolicitado = u.PuestoSolicitado,
-      Estado = u.Estado,
-        u.Rol,
+   Estado = u.Estado,
+        Rol = u.Rol,
          // Obtener la última evaluación práctica (TipoEvaluacion = false)
     NotaPractica = u.EvaluacionIdEvaluadoNavigations
-         .Where(e => e.TipoEvaluacion == false)
+       .Where(e => e.TipoEvaluacion == false)
       .OrderByDescending(e => e.FechaEvaluacion)
       .Select(e => e.Nota)
-            .FirstOrDefault()
+        .FirstOrDefault()
 })
             .ToListAsync();
 

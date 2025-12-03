@@ -19,78 +19,78 @@ namespace DELTAAPI.Controllers
 
         public EvaluacionesTeoricasController(DeltaTestContext context, ILogger<EvaluacionesTeoricasController> logger)
    {
- _context = context;
-     _logger = logger;
+               _context = context;
+               _logger = logger;
         }
 
-  /// <summary>
+         /// <summary>
         /// Guarda las respuestas del usuario para una evaluación teórica
         /// </summary>
-[HttpPost("guardar-respuestas")]
+        [HttpPost("guardar-respuestas")]
         [AllowAnonymous]
-   public async Task<IActionResult> GuardarRespuestasTeoricas([FromBody] GuardarRespuestasRequest request)
-      {
-  if (request == null || request.IdUsuario <= 0 || request.IdEvaluacion <= 0)
-    {
-   return BadRequest(new { mensaje = "Datos inválidos" });
-         }
-
-          try
-      {
-        // Verificar que el usuario existe
-         var usuario = await _context.Usuarios.FindAsync(request.IdUsuario);
-  if (usuario == null)
-        return NotFound(new { mensaje = "Usuario no encontrado" });
-
-    // Verificar que la evaluación existe
-     var evaluacion = await _context.Evaluacions.FindAsync(request.IdEvaluacion);
-     if (evaluacion == null)
-  return NotFound(new { mensaje = "Evaluación no encontrada" });
-
-  // Guardar las respuestas
-      foreach (var respuestaDto in request.Respuestas)
-      {
- var respuesta = new Respuesta
-    {
-IdUsuario = request.IdUsuario,
-       IdPregunta = respuestaDto.IdPregunta,
-     IdEvaluacion = request.IdEvaluacion,
-         TextoRespuesta = respuestaDto.TextoRespuesta
-       };
-
-    _context.Respuestas.Add(respuesta);
-      }
-
-     // Actualizar estado de la evaluación a "Respondida" SIN guardar nota
-      // La nota solo se guardará cuando el administrador la califique
-    evaluacion.EstadoEvaluacion = "Respondida";
-
-await _context.SaveChangesAsync();
-
-    return Ok(new
-      {
-    mensaje = "Respuestas guardadas exitosamente. Pendiente de calificación.",
-     cantidadRespuestas = request.Respuestas.Count
-  });
-   }
-        catch (Exception ex)
-    {
-_logger.LogError($"Error al guardar respuestas: {ex.Message}");
-         return StatusCode(500, new { mensaje = "Error al guardar las respuestas", error = ex.Message });
-   }
- }
-
-    /// <summary>
-        /// Obtiene las respuestas de un usuario para una evaluación teórica específica
- /// </summary>
-     [HttpGet("respuestas/{idUsuario}/{idEvaluacion}")]
-        [AllowAnonymous]
-  public async Task<IActionResult> GetRespuestasUsuario(int idUsuario, int idEvaluacion)
-  {
-  try
+        public async Task<IActionResult> GuardarRespuestasTeoricas([FromBody] GuardarRespuestasRequest request)
         {
-    var respuestas = await _context.Respuestas
- .Where(r => r.IdUsuario == idUsuario && r.IdEvaluacion == idEvaluacion)
+        if (request == null || request.IdUsuario <= 0 || request.IdEvaluacion <= 0)
+        {
+            return BadRequest(new { mensaje = "Datos inválidos" });
+        }
+
+        try
+        {
+             // Verificar que el usuario existe
+            var usuario = await _context.Usuarios.FindAsync(request.IdUsuario);
+            if (usuario == null)
+            return NotFound(new { mensaje = "Usuario no encontrado" });
+
+            // Verificar que la evaluación existe
+            var evaluacion = await _context.Evaluacions.FindAsync(request.IdEvaluacion);
+            if (evaluacion == null)
+            return NotFound(new { mensaje = "Evaluación no encontrada" });
+
+            // Guardar las respuestas
+            foreach (var respuestaDto in request.Respuestas)
+            {
+                var respuesta = new Respuesta
+                {
+                     IdUsuario = request.IdUsuario,
+                     IdPregunta = respuestaDto.IdPregunta,
+                     IdEvaluacion = request.IdEvaluacion,
+                     TextoRespuesta = respuestaDto.TextoRespuesta
+                };
+
+                 _context.Respuestas.Add(respuesta);
+            }
+
+            // Actualizar estado de la evaluación a "Respondida" SIN guardar nota
+            // La nota solo se guardará cuando el administrador la califique
+            evaluacion.EstadoEvaluacion = "Respondida";
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                 mensaje = "Respuestas guardadas exitosamente. Pendiente de calificación.",
+                 cantidadRespuestas = request.Respuestas.Count
+            });
+        }
+        catch (Exception ex)
+        {
+                 _logger.LogError($"Error al guardar respuestas: {ex.Message}");
+                 return StatusCode(500, new { mensaje = "Error al guardar las respuestas", error = ex.Message });
+        }
+        }
+
+        /// <summary>
+        /// Obtiene las respuestas de un usuario para una evaluación teórica específica
+        /// </summary>
+        [HttpGet("respuestas/{idUsuario}/{idEvaluacion}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetRespuestasUsuario(int idUsuario, int idEvaluacion)
+        {
+        try
+        {
+               var respuestas = await _context.Respuestas
+              .Where(r => r.IdUsuario == idUsuario && r.IdEvaluacion == idEvaluacion)
        .Include(r => r.IdPreguntaNavigation)
   .OrderBy(r => r.IdPregunta)
   .ToListAsync();
@@ -245,15 +245,15 @@ doc.Add(new Paragraph($"Evaluado: {usuario.NombreCompleto}", infoFont));
      [HttpGet("usuario/{idUsuario}")]
     [AllowAnonymous]
      public async Task<IActionResult> GetEvaluacionesTeoricasUsuario(int idUsuario)
-        {
- try
+      {
+       try
     {
        var evaluaciones = await _context.Evaluacions
-      .Where(e => e.IdEvaluado == idUsuario && e.TipoEvaluacion == true)
-.Select(e => new
- {
-      e.IdEvaluacion,
-   e.FechaEvaluacion,
+   .Where(e => e.IdEvaluado == idUsuario && e.TipoEvaluacion == true)
+      .Select(e => new
+  {
+   e.IdEvaluacion,
+    e.FechaEvaluacion,
       e.Nota,
    e.EstadoEvaluacion,
    cantidadPreguntas = e.Respuestas.Count
@@ -394,18 +394,169 @@ public async Task<IActionResult> GetEvaluacionesPendientesCalificacion()
      return StatusCode(500, new { mensaje = "Error", error = ex.Message });
     }
   }
- }
+
+    /// <summary>
+        /// Obtiene preguntas con respuestas para calificación (para admin)
+        /// </summary>
+   [HttpGet("calificar/{idEvaluacion}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPreguntasParaCalificar(int idEvaluacion)
+        {
+      try
+  {
+        _logger.LogInformation($"=== GetPreguntasParaCalificar - Evaluación ID: {idEvaluacion} ===");
+     
+  // Obtener la evaluación con todas sus relaciones
+  var evaluacion = await _context.Evaluacions
+    .Include(e => e.IdEvaluadoNavigation)
+    .Include(e => e.Respuestas)
+       .FirstOrDefaultAsync(e => e.IdEvaluacion == idEvaluacion);
+
+    if (evaluacion == null)
+{
+     _logger.LogWarning($"Evaluación no encontrada: {idEvaluacion}");
+   return NotFound(new { mensaje = "Evaluación no encontrada" });
+   }
+
+  // Obtener preguntas por separado
+   var preguntas = await _context.Preguntas
+    .Where(p => p.IdEvaluacion == idEvaluacion)
+  .OrderBy(p => p.IdPregunta)
+    .ToListAsync();
+
+        _logger.LogInformation($"Evaluación encontrada. Preguntas: {preguntas.Count}, Respuestas: {evaluacion.Respuestas.Count}");
+
+    // Obtener preguntas con sus respuestas
+   var preguntasConRespuestas = new List<object>();
+
+   foreach (var pregunta in preguntas)
+  {
+      var respuesta = evaluacion.Respuestas.FirstOrDefault(r => r.IdPregunta == pregunta.IdPregunta);
+            var respuestaTexto = respuesta?.TextoRespuesta ?? "Sin respuesta";
+
+       _logger.LogInformation($"Pregunta ID {pregunta.IdPregunta}: {pregunta.Texto}, Respuesta: {respuestaTexto}, Puntos: {pregunta.Puntos}");
+
+  var preguntaObj = new
+    {
+     idPregunta = pregunta.IdPregunta,
+  pregunta = pregunta.Texto,
+    tipoEvaluacion = pregunta.TipoEvaluacion,
+   opciones = pregunta.Opciones,
+  respuestaCorrectaIndex = pregunta.RespuestaCorrectaIndex,
+       respuesta = respuestaTexto,
+     puntos = pregunta.Puntos
+     };
+
+   preguntasConRespuestas.Add(preguntaObj);
+     }
+
+      _logger.LogInformation($"Preguntas con respuestas procesadas: {preguntasConRespuestas.Count}");
+
+      var resultado = new
+    {
+    idEvaluacion = evaluacion.IdEvaluacion,
+   idEvaluado = evaluacion.IdEvaluado,
+  nombreEvaluado = evaluacion.IdEvaluadoNavigation?.NombreCompleto ?? "Desconocido",
+    fechaEvaluacion = evaluacion.FechaEvaluacion,
+   estadoActual = evaluacion.EstadoEvaluacion,
+notaActual = evaluacion.Nota,
+     recomendacionesActuales = evaluacion.Recomendaciones,
+ preguntas = preguntasConRespuestas
+  };
+
+     return Ok(resultado);
+  }
+catch (Exception ex)
+      {
+   _logger.LogError($"Error en GetPreguntasParaCalificar: {ex.Message}\n{ex.StackTrace}");
+   return StatusCode(500, new { 
+        mensaje = "Error al obtener preguntas y respuestas", 
+ error = ex.Message, 
+stackTrace = ex.StackTrace 
+ });
+       }
+    }
+
+    /// <summary>
+        /// Califica una evaluación teórica
+ /// </summary>
+        [HttpPut("calificar/{idEvaluacion}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> CalificarEvaluacion(int idEvaluacion, [FromBody] CalificarEvaluacionRequest request)
+        {
+        try
+        {
+            if (request == null || request.Nota < 0 || request.Nota > 100)
+            {
+                return BadRequest(new { mensaje = "La calificación debe estar entre 0 y 100" });
+            }
+
+            var evaluacion = await _context.Evaluacions.FindAsync(idEvaluacion);
+            if (evaluacion == null)
+            {
+                return NotFound(new { mensaje = "Evaluación no encontrada" });
+            }
+
+            evaluacion.Nota = request.Nota;
+            evaluacion.Recomendaciones = request.Recomendaciones ?? string.Empty;
+            evaluacion.EstadoEvaluacion = request.Nota >= 80 ? "Aprobada" : "Reprobada";
+
+            // Actualizar puntos de las preguntas si se envían
+            if (request.PreguntasConPuntos != null && request.PreguntasConPuntos.Count > 0)
+            {
+                foreach (var preguntaRequest in request.PreguntasConPuntos)
+            {
+                   var pregunta = await _context.Preguntas.FindAsync(preguntaRequest.IdPregunta);
+                   if (pregunta != null)
+                   {
+                       pregunta.Puntos = preguntaRequest.Puntos;
+                       _context.Preguntas.Update(pregunta);
+                   }
+                }
+            }
+
+                    _context.Evaluacions.Update(evaluacion);
+                    await _context.SaveChangesAsync();
+
+           return Ok(new
+           {
+              mensaje = "Evaluación calificada exitosamente",
+              idEvaluacion = evaluacion.IdEvaluacion,
+              nota = evaluacion.Nota,
+              estado = evaluacion.EstadoEvaluacion
+           });
+        }
+        catch (Exception ex)
+        {
+             _logger.LogError($"Error en CalificarEvaluacion: {ex.Message}");
+             return StatusCode(500, new { mensaje = "Error al calificar la evaluación", error = ex.Message });
+            }
+        }
+    }
 
     public class GuardarRespuestasRequest
     {
-   public int IdUsuario { get; set; }
+        public int IdUsuario { get; set; }
         public int IdEvaluacion { get; set; }
-   public List<RespuestaDto> Respuestas { get; set; } = new();
-}
+        public List<RespuestaDto> Respuestas { get; set; } = new();
+    }
 
     public class RespuestaDto
     {
         public int IdPregunta { get; set; }
-    public string TextoRespuesta { get; set; } = string.Empty;
+        public string TextoRespuesta { get; set; } = string.Empty;
+    }
+
+    public class CalificarEvaluacionRequest
+    {
+       public decimal Nota { get; set; }
+       public string? Recomendaciones { get; set; }
+       public List<PreguntaPuntosRequest>? PreguntasConPuntos { get; set; }
+    }
+
+    public class PreguntaPuntosRequest
+    {
+        public int IdPregunta { get; set; }
+        public int Puntos { get; set; }
     }
 }
