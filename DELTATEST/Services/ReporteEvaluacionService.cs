@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text;
 using DELTATEST.Models;
 
 namespace DELTATEST.Services
@@ -16,28 +17,76 @@ namespace DELTATEST.Services
         {
             try
             {
+                Console.WriteLine($"ReporteEvaluacionService - Requesting evaluation ID: {idEvaluacion}");
                 var response = await _http.GetAsync($"api/evaluaciones/{idEvaluacion}");
+                
+                Console.WriteLine($"ReporteEvaluacionService - Response status: {response.StatusCode}");
+                
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadFromJsonAsync<DetalleEvaluacionDto>();
+                    var result = await response.Content.ReadFromJsonAsync<DetalleEvaluacionDto>();
+                    Console.WriteLine($"ReporteEvaluacionService - Successfully deserialized evaluation");
+                    return result;
                 }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"ReporteEvaluacionService - Error response: {errorContent}");
+                }
+                
                 return null;
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"ReporteEvaluacionService - Exception: {ex.Message}");
+                Console.WriteLine($"ReporteEvaluacionService - StackTrace: {ex.StackTrace}");
                 return null;
             }
         }
 
         public string GenerarHtmlReporte(DetalleEvaluacionDto evaluacion)
         {
-            var fechaFormato = evaluacion.FechaEvaluacion?.ToString("dd/MM/yyyy") ?? "N/A";
-            var tipoEvaluacion = evaluacion.TipoEvaluacion ?? "N/A";
-            var notaFormato = $"{evaluacion.Nota:F2}";
-            var estado = ObtenerEstadoEvaluacion(evaluacion.Nota ?? 0);
+            // Helper function to safely escape HTML special characters
+            string EscapeHtml(string? text)
+            {
+                if (string.IsNullOrEmpty(text))
+                    return "";
+                
+                return text
+                    .Replace("&", "&amp;")
+                    .Replace("<", "&lt;")
+                    .Replace(">", "&gt;")
+                    .Replace("\"", "&quot;")
+                    .Replace("'", "&#39;");
+            }
 
-            var html = $@"
-<!DOCTYPE html>
+            var fechaFormato = evaluacion.FechaEvaluacion?.ToString("dd/MM/yyyy") ?? "N/A";
+            var tipoEvaluacion = EscapeHtml(evaluacion.TipoEvaluacion);
+            var notaFormato = evaluacion.Nota.HasValue ? $"{evaluacion.Nota.Value:F2}" : "0.00";
+            var estado = ObtenerEstadoEvaluacion(evaluacion.Nota ?? 0);
+            
+            // Safe values with proper escaping
+            var nombreEvaluado = EscapeHtml(evaluacion.NombreEvaluado);
+            var ciEvaluado = EscapeHtml(evaluacion.CiEvaluado);
+            var nombreAdministrador = EscapeHtml(evaluacion.NombreAdministrador);
+            var estadoEvaluacion = EscapeHtml(evaluacion.EstadoEvaluacion);
+            var recomendaciones = EscapeHtml(evaluacion.Recomendaciones);
+            var estadoClass = evaluacion.Nota >= 80 ? "estado-aprobado" : "estado-desaprobado";
+
+            // Build recommendations section if present
+            var recommendationsHtml = string.Empty;
+            if (!string.IsNullOrWhiteSpace(recomendaciones))
+            {
+                recommendationsHtml = $@"
+        <div class='section'>
+            <div class='section-title'>Recomendaciones</div>
+            <div class='info-item'>
+                <div class='info-value'>{recomendaciones.Replace("\n", "<br />")}</div>
+            </div>
+        </div>";
+            }
+
+            var html = $@"<!DOCTYPE html>
 <html lang='es'>
 <head>
     <meta charset='UTF-8'>
@@ -122,6 +171,8 @@ namespace DELTATEST.Services
         .info-value {{
             font-size: 14px;
             color: #333;
+            word-break: break-word;
+            line-height: 1.5;
         }}
 
         .resultado-section {{
@@ -277,7 +328,6 @@ namespace DELTATEST.Services
         .btn-secondary:hover {{
             background-color: #5a6268;
         }}
-    }}
     </style>
 </head>
 <body>
@@ -291,8 +341,8 @@ namespace DELTATEST.Services
             <h2>Resultado Final</h2>
             <div class='nota'>{notaFormato}/100</div>
             <p>Tipo de Evaluación: <strong>{tipoEvaluacion}</strong></p>
-            <span class='estado-badge {(evaluacion.Nota >= 80 ? "estado-aprobado" : "estado-desaprobado")}'
-                >{estado}
+            <span class='estado-badge {estadoClass}'>
+                {estado}
             </span>
         </div>
 
@@ -301,11 +351,11 @@ namespace DELTATEST.Services
             <div class='info-grid'>
                 <div class='info-item'>
                     <div class='info-label'>Nombre Completo</div>
-                    <div class='info-value'>{evaluacion.NombreEvaluado}</div>
+                    <div class='info-value'>{nombreEvaluado}</div>
                 </div>
                 <div class='info-item'>
                     <div class='info-label'>Cédula de Identidad</div>
-                    <div class='info-value'>{evaluacion.CiEvaluado}</div>
+                    <div class='info-value'>{ciEvaluado}</div>
                 </div>
             </div>
         </div>
@@ -323,7 +373,7 @@ namespace DELTATEST.Services
                 </div>
                 <div class='info-item'>
                     <div class='info-label'>Estado Evaluación</div>
-                    <div class='info-value'>{evaluacion.EstadoEvaluacion}</div>
+                    <div class='info-value'>{estadoEvaluacion}</div>
                 </div>
                 <div class='info-item'>
                     <div class='info-label'>ID Evaluación</div>
@@ -337,7 +387,7 @@ namespace DELTATEST.Services
             <div class='info-grid'>
                 <div class='info-item'>
                     <div class='info-label'>Nombre del Evaluador/Calificador</div>
-                    <div class='info-value'>{evaluacion.NombreAdministrador}</div>
+                    <div class='info-value'>{nombreAdministrador}</div>
                 </div>
                 <div class='info-item'>
                     <div class='info-label'>Puntaje Obtenido</div>
@@ -345,12 +395,11 @@ namespace DELTATEST.Services
                 </div>
             </div>
         </div>
-
+{recommendationsHtml}
         <div class='section firmas-section'>
             <div class='section-title'>Firmas y Autorizaciones</div>
             <p style='margin-bottom: 15px; color: #666; font-size: 12px;'>
-                Este documento debe ser firmado por el evaluado y el evaluador como confirmación de la evaluación
-                realizada.
+                Este documento debe ser firmado por el evaluado y el evaluador como confirmación de la evaluación realizada.
             </p>
 
             <div class='firmas-container'>
@@ -358,8 +407,8 @@ namespace DELTATEST.Services
                     <div class='firma-label'>Firma del Evaluado</div>
                     <div class='firma-area'></div>
                     <div class='firma-linea'>
-                        <div class='firma-label'>{evaluacion.NombreEvaluado}</div>
-                        <div class='firma-subtext'>C.I.: {evaluacion.CiEvaluado}</div>
+                        <div class='firma-label'>{nombreEvaluado}</div>
+                        <div class='firma-subtext'>C.I.: {ciEvaluado}</div>
                         <div class='firma-subtext'>Fecha: _______________</div>
                     </div>
                 </div>
@@ -368,7 +417,7 @@ namespace DELTATEST.Services
                     <div class='firma-label'>Firma del Evaluador/Calificador</div>
                     <div class='firma-area'></div>
                     <div class='firma-linea'>
-                        <div class='firma-label'>{evaluacion.NombreAdministrador}</div>
+                        <div class='firma-label'>{nombreAdministrador}</div>
                         <div class='firma-subtext'>Evaluador/Calificador</div>
                         <div class='firma-subtext'>Fecha: _______________</div>
                     </div>
@@ -409,5 +458,6 @@ namespace DELTATEST.Services
         public decimal? Nota { get; set; }
         public string? EstadoEvaluacion { get; set; }
         public string? TipoEvaluacion { get; set; }
+        public string? Recomendaciones { get; set; }
     }
 }
