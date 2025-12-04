@@ -23,9 +23,7 @@ namespace DELTAAPI.Controllers
   [AllowAnonymous]
         public async Task<IActionResult> GetNotificacionesUsuario(int idUsuario)
  {
-            try
-            {
-     var notificaciones = await _context.Notificacions
+            var notificaciones = await _context.Notificacions
             .Where(n => n.IdUsuarioDestino == idUsuario)
      .OrderByDescending(n => n.FechaEnvio)
             .Select(n => new
@@ -38,11 +36,6 @@ namespace DELTAAPI.Controllers
       .ToListAsync();
 
      return Ok(notificaciones);
-       }
-     catch (Exception ex)
- {
-    return StatusCode(500, new { mensaje = "Error al obtener notificaciones", error = ex.Message });
-     }
    }
     }
 }

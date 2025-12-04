@@ -377,6 +377,42 @@ mensaje = "Evaluación teórica creada exitosamente",
   });
        }
         }
+
+        private async Task CrearNotificacion(int idUsuarioDestino, string tipoNotificacion, string mensaje, int? idEvaluacion = null)
+{
+    var notificacion = new Notificacion
+    {
+        IdUsuarioDestino = idUsuarioDestino,
+        TipoNotificacion = tipoNotificacion,
+        Mensaje = mensaje,
+        FechaEnvio = DateTime.UtcNow,
+        IdEvaluacion = idEvaluacion
+    };
+
+    _context.Notificacions.Add(notificacion);
+    await _context.SaveChangesAsync();
+}
+
+// En el método para calificar evaluaciones:
+[HttpPost("calificar/{idEvaluacion}")]
+public async Task<IActionResult> CalificarEvaluacion(int idEvaluacion, [FromBody] decimal nota)
+{
+    var evaluacion = await _context.Evaluacions.FindAsync(idEvaluacion);
+    if (evaluacion == null) return NotFound(new { mensaje = "Evaluación no encontrada" });
+
+    evaluacion.Nota = nota;
+    evaluacion.EstadoEvaluacion = "Calificado";
+    await _context.SaveChangesAsync();
+
+    await CrearNotificacion(
+        evaluacion.IdEvaluado,
+        "Evaluación Calificada",
+        $"Tu evaluación con ID {idEvaluacion} ha sido calificada.",
+        idEvaluacion
+    );
+
+    return Ok(new { mensaje = "Evaluación calificada y notificación enviada." });
+}
     }
 
     public class CrearEvaluacionPracticaRequest

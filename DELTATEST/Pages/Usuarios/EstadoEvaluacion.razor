@@ -64,22 +64,22 @@ else
             <h4 class="mb-3 text-orange text-center">Notificaciones</h4>
  @if (notificaciones != null && notificaciones.Count > 0)
             {
-        <ul class="list-group">
+    <ul class="list-group">
         @foreach (var n in notificaciones)
-  {
+        {
             <li class="list-group-item">
-       <strong>@n.TipoNotificacion:</strong> @n.Mensaje
-            <div class="small text-muted">
-   @(n.FechaEnvio?.ToString("dd/MM/yyyy HH:mm") ?? "Sin fecha")
-  </div>
-         </li>
-     }
-          </ul>
-            }
-   else
- {
-              <div class="alert alert-info text-center">No tienes notificaciones nuevas.</div>
-     }
+                <strong>@n.TipoNotificacion:</strong> @n.Mensaje
+                <div class="small text-muted">
+                    @(n.FechaEnvio?.ToString("dd/MM/yyyy HH:mm") ?? "Sin fecha")
+                </div>
+            </li>
+        }
+    </ul>
+}
+else
+{
+    <div class="alert alert-info text-center">No tienes notificaciones nuevas.</div>
+}
       </div>
     </div>
 }
