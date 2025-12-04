@@ -2,6 +2,7 @@
 @implements IDisposable
 @inject NavigationManager NavigationManager
 @inject DELTATEST.Services.AuthService AuthService
+@inject DELTATEST.Services.AuthStateService AuthStateService
 
 <!-- ENCABEZADO GLOBAL -->
 <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom shadow-sm top-row w-100">
@@ -191,26 +192,42 @@
 
     protected override async Task OnInitializedAsync()
     {
-        NavigationManager.LocationChanged += OnLocationChanged;
-        await RefreshAuthStatus();
-        isInitialized = true;
+        try
+        {
+            // Esperar un pequeño tiempo para que localStorage se inicialice
+            await Task.Delay(100);
+            
+            // Inicializar el servicio de estado de autenticación
+            await AuthStateService.InitializeAsync();
+            
+            // Suscribirse a cambios en el estado de autenticación
+            AuthStateService.OnAuthenticationStateChanged += OnAuthStateChanged;
+            
+            NavigationManager.LocationChanged += OnLocationChanged;
+            
+            // Establecer el estado actual
+            RefreshAuthStatus();
+            
+            isInitialized = true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[MainLayout] Initialization error: {ex.Message}");
+            isAuthenticated = false;
+        }
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private void OnAuthStateChanged()
     {
-        if (firstRender)
-        {
-            // Verificar autenticación después del renderizado
-            await RefreshAuthStatus();
-        }
-        await base.OnAfterRenderAsync(firstRender);
+        Console.WriteLine($"[MainLayout] Auth state changed");
+        RefreshAuthStatus();
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         CheckCurrentPage();
         // Verificar autenticación cada vez que cambia la página
-        InvokeAsync(RefreshAuthStatus);
+        RefreshAuthStatus();
     }
 
     private void CheckCurrentPage()
@@ -219,21 +236,21 @@
         isOnAuthPage = uri.Contains("/IniciarSesion") || uri.Contains("/Registro");
     }
 
-    private async Task RefreshAuthStatus()
+    private void RefreshAuthStatus()
     {
         try
         {
             CheckCurrentPage();
             
-            // Llamar al endpoint para verificar si hay sesión activa
-            var (isAuth, userName, userRole, userId) = await AuthService.GetCurrentUserAsync();
+            // Obtener el estado del servicio
+            var (isAuth, userName, userRole, userId) = AuthStateService.GetCurrentState();
             isAuthenticated = isAuth;
             
-            Console.WriteLine($"Auth Status: {isAuthenticated}, User: {userName}, Role: {userRole}");
+            Console.WriteLine($"[MainLayout] Auth Status: {isAuthenticated}, User: {userName}, Role: {userRole}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error checking auth: {ex.Message}");
+            Console.WriteLine($"[MainLayout] Error checking auth: {ex.Message}");
             isAuthenticated = false;
         }
         
@@ -243,9 +260,10 @@
     private async Task HandleSignOut()
     {
         await AuthService.LogoutAsync();
+        await AuthStateService.ClearAuthenticationAsync();
         isAuthenticated = false;
         StateHasChanged();
-        NavigationManager.NavigateTo("/IniciarSesion", forceLoad: true);
+        NavigationManager.NavigateTo("/", forceLoad: true);
     }
 
     private void GoBack()
@@ -256,5 +274,6 @@
     void IDisposable.Dispose()
     {
         NavigationManager.LocationChanged -= OnLocationChanged;
+        AuthStateService.OnAuthenticationStateChanged -= OnAuthStateChanged;
     }
 }

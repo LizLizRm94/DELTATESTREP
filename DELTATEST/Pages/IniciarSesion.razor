@@ -3,6 +3,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 @inject NavigationManager Navigation
 @inject DELTATEST.Services.AuthService AuthService
+@inject DELTATEST.Services.AuthStateService AuthStateService
 
 <style>
     /* Contenedor centrado */
@@ -152,6 +153,15 @@
 
         if (success)
         {
+            // Obtener el nombre del usuario del AuthService
+            var (_, userName, userRole, userId) = await AuthService.GetCurrentUserAsync();
+            
+            // Actualizar el estado de autenticación en el servicio
+            await AuthStateService.SetAuthenticatedAsync(userName ?? "Usuario", rol ?? "Usuario", idUsuario ?? 0);
+            
+            // Esperar a que localStorage se sincronice completamente
+            await Task.Delay(500);
+            
             if (string.Equals(rol, "Inspector", StringComparison.OrdinalIgnoreCase))
             {
                 Navigation.NavigateTo("/panelControlAdmin", true);

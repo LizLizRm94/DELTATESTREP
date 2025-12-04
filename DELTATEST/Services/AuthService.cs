@@ -28,8 +28,8 @@ namespace DELTATEST.Services
                 var result = await response.Content.ReadFromJsonAsync<LoginResponse?>();
                 if (result != null)
                 {
-                    // La cookie se mantiene automáticamente en el navegador
-                    // Guardamos información del usuario localmente para acceso rápido
+                    // Guardar información del usuario en localStorage para acceso rápido
+                    // Esto es especialmente importante en WebAssembly donde las cookies pueden no funcionar directamente
                     await _localStorage.SetItemAsync("userName", result.NombreCompleto);
                     await _localStorage.SetItemAsync("userRole", result.Rol);
                     await _localStorage.SetItemAsync("userId", result.IdUsuario);
@@ -119,7 +119,39 @@ namespace DELTATEST.Services
     {
         try
         {
-            // Primero, intentar obtener del endpoint
+            // Primero, intentar obtener del localStorage (es más confiable en WebAssembly)
+            bool isAuth = false;
+            try
+            {
+                isAuth = await _localStorage.GetItemAsync<bool>("isAuthenticated");
+            }
+            catch
+            {
+                // Si hay error al obtener, isAuth permanece como false
+                isAuth = false;
+            }
+            
+            Console.WriteLine($"GetCurrentUserAsync - isAuthenticated flag from localStorage: {isAuth}");
+            
+            if (isAuth)
+            {
+                var userName = await _localStorage.GetItemAsync<string>("userName");
+                var userRole = await _localStorage.GetItemAsync<string>("userRole");
+                var userId = await _localStorage.GetItemAsync<int?>("userId");
+                
+                Console.WriteLine($"Auth found in localStorage: {userName}, Role: {userRole}");
+                
+                // Si tenemos datos en localStorage, consideramos al usuario como autenticado
+                if (!string.IsNullOrEmpty(userName))
+                {
+                    Console.WriteLine($"? Returning authenticated user from localStorage: {userName}");
+                    return (true, userName, userRole, userId);
+                }
+            }
+            
+            Console.WriteLine($"No auth data in localStorage, attempting server validation...");
+            
+            // Si no hay en localStorage, intentar obtener del servidor
             var response = await _http.GetAsync("api/auth/current-user");
             
             Console.WriteLine($"GetCurrentUser response status: {response.StatusCode}");
@@ -134,47 +166,49 @@ namespace DELTATEST.Services
                     await _localStorage.SetItemAsync("userId", result.IdUsuario);
                     await _localStorage.SetItemAsync("isAuthenticated", true);
                     
-                    Console.WriteLine($"Auth confirmed from server: {result.NombreCompleto}");
+                    Console.WriteLine($"? Auth confirmed from server: {result.NombreCompleto}");
                     return (true, result.NombreCompleto, result.Rol, result.IdUsuario);
                 }
             }
             else
             {
                 Console.WriteLine($"GetCurrentUser failed with status: {response.StatusCode}");
-                // Si falla, intentar obtener del local storage
-                var isAuth = await _localStorage.GetItemAsync<bool>("isAuthenticated");
-                if (isAuth)
-                {
-                    var userName = await _localStorage.GetItemAsync<string>("userName");
-                    var userRole = await _localStorage.GetItemAsync<string>("userRole");
-                    var userId = await _localStorage.GetItemAsync<int?>("userId");
-                    
-                    Console.WriteLine($"Using cached auth data: {userName}");
-                    return (true, userName, userRole, userId);
-                }
             }
 
+            Console.WriteLine($"? No authentication found");
             return (false, null, null, null);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"GetCurrentUserAsync error: {ex.Message}");
             
-            // Fallback: intentar obtener del local storage
+            // Fallback: intentar obtener del local storage en caso de error
             try
             {
-                var isAuth = await _localStorage.GetItemAsync<bool>("isAuthenticated");
+                bool isAuth = false;
+                try
+                {
+                    isAuth = await _localStorage.GetItemAsync<bool>("isAuthenticated");
+                }
+                catch
+                {
+                    isAuth = false;
+                }
+                
                 if (isAuth)
                 {
                     var userName = await _localStorage.GetItemAsync<string>("userName");
                     var userRole = await _localStorage.GetItemAsync<string>("userRole");
                     var userId = await _localStorage.GetItemAsync<int?>("userId");
                     
-                    Console.WriteLine($"Using cached auth data (from fallback): {userName}");
+                    Console.WriteLine($"? Using cached auth data (from fallback): {userName}");
                     return (true, userName, userRole, userId);
                 }
             }
-            catch { }
+            catch (Exception fallbackEx) 
+            { 
+                Console.WriteLine($"Fallback error: {fallbackEx.Message}");
+            }
             
             return (false, null, null, null);
         }

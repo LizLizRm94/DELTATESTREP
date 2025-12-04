@@ -38,6 +38,7 @@ builder.Services.AddScoped(sp =>
 
 // Register application services
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<AuthStateService>();
 builder.Services.AddScoped<ReporteEvaluacionService>();
 builder.Services.AddScoped<EvaluadoService>();
 

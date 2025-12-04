@@ -1,5 +1,8 @@
 ﻿@inherits LayoutComponentBase
+@implements IDisposable
 @inject NavigationManager NavigationManager
+@inject DELTATEST.Services.AuthService AuthService
+@inject DELTATEST.Services.AuthStateService AuthStateService
 
 <!-- ENCABEZADO GLOBAL -->
 <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom shadow-sm top-row w-100 fixed-top">
@@ -27,7 +30,20 @@
                 </li>
 
                 <li class="nav-item">
-                    <NavLink class="btn btn-orange ms-3" href="/IniciarSesion">Sign In</NavLink>
+                    @if (isAuthenticated)
+                    {
+                        <!-- Si está autenticado, mostrar "Sign Out" -->
+                        <button class="btn btn-orange ms-3" @onclick="HandleSignOut">
+                            <span class="bi bi-box-arrow-right me-1"></span> Sign Out
+                        </button>
+                    }
+                    else
+                    {
+                        <!-- Si no está autenticado, mostrar "Sign In" -->
+                        <NavLink class="btn btn-orange ms-3" href="/IniciarSesion">
+                            <span class="bi bi-box-arrow-in-right me-1"></span> Sign In
+                        </NavLink>
+                    }
                 </li>
             </ul>
         </div>
@@ -93,4 +109,69 @@
     }
 </style>
 
-@code {}
+@code {
+    private bool isAuthenticated = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Esperar a que localStorage se inicialice
+        await Task.Delay(100);
+        
+        // Inicializar el servicio de estado de autenticación
+        await AuthStateService.InitializeAsync();
+        
+        // Suscribirse a cambios en el estado de autenticación
+        AuthStateService.OnAuthenticationStateChanged += OnAuthStateChanged;
+        
+        NavigationManager.LocationChanged += OnLocationChanged;
+        
+        // Establecer el estado actual
+        RefreshAuthStatus();
+    }
+
+    private void OnAuthStateChanged()
+    {
+        Console.WriteLine($"[MainSinLayout] Auth state changed");
+        RefreshAuthStatus();
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        // Verificar autenticación cada vez que cambia la página
+        RefreshAuthStatus();
+    }
+
+    private void RefreshAuthStatus()
+    {
+        try
+        {
+            // Obtener el estado del servicio
+            var (isAuth, _, _, _) = AuthStateService.GetCurrentState();
+            isAuthenticated = isAuth;
+            
+            Console.WriteLine($"[MainSinLayout] Auth Status: {isAuthenticated}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[MainSinLayout] Error checking auth: {ex.Message}");
+            isAuthenticated = false;
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task HandleSignOut()
+    {
+        await AuthService.LogoutAsync();
+        await AuthStateService.ClearAuthenticationAsync();
+        isAuthenticated = false;
+        StateHasChanged();
+        NavigationManager.NavigateTo("/", forceLoad: true);
+    }
+
+    void IDisposable.Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+        AuthStateService.OnAuthenticationStateChanged -= OnAuthStateChanged;
+    }
+}

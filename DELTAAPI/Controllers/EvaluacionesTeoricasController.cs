@@ -359,11 +359,7 @@ public async Task<IActionResult> GetEvaluacionesPendientesCalificacion()
      try
   {
   var evaluaciones = await _context.Evaluacions
-   .Where(e => e.TipoEvaluacion == true && 
-             (e.EstadoEvaluacion == "Respondida" || 
-  e.EstadoEvaluacion == "Pendiente" ||
-            e.Nota == null ||
-            e.EstadoEvaluacion == "Completada"))
+   .Where(e => e.TipoEvaluacion == true)
 .Include(e => e.IdEvaluadoNavigation)
       .Include(e => e.Respuestas)
  .Select(e => new
@@ -380,7 +376,7 @@ public async Task<IActionResult> GetEvaluacionesPendientesCalificacion()
        .OrderByDescending(e => e.fechaEvaluacion)
      .ToListAsync();
 
-  _logger.LogInformation($"GetEvaluacionesPendientes: Total pendientes={evaluaciones.Count}");
+  _logger.LogInformation($"GetEvaluacionesPendientes: Total evaluaciones={evaluaciones.Count}");
  foreach (var e in evaluaciones)
   {
     _logger.LogInformation($"  ID={e.idEvaluacion}, Estado='{e.estadoEvaluacion}', Respuestas={e.cantidadPreguntas}");
@@ -390,7 +386,7 @@ public async Task<IActionResult> GetEvaluacionesPendientesCalificacion()
   }
   catch (Exception ex)
      {
-        _logger.LogError($"Error al obtener pendientes: {ex.Message}");
+        _logger.LogError($"Error al obtener evaluaciones: {ex.Message}");
      return StatusCode(500, new { mensaje = "Error", error = ex.Message });
     }
   }

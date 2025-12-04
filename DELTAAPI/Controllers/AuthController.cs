@@ -173,24 +173,43 @@ namespace DELTAAPI.Controllers
         [HttpGet("current-user")]
         public async Task<IActionResult> GetCurrentUser()
         {
-            if (!User.Identity?.IsAuthenticated ?? false)
-                return Unauthorized("No autorizado");
-
-            var idUsuarioStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!int.TryParse(idUsuarioStr, out var idUsuario))
-                return Unauthorized("Token inválido");
-
-            var user = await _context.Usuarios.FindAsync(idUsuario);
-            if (user == null)
-                return NotFound("Usuario no encontrado");
-
-            return Ok(new
+            try
             {
-                idUsuario = user.IdUsuario,
-                nombreCompleto = user.NombreCompleto,
-                correo = user.Correo,
-                rol = user.Rol
-            });
+                if (!User.Identity?.IsAuthenticated ?? false)
+                {
+                    _logger.LogWarning("Current-user request without authentication");
+                    return Unauthorized("No autorizado");
+                }
+
+                var idUsuarioStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!int.TryParse(idUsuarioStr, out var idUsuario))
+                {
+                    _logger.LogWarning("Invalid user ID in claims");
+                    return Unauthorized("Token inválido");
+                }
+
+                var user = await _context.Usuarios.FindAsync(idUsuario);
+                if (user == null)
+                {
+                    _logger.LogWarning($"User {idUsuario} not found in database");
+                    return NotFound("Usuario no encontrado");
+                }
+
+                _logger.LogInformation($"Current-user verified: {user.NombreCompleto}");
+
+                return Ok(new
+                {
+                    idUsuario = user.IdUsuario,
+                    nombreCompleto = user.NombreCompleto,
+                    correo = user.Correo,
+                    rol = user.Rol
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error in GetCurrentUser: {ex.Message}");
+                return StatusCode(500, "Error interno del servidor");
+            }
         }
     }
 }
