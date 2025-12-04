@@ -16,7 +16,9 @@ var clientOrigins = new[]
     "https://localhost:7105",      // Cliente Blazor HTTPS
     "http://localhost:5216",       // Cliente Blazor HTTP
     "https://localhost:7287",      // API HTTPS
-    "http://localhost:5160"        // API HTTP
+    "http://localhost:5160",       // API HTTP
+    "http://localhost:705",        // Cliente Blazor alternativo
+    "https://localhost:705"        // Cliente Blazor alternativo HTTPS
 };
 builder.Services.AddCors(options =>
 {
@@ -56,8 +58,9 @@ builder.Services.AddAuthentication(options =>
     options.SlidingExpiration = true;
     options.Cookie.Name = "DeltaAuth";
     options.Cookie.HttpOnly = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // true en producción
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     options.Cookie.SameSite = SameSiteMode.None; // Importante para cross-origin con cookies
+    options.Cookie.Domain = null; // Permitir cualquier dominio
 });
 
 builder.Services.AddAuthorization();
@@ -74,7 +77,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-// Enable CORS for requests from the client
+// Enable CORS for requests from the client - Debe ir ANTES de Authentication y Authorization
 app.UseCors("AllowClient");
 
 app.UseAuthentication(); // Muy importante: primero autenticación

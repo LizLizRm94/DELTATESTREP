@@ -1,0 +1,270 @@
+@page "/reporte/{IdEvaluacion:int}"
+@using DELTATEST.Services
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject ReporteEvaluacionService ReporteService
+@layout ReportePrintLayout
+
+@if (cargando)
+{
+    <div class="reporte-loading">
+        <div class="spinner"></div>
+        <p>Generando reporte...</p>
+    </div>
+}
+else if (mostrarError)
+{
+    <div class="reporte-error">
+        <div class="error-box">
+            <h3>?? Error al generar el reporte</h3>
+            <p>@mensajeError</p>
+            <button class="btn btn-volver" @onclick="Volver">? Volver a Reportes</button>
+        </div>
+    </div>
+}
+else if (evaluacion != null)
+{
+    <div class="reporte-header no-print">
+        <div class="reporte-titulo">
+            <h2>REPORTE DE EVALUACIÓN</h2>
+            <p class="subtitulo">Evaluado: @evaluacion.NombreEvaluado</p>
+        </div>
+        <div class="reporte-acciones">
+            <button class="btn btn-imprimir" @onclick="ImprimirReporte">??? Imprimir/Descargar PDF</button>
+            <button class="btn btn-volver" @onclick="Volver">? Volver</button>
+        </div>
+    </div>
+
+    <div class="reporte-contenido">
+        @((MarkupString)ReporteService.GenerarHtmlReporte(evaluacion))
+    </div>
+}
+
+<style>
+    .reporte-loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+    }
+
+    .spinner {
+        width: 60px;
+        height: 60px;
+        border: 5px solid #e5e7eb;
+        border-top-color: #f58220;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-bottom: 20px;
+    }
+
+    @@keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .reporte-error {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+        padding: 20px;
+    }
+
+    .error-box {
+        background: white;
+        padding: 40px;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        text-align: center;
+        max-width: 500px;
+    }
+
+    .error-box h3 {
+        color: #dc3545;
+        margin-bottom: 15px;
+        font-size: 22px;
+    }
+
+    .error-box p {
+        color: #666;
+        margin-bottom: 25px;
+        line-height: 1.6;
+    }
+
+    .reporte-header {
+        background: white;
+        border-bottom: 3px solid #f58220;
+        padding: 20px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .reporte-titulo h2 {
+        margin: 0;
+        color: #333;
+        font-size: 24px;
+        font-weight: 700;
+    }
+
+    .subtitulo {
+        margin: 5px 0 0 0;
+        color: #666;
+        font-size: 14px;
+    }
+
+    .reporte-acciones {
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn {
+        padding: 10px 18px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+    }
+
+    .btn-imprimir {
+        background: #f58220;
+        color: white;
+    }
+
+    .btn-imprimir:hover {
+        background: #e67e1a;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(245, 130, 32, 0.3);
+    }
+
+    .btn-volver {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-volver:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+    }
+
+    .reporte-contenido {
+        background: white;
+        padding: 30px;
+        margin: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    @@media print {
+        .reporte-header {
+            display: none !important;
+        }
+
+        .reporte-contenido {
+            margin: 0;
+            padding: 0;
+            box-shadow: none;
+            border-radius: 0;
+        }
+
+        .no-print {
+            display: none !important;
+        }
+
+        body {
+            background: white;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .reporte-header {
+            flex-direction: column;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .reporte-acciones {
+            width: 100%;
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+            text-align: center;
+        }
+
+        .reporte-contenido {
+            padding: 15px;
+            margin: 10px;
+        }
+    }
+</style>
+
+@code {
+    [Parameter]
+    public int IdEvaluacion { get; set; }
+
+    private DetalleEvaluacionDto? evaluacion;
+    private bool cargando = true;
+    private bool mostrarError = false;
+    private string? mensajeError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarReporte();
+    }
+
+    private async Task CargarReporte()
+    {
+        try
+        {
+            cargando = true;
+            Console.WriteLine($"Cargando reporte para evaluación: {IdEvaluacion}");
+            
+            evaluacion = await ReporteService.ObtenerEvaluacionAsync(IdEvaluacion);
+
+            if (evaluacion == null)
+            {
+                mostrarError = true;
+                mensajeError = $"No se encontró la evaluación con ID {IdEvaluacion}";
+                Console.WriteLine(mensajeError);
+            }
+            else
+            {
+                Console.WriteLine($"Reporte cargado: {evaluacion.NombreEvaluado}");
+            }
+        }
+        catch (Exception ex)
+        {
+            mostrarError = true;
+            mensajeError = $"Error al cargar la evaluación: {ex.Message}";
+            Console.WriteLine($"Error: {ex}");
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private void ImprimirReporte()
+    {
+        // Usar la función de impresión del navegador
+        Console.WriteLine("Iniciando impresión...");
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/reportes");
+    }
+}

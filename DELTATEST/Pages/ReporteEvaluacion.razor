@@ -1,5 +1,6 @@
 @page "/reporte-evaluacion/{IdEvaluacion:int}"
 @using DELTATEST.Services
+@layout ReportePrintLayout
 @inject ReporteEvaluacionService ReporteService
 @inject NavigationManager Nav
 @inject IJSRuntime JS
@@ -16,7 +17,7 @@
 else if (evaluacion != null)
 {
     <div class="container-fluid py-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4 no-print">
             <h3 class="fw-bold text-warning">Reporte de Evaluación</h3>
             <div class="gap-2">
                 <button class="btn btn-primary" @onclick="ImprimirReporte" title="Imprimir o descargar como PDF">
@@ -39,6 +40,24 @@ else
         <button class="btn btn-warning" @onclick="IrAtras">Volver</button>
     </div>
 }
+
+<style>
+    @@media print {
+        .no-print {
+            display: none !important;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        
+        .container-fluid {
+            max-width: 100%;
+            padding: 0;
+        }
+    }
+</style>
 
 @code {
     [Parameter]
@@ -75,6 +94,6 @@ else
 
     private void IrAtras()
     {
-        Nav.NavigateTo("/verEvaluacionesReportes");
+        Nav.NavigateTo("/admin/evaluaciones-teoricas");
     }
 }

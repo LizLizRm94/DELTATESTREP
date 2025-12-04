@@ -1,0 +1,577 @@
+@page "/reportes"
+@using DELTATEST.Services
+@using System.Text.Json
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@layout ReportesLayout
+
+<div class="reportes-container">
+    <div class="reportes-header">
+        <h1 class="titulo-reportes">MÓDULO DE REPORTES</h1>
+        <p class="subtitulo-reportes">Sistema de Evaluación - DELTATEST</p>
+    </div>
+
+    @if (cargando)
+    {
+        <div class="loading-container">
+            <div class="spinner"></div>
+            <p>Cargando evaluaciones...</p>
+        </div>
+    }
+    else
+    {
+        <div class="reportes-content">
+            <!-- SECCIÓN 1: EVALUACIONES PENDIENTES -->
+            <div class="seccion-reportes">
+                <div class="seccion-header">
+                    <h2 class="seccion-titulo">?? Evaluaciones Pendientes</h2>
+                    <span class="badge-contador">@(evaluacionesPendientes?.Count ?? 0)</span>
+                </div>
+
+                @if (evaluacionesPendientes == null || evaluacionesPendientes.Count == 0)
+                {
+                    <div class="alerta alerta-info">
+                        <p>No hay evaluaciones pendientes de calificación.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="tabla-evaluaciones">
+                        <table class="tabla">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Evaluado</th>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var eval in evaluacionesPendientes)
+                                {
+                                    <tr class="fila-evaluacion">
+                                        <td><strong>@eval.IdEvaluacion</strong></td>
+                                        <td>@eval.NombreEvaluado</td>
+                                        <td>@eval.FechaEvaluacion?.ToString("dd/MM/yyyy")</td>
+                                        <td>
+                                            @if (eval.TipoEvaluacion == true)
+                                            {
+                                                <span class="badge badge-teorica">Teórica</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge badge-practica">Práctica</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span class="estado-pendiente">@eval.EstadoEvaluacion</span>
+                                        </td>
+                                        <td>
+                                            <button class="btn-accion btn-calificar" 
+                                                    @onclick="() => IrACalificar(eval.IdEvaluacion)"
+                                                    title="Calificar esta evaluación">
+                                                ? Calificar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+
+            <hr class="divisor-secciones" />
+
+            <!-- SECCIÓN 2: EVALUACIONES REVISADAS/COMPLETADAS -->
+            <div class="seccion-reportes">
+                <div class="seccion-header">
+                    <h2 class="seccion-titulo">? Evaluaciones Revisadas/Completadas</h2>
+                    <span class="badge-contador">@(evaluacionesRevisadas?.Count ?? 0)</span>
+                </div>
+
+                @if (evaluacionesRevisadas == null || evaluacionesRevisadas.Count == 0)
+                {
+                    <div class="alerta alerta-info">
+                        <p>No hay evaluaciones revisadas o completadas.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="tabla-evaluaciones">
+                        <table class="tabla">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Evaluado</th>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Calificación</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var eval in evaluacionesRevisadas)
+                                {
+                                    var claseNota = eval.Nota >= 80 ? "nota-aprobado" : eval.Nota >= 51 ? "nota-regular" : "nota-reprobado";
+                                    <tr class="fila-evaluacion">
+                                        <td><strong>@eval.IdEvaluacion</strong></td>
+                                        <td>@eval.NombreEvaluado</td>
+                                        <td>@eval.FechaEvaluacion?.ToString("dd/MM/yyyy")</td>
+                                        <td>
+                                            @if (eval.TipoEvaluacion == true)
+                                            {
+                                                <span class="badge badge-teorica">Teórica</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge badge-practica">Práctica</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span class="@claseNota">@eval.Nota?.ToString("F2") ?? "N/A")/100</span>
+                                        </td>
+                                        <td>
+                                            <span class="@(eval.Nota >= 80 ? "estado-aprobado" : "estado-desaprobado")">
+                                                @(eval.Nota >= 80 ? "Aprobado" : "Desaprobado")
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <button class="btn-accion btn-reporte" 
+                                                    @onclick="() => GenerarReporte(eval.IdEvaluacion)"
+                                                    title="Generar reporte de esta evaluación">
+                                                ?? Reporte
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(mensajeError))
+    {
+        <div class="alerta alerta-error">
+            <span>@mensajeError</span>
+        </div>
+    }
+</div>
+
+<style>
+    .reportes-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 30px 20px;
+        background: #f5f5f5;
+        min-height: 100vh;
+    }
+
+    .reportes-header {
+        text-align: center;
+        margin-bottom: 40px;
+        padding: 30px 20px;
+        background: linear-gradient(135deg, #f58220 0%, #ff9c42 100%);
+        border-radius: 10px;
+        color: white;
+        box-shadow: 0 4px 12px rgba(245, 130, 32, 0.3);
+    }
+
+    .titulo-reportes {
+        font-size: 32px;
+        font-weight: 700;
+        margin: 0;
+        letter-spacing: 1px;
+    }
+
+    .subtitulo-reportes {
+        font-size: 14px;
+        margin: 8px 0 0 0;
+        opacity: 0.95;
+    }
+
+    .loading-container {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #e5e7eb;
+        border-top-color: #f58220;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin: 0 auto 15px;
+    }
+
+    @@keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .reportes-content {
+        background: white;
+        border-radius: 10px;
+        padding: 30px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .reportes-actions {
+        margin-bottom: 30px;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .btn-refrescar {
+        display: inline-block;
+        padding: 8px 16px;
+        background: #0084c9;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .btn-refrescar:hover {
+        background: #0066a1;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 132, 201, 0.3);
+    }
+
+    .seccion-reportes {
+        margin-bottom: 40px;
+    }
+
+    .seccion-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 3px solid #f58220;
+    }
+
+    .seccion-titulo {
+        font-size: 22px;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+    }
+
+    .badge-contador {
+        display: inline-block;
+        background: #f58220;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    .divisor-secciones {
+        border: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #f58220, transparent);
+        margin: 50px 0;
+    }
+
+    .tabla-evaluaciones {
+        overflow-x: auto;
+    }
+
+    .tabla {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    .tabla thead {
+        background: #f9f9f9;
+        border-bottom: 2px solid #f58220;
+    }
+
+    .tabla th {
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+        color: #333;
+        text-transform: uppercase;
+        font-size: 12px;
+        letter-spacing: 0.5px;
+    }
+
+    .tabla td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #e5e7eb;
+        color: #555;
+    }
+
+    .fila-evaluacion:hover {
+        background: #f9f9f9;
+        transition: background 0.3s ease;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .badge-teorica {
+        background: #cfe2ff;
+        color: #084298;
+    }
+
+    .badge-practica {
+        background: #d1e7dd;
+        color: #0f5132;
+    }
+
+    .estado-pendiente {
+        display: inline-block;
+        background: #fff3cd;
+        color: #664d03;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 12px;
+    }
+
+    .estado-aprobado {
+        display: inline-block;
+        background: #d1e7dd;
+        color: #0f5132;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 12px;
+    }
+
+    .estado-desaprobado {
+        display: inline-block;
+        background: #f8d7da;
+        color: #842029;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 12px;
+    }
+
+    .nota-aprobado {
+        color: #0f5132;
+        font-weight: 600;
+        background: #d1e7dd;
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+
+    .nota-regular {
+        color: #664d03;
+        font-weight: 600;
+        background: #fff3cd;
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+
+    .nota-reprobado {
+        color: #842029;
+        font-weight: 600;
+        background: #f8d7da;
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+
+    .btn-accion {
+        display: inline-block;
+        padding: 6px 12px;
+        border: none;
+        border-radius: 5px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .btn-calificar {
+        background: #f58220;
+        color: white;
+    }
+
+    .btn-calificar:hover {
+        background: #e67e1a;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(245, 130, 32, 0.3);
+    }
+
+    .btn-reporte {
+        background: #0084c9;
+        color: white;
+    }
+
+    .btn-reporte:hover {
+        background: #0066a1;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 132, 201, 0.3);
+    }
+
+    .alerta {
+        padding: 16px 20px;
+        border-radius: 6px;
+        margin: 20px 0;
+        font-size: 14px;
+    }
+
+    .alerta-info {
+        background: #cfe2ff;
+        border: 1px solid #b6d4fe;
+        color: #084298;
+    }
+
+    .alerta-error {
+        background: #f8d7da;
+        border: 1px solid #f5c2c7;
+        color: #842029;
+    }
+
+    .alerta p {
+        margin: 0;
+    }
+
+    @@media (max-width: 768px) {
+        .reportes-container {
+            padding: 15px;
+        }
+
+        .reportes-header {
+            padding: 20px 15px;
+        }
+
+        .titulo-reportes {
+            font-size: 24px;
+        }
+
+        .reportes-content {
+            padding: 15px;
+        }
+
+        .tabla {
+            font-size: 12px;
+        }
+
+        .tabla th,
+        .tabla td {
+            padding: 8px 10px;
+        }
+
+        .btn-accion {
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+
+        .seccion-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+    }
+</style>
+
+@code {
+    private List<EvaluacionDto>? evaluacionesPendientes;
+    private List<EvaluacionDto>? evaluacionesRevisadas;
+    private bool cargando = true;
+    private string? mensajeError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarEvaluaciones();
+    }
+
+    private async Task CargarEvaluaciones()
+    {
+        try
+        {
+            cargando = true;
+            mensajeError = null;
+
+            // Obtener todas las evaluaciones teóricas
+            var response = await Http.GetAsync("api/evaluacionesteoricass/debug/todas");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var contenido = await response.Content.ReadAsStringAsync();
+                var todasLasEvaluaciones = JsonSerializer.Deserialize<List<EvaluacionDto>>(contenido);
+
+                if (todasLasEvaluaciones != null)
+                {
+                    // Separar en pendientes y revisadas
+                    evaluacionesPendientes = todasLasEvaluaciones
+                        .Where(e => string.IsNullOrEmpty(e.Nota.ToString()) || e.Nota == 0)
+                        .OrderByDescending(e => e.FechaEvaluacion)
+                        .ToList();
+
+                    evaluacionesRevisadas = todasLasEvaluaciones
+                        .Where(e => e.Nota.HasValue && e.Nota > 0)
+                        .OrderByDescending(e => e.FechaEvaluacion)
+                        .ToList();
+                }
+            }
+            else
+            {
+                mensajeError = "Error al cargar las evaluaciones";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeError = $"Error: {ex.Message}";
+            Console.WriteLine($"Error: {ex}");
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private void IrACalificar(int idEvaluacion)
+    {
+        NavigationManager.NavigateTo($"/admin/evaluaciones-teoricas?id={idEvaluacion}");
+    }
+
+    private void GenerarReporte(int idEvaluacion)
+    {
+        // Redirigir a página de reporte
+        NavigationManager.NavigateTo($"/reporte/{idEvaluacion}");
+    }
+
+    public class EvaluacionDto
+    {
+        public int IdEvaluacion { get; set; }
+        public int IdEvaluado { get; set; }
+        public string? NombreEvaluado { get; set; }
+        public DateOnly? FechaEvaluacion { get; set; }
+        public decimal? Nota { get; set; }
+        public string? EstadoEvaluacion { get; set; }
+        public bool? TipoEvaluacion { get; set; }
+        public int CantidadPreguntas { get; set; }
+        public bool TieneRespuestas { get; set; }
+    }
+}

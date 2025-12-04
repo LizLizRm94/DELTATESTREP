@@ -20,7 +20,7 @@ namespace DELTATEST.Services
     {
         try
         {
-            // Ahora enviamos Username (CI o correo) y Password
+            // Enviar Username (CI o correo) y Password
             var payload = new { Username = model.Username, Password = model.Contrasena };
             var response = await _http.PostAsJsonAsync("api/auth/login", payload);
             if (response.IsSuccessStatusCode)
@@ -33,7 +33,9 @@ namespace DELTATEST.Services
                     await _localStorage.SetItemAsync("userName", result.NombreCompleto);
                     await _localStorage.SetItemAsync("userRole", result.Rol);
                     await _localStorage.SetItemAsync("userId", result.IdUsuario);
+                    await _localStorage.SetItemAsync("isAuthenticated", true);
 
+                    Console.WriteLine($"Login exitoso: {result.NombreCompleto}, Rol: {result.Rol}");
                     return (true, result.Rol, null, result.IdUsuario);
                 }
 
@@ -45,6 +47,7 @@ namespace DELTATEST.Services
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"Login error: {ex.Message}");
             return (false, null, ex.Message, null);
         }
     }
@@ -66,7 +69,7 @@ namespace DELTATEST.Services
                 Ci = model.Ci,
                 Correo = model.Correo,
                 Telefono = model.Telefono,
-                Role = model.Rol, // coincide con el DTO del API
+                Role = model.Rol,
                 FechaIngreso = fechaStr,
                 Estado = model.Estado,
                 PuestoActual = model.PuestoActual,
@@ -78,7 +81,6 @@ namespace DELTATEST.Services
             var response = await _http.PostAsJsonAsync("api/auth/register", payload);
             if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.Created)
             {
-                // Devuelve éxito, rol y nombre registrado
                 return (true, model.Rol, null, model.NombreCompleto);
             }
 
@@ -87,7 +89,7 @@ namespace DELTATEST.Services
         }
         catch (Exception ex)
         {
-            // En caso de excepción, no se puede devolver null en bool
+            Console.WriteLine($"Register error: {ex.Message}");
             return (false, null, ex.Message, null);
         }
     }
@@ -98,23 +100,30 @@ namespace DELTATEST.Services
         {
             // Enviar solicitud de logout al servidor para limpiar la cookie
             await _http.PostAsync("api/auth/logout", null);
+            Console.WriteLine("Logout request sent to server");
         }
-        catch
+        catch (Exception ex)
         {
-            // Continuar incluso si falla la solicitud de logout remota
+            Console.WriteLine($"Logout error: {ex.Message}");
         }
 
         // Limpiar almacenamiento local
         await _localStorage.RemoveItemAsync("userName");
         await _localStorage.RemoveItemAsync("userRole");
         await _localStorage.RemoveItemAsync("userId");
+        await _localStorage.RemoveItemAsync("isAuthenticated");
+        Console.WriteLine("Local storage cleared");
     }
 
     public async Task<(bool isAuthenticated, string? userName, string? userRole, int? userId)> GetCurrentUserAsync()
     {
         try
         {
+            // Primero, intentar obtener del endpoint
             var response = await _http.GetAsync("api/auth/current-user");
+            
+            Console.WriteLine($"GetCurrentUser response status: {response.StatusCode}");
+            
             if (response.IsSuccessStatusCode)
             {
                 var result = await response.Content.ReadFromJsonAsync<CurrentUserResponse?>();
@@ -123,15 +132,50 @@ namespace DELTATEST.Services
                     await _localStorage.SetItemAsync("userName", result.NombreCompleto);
                     await _localStorage.SetItemAsync("userRole", result.Rol);
                     await _localStorage.SetItemAsync("userId", result.IdUsuario);
+                    await _localStorage.SetItemAsync("isAuthenticated", true);
                     
+                    Console.WriteLine($"Auth confirmed from server: {result.NombreCompleto}");
                     return (true, result.NombreCompleto, result.Rol, result.IdUsuario);
+                }
+            }
+            else
+            {
+                Console.WriteLine($"GetCurrentUser failed with status: {response.StatusCode}");
+                // Si falla, intentar obtener del local storage
+                var isAuth = await _localStorage.GetItemAsync<bool>("isAuthenticated");
+                if (isAuth)
+                {
+                    var userName = await _localStorage.GetItemAsync<string>("userName");
+                    var userRole = await _localStorage.GetItemAsync<string>("userRole");
+                    var userId = await _localStorage.GetItemAsync<int?>("userId");
+                    
+                    Console.WriteLine($"Using cached auth data: {userName}");
+                    return (true, userName, userRole, userId);
                 }
             }
 
             return (false, null, null, null);
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"GetCurrentUserAsync error: {ex.Message}");
+            
+            // Fallback: intentar obtener del local storage
+            try
+            {
+                var isAuth = await _localStorage.GetItemAsync<bool>("isAuthenticated");
+                if (isAuth)
+                {
+                    var userName = await _localStorage.GetItemAsync<string>("userName");
+                    var userRole = await _localStorage.GetItemAsync<string>("userRole");
+                    var userId = await _localStorage.GetItemAsync<int?>("userId");
+                    
+                    Console.WriteLine($"Using cached auth data (from fallback): {userName}");
+                    return (true, userName, userRole, userId);
+                }
+            }
+            catch { }
+            
             return (false, null, null, null);
         }
     }

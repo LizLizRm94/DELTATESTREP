@@ -1,5 +1,7 @@
-ï»¿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+@implements IDisposable
 @inject NavigationManager NavigationManager
+@inject DELTATEST.Services.AuthService AuthService
 
 <!-- ENCABEZADO GLOBAL -->
 <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom shadow-sm top-row w-100">
@@ -32,14 +34,34 @@
                 </li>
                
                 <li class="nav-item">
-                    <NavLink class="btn btn-orange ms-3" href="/IniciarSesion">Sign In</NavLink>
+                    @if (isOnAuthPage)
+                    {
+                        <!-- Si está en login o registro, mostrar "Volver" -->
+                        <button class="btn btn-secondary ms-3" @onclick="GoBack">
+                            <span class="bi bi-arrow-left me-1"></span> Volver
+                        </button>
+                    }
+                    else if (isAuthenticated)
+                    {
+                        <!-- Si está autenticado, mostrar "Sign Out" -->
+                        <button class="btn btn-orange ms-3" @onclick="HandleSignOut">
+                            <span class="bi bi-box-arrow-right me-1"></span> Sign Out
+                        </button>
+                    }
+                    else
+                    {
+                        <!-- Si no está autenticado y no está en auth page, mostrar "Sign In" -->
+                        <NavLink class="btn btn-orange ms-3" href="/IniciarSesion">
+                            <span class="bi bi-box-arrow-in-right me-1"></span> Sign In
+                        </NavLink>
+                    }
                 </li>
             </ul>
         </div>
     </div>
 </nav>
 
-<!-- CONTENIDO DE CADA PÃGINA -->
+<!-- CONTENIDO DE CADA PÁGINA -->
 <div class="main-content">
     @Body
 </div>
@@ -64,7 +86,7 @@
                 </ul>
             </div>
         </div>
-        <p class="footer-copy">Â© 2025 Laboratorios Delta S.A. - Todos los derechos reservados.</p>
+        <p class="footer-copy">© 2025 Laboratorios Delta S.A. - Todos los derechos reservados.</p>
     </div>
 </footer>
 
@@ -76,10 +98,27 @@
         padding: 6px 16px;
         border-radius: 6px;
         transition: background-color 0.3s;
+        cursor: pointer;
+        font-weight: 500;
     }
 
         .btn-orange:hover {
             background-color: #d86c0a;
+        }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        padding: 6px 16px;
+        border-radius: 6px;
+        transition: background-color 0.3s;
+        cursor: pointer;
+        font-weight: 500;
+    }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
         }
 
     .navbar-nav .nav-link {
@@ -144,3 +183,78 @@
         margin-top: 1rem;
     }
 </style>
+
+@code {
+    private bool isAuthenticated = false;
+    private bool isOnAuthPage = false;
+    private bool isInitialized = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        NavigationManager.LocationChanged += OnLocationChanged;
+        await RefreshAuthStatus();
+        isInitialized = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Verificar autenticación después del renderizado
+            await RefreshAuthStatus();
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        CheckCurrentPage();
+        // Verificar autenticación cada vez que cambia la página
+        InvokeAsync(RefreshAuthStatus);
+    }
+
+    private void CheckCurrentPage()
+    {
+        var uri = NavigationManager.Uri;
+        isOnAuthPage = uri.Contains("/IniciarSesion") || uri.Contains("/Registro");
+    }
+
+    private async Task RefreshAuthStatus()
+    {
+        try
+        {
+            CheckCurrentPage();
+            
+            // Llamar al endpoint para verificar si hay sesión activa
+            var (isAuth, userName, userRole, userId) = await AuthService.GetCurrentUserAsync();
+            isAuthenticated = isAuth;
+            
+            Console.WriteLine($"Auth Status: {isAuthenticated}, User: {userName}, Role: {userRole}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error checking auth: {ex.Message}");
+            isAuthenticated = false;
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task HandleSignOut()
+    {
+        await AuthService.LogoutAsync();
+        isAuthenticated = false;
+        StateHasChanged();
+        NavigationManager.NavigateTo("/IniciarSesion", forceLoad: true);
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+
+    void IDisposable.Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}

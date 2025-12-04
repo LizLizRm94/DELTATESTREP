@@ -1,8 +1,10 @@
 @page "/admin/evaluaciones-teoricas"
 @using DELTATEST.Models
+@using DELTATEST.Services
 @using System.Text.Json
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+@inject ReporteEvaluacionService ReporteService
 @layout MainSinLayout
 
   <div class="container-admin mt-5">
@@ -19,14 +21,14 @@
     else if (evaluacionesPendientes == null || evaluacionesPendientes.Count == 0)
     {
         <div class="alert alert-info text-center">
-            No hay evaluaciones teóricas pendientes de calificación.
+            No hay evaluaciones teóricas registradas.
         </div>
     }
     else
     {
       <div class="row">
           <div class="col-md-4">
-              <h5 class="text-orange mb-3">Evaluaciones Pendientes</h5>
+              <h5 class="text-orange mb-3">Evaluaciones Teóricas</h5>
              <div class="list-group">
                @foreach (var eval in evaluacionesPendientes)
                {
@@ -38,7 +40,9 @@
                         <h6 class="mb-1">@eval.NombreUsuario</h6>
                         <small class="text-muted">@eval.FechaEvaluacion?.ToString("dd/MM/yyyy")</small>
                      </div>
-                     <span class="badge bg-warning text-dark">Pendiente</span>
+                     <span class="badge @(eval.Estado == "Respondida" ? "bg-warning text-dark" : "bg-success text-white")">
+                        @(eval.Estado == "Respondida" ? "Pendiente" : "Calificada")
+                     </span>
                   </div>
                </button>
                }
@@ -132,6 +136,20 @@
   Cancelar
                  </button>
   <button type="button" 
+     class="btn btn-info text-white"
+     @onclick="GenerarReporte"
+     disabled="@(cargandoGenerarReporte || calificacionGlobal < 0 || calificacionGlobal > 100)">
+      @if (cargandoGenerarReporte)
+      {
+          <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+          <span>Generando...</span>
+      }
+      else
+      {
+          <span>?? Generar Reporte</span>
+      }
+  </button>
+  <button type="button" 
      class="btn btn-orange" 
               @onclick="GuardarCalificacion"
       disabled="@(cargandoGuardar || calificacionGlobal < 0 || calificacionGlobal > 100)">
@@ -195,6 +213,22 @@
         cursor: not-allowed;
     }
 
+    .btn-info {
+        background-color: #17a2b8;
+        border-color: #17a2b8;
+    }
+
+    .btn-info:hover {
+        background-color: #138496;
+        border-color: #117a8b;
+    }
+
+    .btn-info:disabled {
+        background-color: #ccc;
+        border-color: #ccc;
+        cursor: not-allowed;
+    }
+
     .list-group-item.active {
         background-color: #f58220;
         border-color: #f58220;
@@ -239,6 +273,7 @@
     private string comentarios = string.Empty;
     private bool cargando = true;
     private bool cargandoGuardar = false;
+    private bool cargandoGenerarReporte = false;
     private bool mensajeMostrar = false;
     private bool esError = false;
     private string mensajeRespuesta = string.Empty;
@@ -469,6 +504,32 @@ Puntos = puntos
             Console.WriteLine($"Stack: {ex.StackTrace}");
  preguntasRespuestas = new List<PreguntaRespuesta>();
             MostrarMensaje($"Error: {ex.Message}", true);
+        }
+    }
+
+    private async Task GenerarReporte()
+    {
+        if (evalSeleccionada == null || calificacionGlobal < 0 || calificacionGlobal > 100)
+        {
+            MostrarMensaje("La calificación debe estar entre 0 y 100", true);
+            return;
+        }
+
+        cargandoGenerarReporte = true;
+        try
+        {
+            // Navegar a la página de reporte con la evaluación actual
+            NavigationManager.NavigateTo($"/reporte-evaluacion/{evalSeleccionada.IdEvaluacion}");
+            MostrarMensaje("Reporte generado exitosamente", false);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al generar reporte: {ex.Message}");
+            MostrarMensaje($"Error al generar reporte: {ex.Message}", true);
+        }
+        finally
+        {
+            cargandoGenerarReporte = false;
         }
     }
 
