@@ -31,11 +31,22 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Register EF DbContext with retry on failure
+// Register EF DbContext with retry on failure (PostgreSQL / Supabase)
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException(
+        "No se encontro la connection string 'DefaultConnection'. " +
+        "Definala en DELTAAPI/appsettings.json dentro de \"ConnectionStrings\": { \"DefaultConnection\": ... } " +
+        "o mediante la variable de entorno ConnectionStrings__DefaultConnection. " +
+        "Nota: appsettings.json esta en .gitignore, asi que debe crearse manualmente en cada equipo.");
+}
+
 builder.Services.AddDbContext<DeltaTestContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection") ?? "Name=DefaultConnection",
-        sqlOptions => sqlOptions.EnableRetryOnFailure(5))
+    options.UseNpgsql(
+        connectionString,
+        npgsqlOptions => npgsqlOptions.EnableRetryOnFailure(5))
 );
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

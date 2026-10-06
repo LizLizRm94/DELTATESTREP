@@ -9,41 +9,41 @@ namespace DELTAAPI.Controllers
     [Route("api/[controller]")]
     public class EvaluacionesController : ControllerBase
     {
-      private readonly DeltaTestContext _context;
+        private readonly DeltaTestContext _context;
 
         public EvaluacionesController(DeltaTestContext context)
         {
-     _context = context;
+            _context = context;
         }
 
         [HttpPost("crear-evaluacion-practica")]
         [AllowAnonymous]
         public async Task<IActionResult> CrearEvaluacionPractica([FromBody] CrearEvaluacionPracticaRequest request)
-      {
+        {
             if (request == null || request.IdUsuario <= 0)
-       {
-        return BadRequest(new { mensaje = "El ID del usuario es requerido" });
+        {
+            return BadRequest(new { mensaje = "El ID del usuario es requerido" });
         }
 
-      try
-         {
-   var usuario = await _context.Usuarios.FindAsync(request.IdUsuario);
+        try
+        {
+            var usuario = await _context.Usuarios.FindAsync(request.IdUsuario);
             if (usuario == null)
             {
-                    return NotFound(new { mensaje = "Usuario no encontrado" });
-                }
+                return NotFound(new { mensaje = "Usuario no encontrado" });
+            }
 
-      var evaluacion = new Evaluacion
-          {
-      IdEvaluado = request.IdUsuario,
-    FechaEvaluacion = DateOnly.FromDateTime(DateTime.Now),
-      TipoEvaluacion = false,
-    EstadoEvaluacion = "Completada",
-         Nota = CalcularCalificacion(request.Tareas),
-       Recomendaciones = request.Recomendaciones
-           };
+            var evaluacion = new Evaluacion
+            {
+                IdEvaluado = request.IdUsuario,
+                FechaEvaluacion = DateOnly.FromDateTime(DateTime.Now),
+                TipoEvaluacion = false,
+                EstadoEvaluacion = "Completada",
+                Nota = CalcularCalificacion(request.Tareas),
+                Recomendaciones = request.Recomendaciones
+            };
 
-    _context.Evaluacions.Add(evaluacion);
+        _context.Evaluacions.Add(evaluacion);
 await _context.SaveChangesAsync();
 
   return Ok(new
@@ -100,7 +100,7 @@ await _context.SaveChangesAsync();
             catch (Exception ex)
             {
                 return StatusCode(500, new { mensaje = "Error al obtener las evaluaciones", error = ex.Message });
-}
+            }
         }
 
         [HttpGet("{id}")]

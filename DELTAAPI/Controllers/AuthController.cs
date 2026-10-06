@@ -16,6 +16,11 @@ namespace DELTAAPI.Controllers
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthController> _logger;
 
+        private static readonly HashSet<string> ExtensionesValidas = new(StringComparer.Ordinal)
+        {
+            "LP", "SC", "CB", "OR", "PT", "TJ", "BN", "CH", "PD"
+        };
+
         public AuthController(DeltaTestContext context, IConfiguration configuration, ILogger<AuthController> logger)
         {
             _context = context;
@@ -27,11 +32,13 @@ namespace DELTAAPI.Controllers
         {
             public string? NombreCompleto { get; set; }
             public string? Ci { get; set; }
+            public string? Expedicion { get; set; }
             public string? Correo { get; set; }
             public string? Telefono { get; set; }
             public string? FechaIngreso { get; set; } // formato ISO yyyy-MM-dd esperado desde <input type="date">
             public string? Password { get; set; }
             public string? Role { get; set; }
+            public int? IdCreadoPor { get; set; }
         }
 
         [HttpPost("register")]
@@ -39,6 +46,15 @@ namespace DELTAAPI.Controllers
         {
             if (string.IsNullOrWhiteSpace(dto?.NombreCompleto) || string.IsNullOrWhiteSpace(dto.Password))
                 return BadRequest("Nombre completo y contraseña son obligatorios.");
+
+            // Normalizar y validar la extensión (sigla del departamento)
+            string? expedicion = null;
+            if (!string.IsNullOrWhiteSpace(dto.Expedicion))
+            {
+                expedicion = dto.Expedicion.Trim().ToUpperInvariant();
+                if (!ExtensionesValidas.Contains(expedicion))
+                    return BadRequest("Extensión no válida.");
+            }
 
             // Validar correo/ci únicos si se proporcionan
             if (!string.IsNullOrWhiteSpace(dto.Correo))
@@ -60,17 +76,46 @@ namespace DELTAAPI.Controllers
             }
 
 
+            // Resolver el usuario que creó la cuenta (viene de la cookie de autenticación)
+            int? idCreadoPor = null;
+            var idCreadoPorClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (int.TryParse(idCreadoPorClaim, out var idCreadorClaim))
+            {
+                idCreadoPor = idCreadorClaim;
+            }
+            else if (dto.IdCreadoPor.HasValue)
+            {
+                // Fallback: en WebAssembly la cookie cross-origin puede no enviarse,
+                // por lo que el cliente envía el id y se valida contra la base de datos.
+                idCreadoPor = dto.IdCreadoPor.Value;
+            }
+
+            if (idCreadoPor.HasValue)
+            {
+                var existeCreador = await _context.Usuarios
+                    .AsNoTracking()
+                    .AnyAsync(u => u.IdUsuario == idCreadoPor.Value);
+
+                if (!existeCreador)
+                {
+                    _logger.LogWarning("Register: el usuario creador {IdCreador} no existe en la base de datos", idCreadoPor);
+                    idCreadoPor = null;
+                }
+            }
+
             var hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
             var usuario = new Usuario
             {
                 NombreCompleto = dto.NombreCompleto!.Trim(),
                 Ci = dto.Ci ?? string.Empty,
+                Expedicion = expedicion,
                 Correo = dto.Correo,
                 Telefono = dto.Telefono,
                 Contraseña = hashedPassword, 
                 Rol = roleNormalized,
-                Estado = "Activo"
+                Estado = "Activo",
+                IdCreadoPor = idCreadoPor
             };
 
             // Parse FechaIngreso si viene

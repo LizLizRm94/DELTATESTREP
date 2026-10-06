@@ -46,6 +46,23 @@
                 </div>
 
                 <div class="mb-2">
+                    <label>Extensión</label>
+                    <InputSelect @bind-Value="model.Expedicion" class="form-control">
+                        <option value="">Seleccionar extensión</option>
+                        <option value="LP">LP</option>
+                        <option value="SC">SC</option>
+                        <option value="CB">CB</option>
+                        <option value="OR">OR</option>
+                        <option value="PT">PT</option>
+                        <option value="TJ">TJ</option>
+                        <option value="BN">BN</option>
+                        <option value="CH">CH</option>
+                        <option value="PD">PD</option>
+                    </InputSelect>
+                    <ValidationMessage For="() => model.Expedicion" />
+                </div>
+
+                <div class="mb-2">
                     <label>Tel�fono (opcional)</label>
                     <InputText @bind-Value="model.Telefono" class="form-control" />
                 </div>

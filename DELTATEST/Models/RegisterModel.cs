@@ -10,6 +10,9 @@ namespace DELTATEST.Models
         [StringLength(50, ErrorMessage = "CI demasiado largo")]
         public string? Ci { get; set; }
 
+        [StringLength(2, ErrorMessage = "Extensión no válida")]
+        public string? Expedicion { get; set; }
+
         [Required(ErrorMessage = "Correo es obligatorio")]
         [EmailAddress(ErrorMessage = "Correo no v�lido")]
         public string Correo { get; set; } = string.Empty;

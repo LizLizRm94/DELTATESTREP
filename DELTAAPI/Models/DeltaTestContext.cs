@@ -32,14 +32,15 @@ public partial class DeltaTestContext : DbContext
 
     public virtual DbSet<Respuesta> Respuestas { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        // Sólo usar la cadena hardcodeada como fallback (p. ej. diseño/ef tools).
-        if (!optionsBuilder.IsConfigured)
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer("Name=DefaultConnection");
+            // Sólo usar la cadena hardcodeada como fallback (p. ej. diseño/ef tools).
+            if (!optionsBuilder.IsConfigured)
+            {
+                // Usar Npgsql (PostgreSQL / Supabase) como proveedor por defecto
+                optionsBuilder.UseNpgsql("Name=DefaultConnection");
+            }
         }
-    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -117,8 +118,9 @@ public partial class DeltaTestContext : DbContext
             entity.Property(e => e.TipoEvaluacion).HasColumnName("tipo_evaluacion");
             
             // Configuración de Recomendaciones - AHORA HABILITADO
+            // Usar tipo 'text' en PostgreSQL en lugar de nvarchar(max)
             entity.Property(e => e.Recomendaciones)
-                .HasColumnType("nvarchar(max)")
+                .HasColumnType("text")
                 .HasColumnName("recomendaciones");
 
             entity.HasOne(d => d.IdAdministradorNavigation).WithMany(p => p.EvaluacionIdAdministradorNavigations)
@@ -142,8 +144,9 @@ public partial class DeltaTestContext : DbContext
             entity.ToTable("NOTIFICACION");
 
             entity.Property(e => e.IdNotificacion).HasColumnName("id_notificacion");
+            // FechaEnvio: usar tipo timestamp en PostgreSQL
             entity.Property(e => e.FechaEnvio)
-                .HasColumnType("datetime")
+                .HasColumnType("timestamp")
                 .HasColumnName("fecha_envio");
             entity.Property(e => e.IdAdministrador).HasColumnName("id_administrador");
             entity.Property(e => e.IdEvaluacion).HasColumnName("id_evaluacion");

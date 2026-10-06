@@ -4,7 +4,7 @@
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'PREGUNTA' AND COLUMN_NAME = 'opciones')
 BEGIN
     ALTER TABLE [dbo].[PREGUNTA]
-    ADD [opciones] NVARCHAR(MAX) NULL;
+    ADD opciones text NULL;
     PRINT 'Columna opciones agregada exitosamente';
 END
 ELSE

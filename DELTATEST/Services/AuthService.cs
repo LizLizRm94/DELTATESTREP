@@ -63,10 +63,24 @@ namespace DELTATEST.Services
                 fechaStr = model.FechaIngreso.Value.ToString("yyyy-MM-dd");
             }
 
+            // Id del usuario autenticado que está creando la cuenta.
+            // El servidor lo valida contra la base de datos antes de asignarlo.
+            int? idCreadoPor = null;
+            try
+            {
+                idCreadoPor = await _localStorage.GetItemAsync<int?>("userId");
+            }
+            catch
+            {
+                idCreadoPor = null;
+            }
+
             var payload = new
             {
+                IdCreadoPor = idCreadoPor,
                 NombreCompleto = model.NombreCompleto,
                 Ci = model.Ci,
+                Expedicion = model.Expedicion,
                 Correo = model.Correo,
                 Telefono = model.Telefono,
                 Role = model.Rol,

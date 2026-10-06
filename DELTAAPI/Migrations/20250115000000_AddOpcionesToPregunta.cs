@@ -13,7 +13,7 @@ namespace DELTAAPI.Migrations
             migrationBuilder.AddColumn<string>(
           name: "opciones",
        table: "PREGUNTA",
-                type: "nvarchar(max)",
+                type: "text",
     nullable: true);
         }
 
