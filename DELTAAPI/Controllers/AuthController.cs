@@ -57,16 +57,29 @@ namespace DELTAAPI.Controllers
             }
 
             // Validar correo/ci únicos si se proporcionan
-            if (!string.IsNullOrWhiteSpace(dto.Correo))
+            try
             {
-                var existsCorreo = await Task.Run(() => _context.Usuarios.Any(u => u.Correo == dto.Correo));
-                if (existsCorreo) return BadRequest("Correo ya registrado.");
-            }
+                if (!string.IsNullOrWhiteSpace(dto.Correo))
+                {
+                    var existsCorreo = await _context.Usuarios.AnyAsync(u => u.Correo == dto.Correo);
+                    if (existsCorreo) return BadRequest("Correo ya registrado.");
+                }
 
-            if (!string.IsNullOrWhiteSpace(dto.Ci))
+                if (!string.IsNullOrWhiteSpace(dto.Ci))
+                {
+                    var existsCi = await _context.Usuarios.AnyAsync(u => u.Ci == dto.Ci);
+                    if (existsCi) return BadRequest("CI ya registrado.");
+                }
+            }
+            catch (System.Net.Sockets.SocketException sockEx)
             {
-                var existsCi = await Task.Run(() => _context.Usuarios.Any(u => u.Ci == dto.Ci));
-                if (existsCi) return BadRequest("CI ya registrado.");
+                _logger.LogError(sockEx, "Register: error de red al consultar usuarios (posible host desconocido)");
+                return StatusCode(503, "Servicio de base de datos no disponible (host desconocido o inaccesible).");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Register: error al consultar usuarios");
+                return StatusCode(500, "Error interno del servidor.");
             }
 
             var roleNormalized = "Usuario"; 
