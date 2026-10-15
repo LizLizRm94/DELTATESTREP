@@ -1,7 +1,9 @@
-using Microsoft.AspNetCore.Mvc;
+锘縰sing Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DELTAAPI.Models;
 using Microsoft.AspNetCore.Authorization;
+using System.Text;
+using System.Text.Json;
 
 namespace DELTAAPI.Controllers
 {
@@ -10,10 +12,20 @@ namespace DELTAAPI.Controllers
     public class EvaluacionesController : ControllerBase
     {
         private readonly DeltaTestContext _context;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IConfiguration _configuration;
+        private readonly ILogger<EvaluacionesController> _logger;
 
-        public EvaluacionesController(DeltaTestContext context)
+        public EvaluacionesController(
+            DeltaTestContext context,
+            IHttpClientFactory httpClientFactory,
+            IConfiguration configuration,
+            ILogger<EvaluacionesController> logger)
         {
             _context = context;
+            _httpClientFactory = httpClientFactory;
+            _configuration = configuration;
+            _logger = logger;
         }
 
         [HttpPost("crear-evaluacion-practica")]
@@ -48,7 +60,7 @@ await _context.SaveChangesAsync();
 
   return Ok(new
        {
-         mensaje = "Evaluaci髇 pr醕tica guardada exitosamente",
+         mensaje = "Evaluaci贸n pr谩ctica guardada exitosamente",
        idEvaluacion = evaluacion.IdEvaluacion,
       cantidadTareas = request.Tareas?.Count ?? 0,
              calificacion = evaluacion.Nota
@@ -68,7 +80,7 @@ await _context.SaveChangesAsync();
   {
           return StatusCode(500, new
        {
-  mensaje = "Error al guardar la evaluaci髇",
+  mensaje = "Error al guardar la evaluaci贸n",
       error = ex.Message,
     innerException = ex.InnerException?.Message
         });
@@ -91,7 +103,7 @@ await _context.SaveChangesAsync();
                         e.FechaEvaluacion,
                         e.Nota,
                         e.EstadoEvaluacion,
-                        TipoEvaluacion = e.TipoEvaluacion == true ? "Te髍ica" : "Pr醕tica"
+                        TipoEvaluacion = e.TipoEvaluacion == true ? "Te贸rica" : "Pr谩ctica"
                     })
                     .ToListAsync();
 
@@ -116,7 +128,7 @@ await _context.SaveChangesAsync();
                     .FirstOrDefaultAsync(e => e.IdEvaluacion == id);
 
                 if (evaluacion == null)
-                    return NotFound(new { mensaje = "Evaluaci髇 no encontrada" });
+                    return NotFound(new { mensaje = "Evaluaci贸n no encontrada" });
 
                 // Validar que el usuario evaluado existe
                 if (evaluacion.IdEvaluadoNavigation == null)
@@ -132,7 +144,7 @@ await _context.SaveChangesAsync();
                     evaluacion.FechaEvaluacion,
                     evaluacion.Nota,
                     evaluacion.EstadoEvaluacion,
-                    TipoEvaluacion = evaluacion.TipoEvaluacion == true ? "Te髍ica" : "Pr醕tica",
+                    TipoEvaluacion = evaluacion.TipoEvaluacion == true ? "Te贸rica" : "Pr谩ctica",
                     Recomendaciones = evaluacion.Recomendaciones ?? string.Empty
                 });
             }
@@ -142,7 +154,7 @@ await _context.SaveChangesAsync();
                 Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return StatusCode(500, new
                 {
-                    mensaje = "Error al obtener la evaluaci髇",
+                    mensaje = "Error al obtener la evaluaci贸n",
                     error = ex.Message,
                     stackTrace = ex.StackTrace
                 });
@@ -163,7 +175,7 @@ await _context.SaveChangesAsync();
        e.FechaEvaluacion,
           e.Nota,
              e.EstadoEvaluacion,
-                TipoEvaluacion = e.TipoEvaluacion == true ? "Te髍ica" : "Pr醕tica"
+                TipoEvaluacion = e.TipoEvaluacion == true ? "Te贸rica" : "Pr谩ctica"
        })
          .ToListAsync();
 
@@ -201,7 +213,7 @@ catch (Exception ex)
      }
 catch (Exception ex)
       {
-    return StatusCode(500, new { mensaje = "Error al obtener la 鷏tima evaluaci髇 pr醕tica", error = ex.Message });
+    return StatusCode(500, new { mensaje = "Error al obtener la 煤ltima evaluaci贸n pr谩ctica", error = ex.Message });
             }
         }
 
@@ -213,7 +225,7 @@ catch (Exception ex)
          {
       var evaluacion = await _context.Evaluacions.FindAsync(id);
      if (evaluacion == null)
-    return NotFound(new { mensaje = "Evaluaci髇 no encontrada" });
+    return NotFound(new { mensaje = "Evaluaci贸n no encontrada" });
 
        if (!string.IsNullOrWhiteSpace(request.EstadoEvaluacion))
        evaluacion.EstadoEvaluacion = request.EstadoEvaluacion;
@@ -227,11 +239,11 @@ catch (Exception ex)
      _context.Evaluacions.Update(evaluacion);
      await _context.SaveChangesAsync();
 
-     return Ok(new { mensaje = "Evaluaci髇 actualizada exitosamente" });
+     return Ok(new { mensaje = "Evaluaci贸n actualizada exitosamente" });
             }
   catch (Exception ex)
             {
-         return StatusCode(500, new { mensaje = "Error al actualizar la evaluaci髇", error = ex.Message });
+         return StatusCode(500, new { mensaje = "Error al actualizar la evaluaci贸n", error = ex.Message });
    }
         }
 
@@ -243,16 +255,16 @@ catch (Exception ex)
       {
     var evaluacion = await _context.Evaluacions.FindAsync(id);
       if (evaluacion == null)
- return NotFound(new { mensaje = "Evaluaci髇 no encontrada" });
+ return NotFound(new { mensaje = "Evaluaci贸n no encontrada" });
 
 _context.Evaluacions.Remove(evaluacion);
                 await _context.SaveChangesAsync();
 
-   return Ok(new { mensaje = "Evaluaci髇 eliminada exitosamente" });
+   return Ok(new { mensaje = "Evaluaci贸n eliminada exitosamente" });
             }
     catch (Exception ex)
         {
-     return StatusCode(500, new { mensaje = "Error al eliminar la evaluaci髇", error = ex.Message });
+     return StatusCode(500, new { mensaje = "Error al eliminar la evaluaci贸n", error = ex.Message });
 }
         }
 
@@ -297,15 +309,15 @@ return BadRequest(new { mensaje = "El ID del usuario es requerido" });
       return BadRequest(new { mensaje = "Debe proporcionar al menos una pregunta" });
   }
 
-   // Crear una nueva evaluaci髇 te髍ica
+   // Crear una nueva evaluaci贸n te贸rica
    var evaluacion = new Evaluacion
         {
   IdEvaluado = request.IdUsuario,
   IdAdministrador = null,
   FechaEvaluacion = DateOnly.FromDateTime(DateTime.Now),
-TipoEvaluacion = true, // true = te髍ica
+TipoEvaluacion = true, // true = te贸rica
  EstadoEvaluacion = "Pendiente",
-    Nota = null // Sin calificaci髇 hasta que responda
+    Nota = null // Sin calificaci贸n hasta que responda
      };
 
   _context.Evaluacions.Add(evaluacion);
@@ -319,7 +331,7 @@ TipoEvaluacion = true, // true = te髍ica
 
    foreach (var preguntaDto in preguntasValidas)
     {
-  // Encontrar el 韓dice de la opci髇 correcta (si es m鷏tiple)
+  // Encontrar el 铆ndice de la opci贸n correcta (si es m煤ltiple)
       int? respuestaCorrectaIndex = null;
  if (!preguntaDto.TipoEvaluacion && preguntaDto.OpcionesConCorrecta != null && preguntaDto.OpcionesConCorrecta.Count > 0)
     {
@@ -332,7 +344,7 @@ TipoEvaluacion = true, // true = te髍ica
  var pregunta = new Pregunta
    {
      Texto = preguntaDto.Texto,
-   TipoEvaluacion = preguntaDto.TipoEvaluacion, // true=abierta, false=m鷏tiple
+   TipoEvaluacion = preguntaDto.TipoEvaluacion, // true=abierta, false=m煤ltiple
 IdEvaluacion = evaluacion.IdEvaluacion,
       Opciones = preguntaDto.Opciones, // Guardar opciones como JSON (ya serializado desde el cliente)
 RespuestaCorrectaIndex = respuestaCorrectaIndex,
@@ -345,7 +357,7 @@ Puntos = preguntaDto.Puntos // Guardar puntos
 
 return Ok(new
  {
-mensaje = "Evaluaci髇 te髍ica creada exitosamente",
+mensaje = "Evaluaci贸n te贸rica creada exitosamente",
      idEvaluacion = evaluacion.IdEvaluacion,
     idUsuario = usuario.IdUsuario,
    nombreUsuario = usuario.NombreCompleto,
@@ -371,11 +383,278 @@ mensaje = "Evaluaci髇 te髍ica creada exitosamente",
       Console.WriteLine($"StackTrace: {ex.StackTrace}");
        return StatusCode(500, new
   {
- mensaje = "Error al crear la evaluaci髇",
+ mensaje = "Error al crear la evaluaci贸n",
   error = ex.Message,
         innerException = ex.InnerException?.Message
   });
        }
+        }
+
+        /// <summary>
+        /// HU11 - Asistente de IA para el Administrador.
+        /// Genera preguntas abiertas y de opci贸n m煤ltiple contextualizadas en el
+        /// rubro farmac茅utico de Delta usando Google Gemini (gemini-2.5-flash).
+        /// </summary>
+        [HttpPost("generar-ia")]
+        [Authorize(Roles = "Inspector,Administrador")]
+        public async Task<IActionResult> GenerarPreguntasIA([FromBody] GenerarPreguntasIARequest request)
+        {
+            if (request == null)
+                return BadRequest(new { mensaje = "Solicitud inv谩lida" });
+
+            var subarea = string.IsNullOrWhiteSpace(request.Subarea) ? "Desarrollo de Medicamentos" : request.Subarea.Trim();
+            var dificultad = string.IsNullOrWhiteSpace(request.Dificultad) ? "Intermedio" : request.Dificultad.Trim();
+            var cantidadAbiertas = request.CantidadAbiertas > 0 ? Math.Min(request.CantidadAbiertas, 10) : 5;
+            var cantidadMultiples = request.CantidadMultiples > 0 ? Math.Min(request.CantidadMultiples, 10) : 5;
+            var puntosAbiertas = request.PuntosAbiertas > 0 ? request.PuntosAbiertas : 10;
+            var puntosMultiples = request.PuntosMultiples > 0 ? request.PuntosMultiples : 10;
+
+            // API Key desde variable de entorno / configuraci贸n (GEMINI_API_KEY)
+            var apiKey = _configuration["GEMINI_API_KEY"]
+                         ?? Environment.GetEnvironmentVariable("GEMINI_API_KEY");
+
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                _logger.LogError("GEMINI_API_KEY no est谩 configurada.");
+                return StatusCode(500, new
+                {
+                    mensaje = "La API Key de Gemini no est谩 configurada en el servidor. Defina la variable de entorno GEMINI_API_KEY."
+                });
+            }
+
+            // Modelo de Gemini configurable (GEMINI_MODEL). Por defecto el alias vigente.
+            var modelo = _configuration["GEMINI_MODEL"];
+            if (string.IsNullOrWhiteSpace(modelo))
+                modelo = "gemini-flash-latest";
+            modelo = modelo.Trim();
+
+            var systemPrompt = ConstruirSystemPromptFarmaceutico();
+            var userPrompt = ConstruirUserPrompt(subarea, dificultad, cantidadAbiertas, cantidadMultiples, puntosAbiertas, puntosMultiples);
+
+            var requestBody = new
+            {
+                systemInstruction = new
+                {
+                    parts = new[] { new { text = systemPrompt } }
+                },
+                contents = new[]
+                {
+                    new
+                    {
+                        role = "user",
+                        parts = new[] { new { text = userPrompt } }
+                    }
+                },
+                generationConfig = new
+                {
+                    responseMimeType = "application/json",
+                    responseSchema = ConstruirEsquemaRespuestaIA(),
+                    temperature = 0.9,
+                    topP = 0.95,
+                    maxOutputTokens = 8192,
+                    thinkingConfig = new { thinkingBudget = 0 }
+                }
+            };
+
+            try
+            {
+                var httpClient = _httpClientFactory.CreateClient();
+                httpClient.Timeout = TimeSpan.FromSeconds(120);
+
+                var url = $"https://generativelanguage.googleapis.com/v1beta/models/{modelo}:generateContent?key={apiKey}";
+
+                HttpResponseMessage response;
+                string responseString;
+
+                // Reintentar ante saturaci贸n temporal del plan gratuito (503/429)
+                for (int intento = 1; ; intento++)
+                {
+                    using var content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
+                    response = await httpClient.PostAsync(url, content);
+                    responseString = await response.Content.ReadAsStringAsync();
+
+                    var recuperable =
+                        response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable ||
+                        response.StatusCode == System.Net.HttpStatusCode.TooManyRequests;
+
+                    if (response.IsSuccessStatusCode || !recuperable || intento >= 3)
+                        break;
+
+                    _logger.LogWarning("Gemini devolvi贸 {Status}. Reintentando {Intento}/3...", response.StatusCode, intento);
+                    response.Dispose();
+                    await Task.Delay(TimeSpan.FromMilliseconds(700 * intento));
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    response.Dispose();
+                    _logger.LogError("Gemini API ({Modelo}) respondi贸 {Status}: {Body}", modelo, response.StatusCode, responseString);
+                    return StatusCode((int)response.StatusCode, new
+                    {
+                        mensaje = $"Error al consultar la IA de Gemini (modelo {modelo}).",
+                        detalle = responseString
+                    });
+                }
+                response.Dispose();
+
+                using var doc = JsonDocument.Parse(responseString);
+                var textoJson = doc.RootElement
+                    .GetProperty("candidates")[0]
+                    .GetProperty("content")
+                    .GetProperty("parts")[0]
+                    .GetProperty("text")
+                    .GetString();
+
+                if (string.IsNullOrWhiteSpace(textoJson))
+                {
+                    return StatusCode(502, new { mensaje = "La IA no devolvi贸 contenido. Intente nuevamente." });
+                }
+
+                var opcionesJson = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var generado = JsonSerializer.Deserialize<GenerarPreguntasIAResponse>(textoJson, opcionesJson);
+
+                if (generado == null)
+                {
+                    return StatusCode(502, new { mensaje = "No se pudo interpretar la respuesta de la IA." });
+                }
+
+                // Normalizar / validar preguntas abiertas
+                var preguntasAbiertas = (generado.PreguntasAbiertas ?? new List<PreguntaGeneradaIA>())
+                    .Where(p => !string.IsNullOrWhiteSpace(p.Texto))
+                    .Take(cantidadAbiertas)
+                    .Select(p => new PreguntaGeneradaIA
+                    {
+                        Texto = p.Texto.Trim(),
+                        Puntos = p.Puntos > 0 ? p.Puntos : puntosAbiertas
+                    })
+                    .ToList();
+
+                // Normalizar / validar preguntas de opci贸n m煤ltiple
+                var preguntasMultiples = (generado.PreguntasMultiples ?? new List<PreguntaMultipleGeneradaIA>())
+                    .Where(p => !string.IsNullOrWhiteSpace(p.Texto)
+                                && p.Opciones != null
+                                && p.Opciones.Count(o => !string.IsNullOrWhiteSpace(o.Texto)) >= 2)
+                    .Take(cantidadMultiples)
+                    .Select(p =>
+                    {
+                        var opciones = p.Opciones!
+                            .Where(o => !string.IsNullOrWhiteSpace(o.Texto))
+                            .Select(o => new OpcionGeneradaIA { Texto = o.Texto.Trim(), EsCorrecta = o.EsCorrecta })
+                            .ToList();
+
+                        if (!opciones.Any(o => o.EsCorrecta))
+                            opciones[0].EsCorrecta = true;
+
+                        return new PreguntaMultipleGeneradaIA
+                        {
+                            Texto = p.Texto.Trim(),
+                            Puntos = p.Puntos > 0 ? p.Puntos : puntosMultiples,
+                            Opciones = opciones
+                        };
+                    })
+                    .ToList();
+
+                return Ok(new
+                {
+                    mensaje = "Preguntas generadas con IA exitosamente",
+                    subarea,
+                    dificultad,
+                    preguntasAbiertas,
+                    preguntasMultiples
+                });
+            }
+            catch (TaskCanceledException)
+            {
+                _logger.LogError("Timeout al consultar Gemini API.");
+                return StatusCode(504, new { mensaje = "La IA tard贸 demasiado en responder. Intente nuevamente." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al generar preguntas con IA");
+                return StatusCode(500, new { mensaje = "Error al generar preguntas con IA", error = ex.Message });
+            }
+        }
+
+        private static string ConstruirSystemPromptFarmaceutico()
+        {
+            return
+                "Eres un experto farmac茅utico, qu铆mico farmac茅utico y auditor t茅cnico senior de la empresa DELTA, " +
+                "dedicada al desarrollo, producci贸n, control de calidad y comercializaci贸n de medicamentos y productos farmac茅uticos. " +
+                "Redactas preguntas de evaluaci贸n te贸rica en espa帽ol, claras, precisas, t茅cnicamente correctas y contextualizadas " +
+                "en el sector de medicamentos, desarrollo farmac茅utico y normativas de salud (por ejemplo, BPM/GMP, farmacopeas, " +
+                "regulaci贸n sanitaria, control de calidad, farmacolog铆a y farmacovigilancia). " +
+                "Cada pregunta debe evaluar competencias reales del personal y pasantes de la empresa. " +
+                "No incluyas explicaciones, saludos ni texto fuera del JSON solicitado.";
+        }
+
+        private static string ConstruirUserPrompt(string subarea, string dificultad, int cantidadAbiertas, int cantidadMultiples, int puntosAbiertas, int puntosMultiples)
+        {
+            return
+                $"Genera un examen t茅cnico para la empresa farmac茅utica DELTA.\n" +
+                $"- Sub谩rea / tema: {subarea}\n" +
+                $"- Nivel de dificultad: {dificultad}\n" +
+                $"- Cantidad de preguntas abiertas: {cantidadAbiertas} (cada una con {puntosAbiertas} puntos)\n" +
+                $"- Cantidad de preguntas de opci贸n m煤ltiple: {cantidadMultiples} (cada una con {puntosMultiples} puntos)\n\n" +
+                "Requisitos:\n" +
+                "1. Las preguntas abiertas deben requerir respuestas de desarrollo t茅cnico (no de s铆/no).\n" +
+                "2. Cada pregunta de opci贸n m煤ltiple debe tener exactamente 4 opciones y SOLO una marcada con \"esCorrecta\": true.\n" +
+                "3. Usa terminolog铆a farmac茅utica correcta y, cuando aplique, referencia normativas de salud.\n" +
+                "4. Ajusta la complejidad al nivel de dificultad indicado.\n" +
+                "5. Devuelve 煤nicamente el JSON con el esquema solicitado.";
+        }
+
+        private static object ConstruirEsquemaRespuestaIA()
+        {
+            return new
+            {
+                type = "OBJECT",
+                properties = new
+                {
+                    preguntasAbiertas = new
+                    {
+                        type = "ARRAY",
+                        items = new
+                        {
+                            type = "OBJECT",
+                            properties = new
+                            {
+                                texto = new { type = "STRING" },
+                                puntos = new { type = "INTEGER" }
+                            },
+                            required = new[] { "texto", "puntos" }
+                        }
+                    },
+                    preguntasMultiples = new
+                    {
+                        type = "ARRAY",
+                        items = new
+                        {
+                            type = "OBJECT",
+                            properties = new
+                            {
+                                texto = new { type = "STRING" },
+                                puntos = new { type = "INTEGER" },
+                                opciones = new
+                                {
+                                    type = "ARRAY",
+                                    items = new
+                                    {
+                                        type = "OBJECT",
+                                        properties = new
+                                        {
+                                            texto = new { type = "STRING" },
+                                            esCorrecta = new { type = "BOOLEAN" }
+                                        },
+                                        required = new[] { "texto", "esCorrecta" }
+                                    }
+                                }
+                            },
+                            required = new[] { "texto", "puntos", "opciones" }
+                        }
+                    }
+                },
+                required = new[] { "preguntasAbiertas", "preguntasMultiples" }
+            };
         }
 
         private async Task CrearNotificacion(int idUsuarioDestino, string tipoNotificacion, string mensaje, int? idEvaluacion = null)
@@ -393,12 +672,12 @@ mensaje = "Evaluaci髇 te髍ica creada exitosamente",
     await _context.SaveChangesAsync();
 }
 
-// En el m閠odo para calificar evaluaciones:
+// En el m茅todo para calificar evaluaciones:
 [HttpPost("calificar/{idEvaluacion}")]
 public async Task<IActionResult> CalificarEvaluacion(int idEvaluacion, [FromBody] decimal nota)
 {
     var evaluacion = await _context.Evaluacions.FindAsync(idEvaluacion);
-    if (evaluacion == null) return NotFound(new { mensaje = "Evaluaci髇 no encontrada" });
+    if (evaluacion == null) return NotFound(new { mensaje = "Evaluaci贸n no encontrada" });
 
     evaluacion.Nota = nota;
     evaluacion.EstadoEvaluacion = "Calificado";
@@ -406,12 +685,12 @@ public async Task<IActionResult> CalificarEvaluacion(int idEvaluacion, [FromBody
 
     await CrearNotificacion(
         evaluacion.IdEvaluado,
-        "Evaluaci髇 Calificada",
-        $"Tu evaluaci髇 con ID {idEvaluacion} ha sido calificada.",
+        "Evaluaci贸n Calificada",
+        $"Tu evaluaci贸n con ID {idEvaluacion} ha sido calificada.",
         idEvaluacion
     );
 
-    return Ok(new { mensaje = "Evaluaci髇 calificada y notificaci髇 enviada." });
+    return Ok(new { mensaje = "Evaluaci贸n calificada y notificaci贸n enviada." });
 }
     }
 
@@ -450,15 +729,50 @@ public async Task<IActionResult> CalificarEvaluacion(int idEvaluacion, [FromBody
     public class PreguntaRequest
     {
    public string Texto { get; set; } = string.Empty;
-   public bool TipoEvaluacion { get; set; } // true=abierta, false=m鷏tiple
+   public bool TipoEvaluacion { get; set; } // true=abierta, false=m煤ltiple
      public string? Opciones { get; set; } // JSON serializado con las opciones
    public int Puntos { get; set; } = 0; // Puntos para esta pregunta
-      public List<OpcionConCorrecta> OpcionesConCorrecta { get; set; } = new(); // Para procesar cu醠 es correcta
+      public List<OpcionConCorrecta> OpcionesConCorrecta { get; set; } = new(); // Para procesar cu谩l es correcta
     }
 
     public class OpcionConCorrecta
     {
         public string Texto { get; set; } = string.Empty;
         public bool EsCorrecta { get; set; } = false;
+    }
+
+    // ===== HU11: DTOs del Asistente de IA =====
+    public class GenerarPreguntasIARequest
+    {
+        public string? Subarea { get; set; }
+        public string? Dificultad { get; set; }
+        public int CantidadAbiertas { get; set; } = 5;
+        public int CantidadMultiples { get; set; } = 5;
+        public int PuntosAbiertas { get; set; } = 10;
+        public int PuntosMultiples { get; set; } = 10;
+        public string? ContextoAdicional { get; set; }
+    }
+
+    public class GenerarPreguntasIAResponse
+    {
+        public List<PreguntaGeneradaIA>? PreguntasAbiertas { get; set; }
+        public List<PreguntaMultipleGeneradaIA>? PreguntasMultiples { get; set; }
+    }
+
+    public class PreguntaGeneradaIA
+    {
+        public string Texto { get; set; } = string.Empty;
+        public int Puntos { get; set; }
+    }
+
+    public class PreguntaMultipleGeneradaIA : PreguntaGeneradaIA
+    {
+        public List<OpcionGeneradaIA>? Opciones { get; set; }
+    }
+
+    public class OpcionGeneradaIA
+    {
+        public string Texto { get; set; } = string.Empty;
+        public bool EsCorrecta { get; set; }
     }
 }

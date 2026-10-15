@@ -340,3 +340,7 @@ FodyWeavers.xsd
 appsettings.json
 /DELTAAPI/appsettings.json
 /DELTAAPI/appsettings.json
+
+# Ignorar configuración con secretos (API key y contraseña de BD)
+appsettings.Development.json
+/DELTAAPI/appsettings.Development.json

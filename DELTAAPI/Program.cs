@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using DELTAAPI.Models;
 
@@ -9,6 +9,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 // Also keep AddControllers for API-style controllers
 builder.Services.AddControllers();
+
+// HU11: IHttpClientFactory para llamadas salientes a la API de Gemini (Asistente de IA)
+builder.Services.AddHttpClient();
 
 // Configure CORS to allow the Blazor WebAssembly client during development
 var clientOrigins = new[] 
@@ -91,7 +94,7 @@ app.UseStaticFiles();
 // Enable CORS for requests from the client - Debe ir ANTES de Authentication y Authorization
 app.UseCors("AllowClient");
 
-app.UseAuthentication(); // Muy importante: primero autenticaci�n
+app.UseAuthentication(); // Muy importante: primero autenticación
 app.UseAuthorization();
 
 // Map MVC default route so views can be served

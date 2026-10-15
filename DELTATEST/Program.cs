@@ -22,7 +22,17 @@ builder.Services.AddHttpClient("API", client =>
 {
     client.BaseAddress = apiBase;
     client.DefaultRequestHeaders.Add("Accept", "application/json");
-    client.Timeout = TimeSpan.FromSeconds(30);
+    client.Timeout = TimeSpan.FromSeconds(120);
+})
+.AddHttpMessageHandler<AuthorizationMessageHandler>();
+
+// HU11: Cliente dedicado para el Asistente de IA (la generación con Gemini puede tardar más de 30 s)
+builder.Services.AddHttpClient("AI", client =>
+{
+    client.BaseAddress = apiBase;
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
+    client.Timeout = TimeSpan.FromMinutes(3);
 })
 .AddHttpMessageHandler<AuthorizationMessageHandler>();
 

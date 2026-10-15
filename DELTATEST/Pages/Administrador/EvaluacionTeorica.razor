@@ -1,7 +1,8 @@
-@page "/EvaluacionTeorica"
+﻿@page "/EvaluacionTeorica"
 @using DELTATEST.Models
 @using System.Text.Json
 @inject HttpClient Http
+@inject IHttpClientFactory HttpClientFactory
 @inject IJSRuntime JS
 @inject NavigationManager NavigationManager
 @layout MainSinLayout
@@ -33,7 +34,68 @@
   </select>
         </div>
 
-    <!-- SECCI�N 1: Preguntas Abiertas -->
+        <!-- ========== HU11: ASISTENTE DE IA PARA EL ADMINISTRADOR ========== -->
+        <div class="panel-ia">
+            <div class="panel-ia-header">
+                <span class="panel-ia-titulo">Asistente de IA para el Administrador</span>
+                <span class="panel-ia-badge">HU11 · Delta</span>
+            </div>
+            <p class="panel-ia-desc">
+                Genera automáticamente las 5 preguntas abiertas y las 5 de opción múltiple,
+                contextualizadas en el rubro farmacéutico de Delta (medicamentos, desarrollo
+                farmacéutico y normativas de salud).
+            </p>
+
+            <div class="panel-ia-controles">
+                <div class="campo-ia">
+                    <label class="label-pregunta">Subárea Farmacéutica / Tema</label>
+                    <select class="input-respuesta" @bind="subareaSeleccionada" disabled="@cargandoIA">
+                        @foreach (var subarea in subareasFarmaceuticas)
+                        {
+                            <option value="@subarea">@subarea</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="campo-ia">
+                    <label class="label-pregunta">Nivel de Dificultad</label>
+                    <select class="input-respuesta" @bind="dificultadSeleccionada" disabled="@cargandoIA">
+                        @foreach (var nivel in nivelesDificultad)
+                        {
+                            <option value="@nivel">@nivel</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="campo-ia campo-ia-boton">
+                    <button type="button" class="btn btn-ia" @onclick="GenerarPreguntasConIA" disabled="@cargandoIA">
+                        @if (cargandoIA)
+                        {
+                            <span class="spinner"></span>
+                            <span>Generando preguntas...</span>
+                        }
+                        else
+                        {
+                            <span>Generar Preguntas con IA</span>
+                        }
+                    </button>
+                </div>
+            </div>
+
+            @if (cargandoIA)
+            {
+                <div class="ia-cargando">
+                    <span class="spinner"></span>
+                    <span>
+                        La IA está redactando preguntas de <strong>@subareaSeleccionada</strong>
+                        (nivel @dificultadSeleccionada). Esto puede tardar unos segundos...
+                    </span>
+                </div>
+            }
+        </div>
+        <!-- ========== FIN HU11 ========== -->
+
+    <!-- SECCIÓN 1: Preguntas Abiertas -->
    @if (modelo?.PreguntasAbiertas != null && modelo.PreguntasAbiertas.Count > 0)
         {
         <div class="seccion-preguntas">
@@ -52,11 +114,11 @@
             </div>
         }
 
-        <!-- SECCI�N 2: Preguntas Opci�n M�ltiple -->
+        <!-- SECCIÓN 2: Preguntas Opción Múltiple -->
         @if (modelo?.PreguntasMultiples != null && modelo.PreguntasMultiples.Count > 0)
    {
          <div class="seccion-preguntas">
-      <h4 class="titulo-seccion">Preguntas de Opci�n M�ltiple (5)</h4>
+      <h4 class="titulo-seccion">Preguntas de Opción Múltiple (5)</h4>
       @foreach (var pregunta in modelo.PreguntasMultiples)
      {
  var indexPregunta = modelo.PreguntasMultiples.IndexOf(pregunta);
@@ -79,7 +141,7 @@
   var indexOpcion = pregunta.OpcionesLista.IndexOf(opcion);
    <div class="opcion-item">
        <div class="opcion-header">
-     <label class="label-opcion">Opci�n @((char)('A' + indexOpcion))</label>
+     <label class="label-opcion">Opción @((char)('A' + indexOpcion))</label>
       <input type="checkbox" class="checkbox-correcta" 
  @onchange="@((ChangeEventArgs e) => MarcarOpcionCorrecta(pregunta, indexOpcion, (bool)e.Value!))" 
    checked="@opcion.EsCorrecta" 
@@ -87,20 +149,20 @@
       <span class="label-checkbox">Correcta</span>
     @if (pregunta.OpcionesLista.Count > 2)
    {
-      <button type="button" class="btn-eliminar-opcion" @onclick="@(() => EliminarOpcion(pregunta, indexOpcion))" title="Eliminar esta opci�n">
+      <button type="button" class="btn-eliminar-opcion" @onclick="@(() => EliminarOpcion(pregunta, indexOpcion))" title="Eliminar esta opción">
    -
           </button>
       }
       </div>
-   <input type="text" class="input-respuesta" @bind="opcion.Texto" @bind:event="oninput" placeholder="Ingrese la opci�n" />
+   <input type="text" class="input-respuesta" @bind="opcion.Texto" @bind:event="oninput" placeholder="Ingrese la opción" />
      </div>
       }
  }
      </div>
 
-     <!-- Bot�n para agregar opci�n -->
+     <!-- Botón para agregar opción -->
        <button type="button" class="btn-agregar-opcion" @onclick="@(() => AgregarOpcion(pregunta))">
- + Agregar Opci�n
+ + Agregar Opción
     </button>
              </div>
      }
@@ -133,6 +195,28 @@
     private string mensajeRespuesta = string.Empty;
     private bool esError = false;
 
+    // ===== HU11: Asistente de IA =====
+    private bool cargandoIA = false;
+    private string subareaSeleccionada = "Desarrollo de Medicamentos";
+    private string dificultadSeleccionada = "Intermedio";
+
+    private readonly List<string> subareasFarmaceuticas = new()
+    {
+        "Desarrollo de Medicamentos",
+        "Farmacología Clínica",
+        "Control de Calidad Farmacéutica",
+        "Buenas Prácticas de Manufactura",
+        "Normativas de Salud y Regulatorio",
+        "Farmacovigilancia"
+    };
+
+    private readonly List<string> nivelesDificultad = new()
+    {
+        "Básico",
+        "Intermedio",
+        "Avanzado"
+    };
+
     protected override async Task OnInitializedAsync()
     {
  await CargarUsuarios();
@@ -164,7 +248,7 @@
         .Select(i => new Pregunta { Texto = string.Empty, TipoEvaluacion = true })
      .ToList();
 
-       // Inicializar 5 preguntas de opci�n m�ltiple con 2 opciones iniciales
+       // Inicializar 5 preguntas de opción múltiple con 2 opciones iniciales
 modelo.PreguntasMultiples = Enumerable.Range(1, 5)
               .Select(i => new Pregunta
           {
@@ -233,7 +317,7 @@ modelo.PreguntasMultiples = Enumerable.Range(1, 5)
  .Where(p => !string.IsNullOrWhiteSpace(p.Texto))
     .ToList();
 
-    // Validar preguntas m�ltiples
+    // Validar preguntas múltiples
       var preguntasMultiplesValidas = modelo.PreguntasMultiples
     .Where(p => !string.IsNullOrWhiteSpace(p.Texto) && 
 p.OpcionesLista.Count >= 2 && 
@@ -245,7 +329,7 @@ p.OpcionesLista.Count >= 2 &&
    {
         mostrarMensaje = true;
          esError = true;
-     mensajeRespuesta = "Debe ingresar al menos una pregunta completa. Las preguntas m�ltiples deben tener m�nimo 2 opciones y una marcada como correcta.";
+     mensajeRespuesta = "Debe ingresar al menos una pregunta completa. Las preguntas múltiples deben tener mínimo 2 opciones y una marcada como correcta.";
      cargando = false;
     return;
   }
@@ -260,7 +344,7 @@ p.OpcionesLista.Count >= 2 &&
     opcionesConCorrecta = new List<object>()
 }).ToList();
 
-     // Preparar preguntas m�ltiples con opciones serializadas
+     // Preparar preguntas múltiples con opciones serializadas
   var preguntasMultiples = preguntasMultiplesValidas.Take(5).Select(p => new
   {
  texto = p.Texto,
@@ -287,7 +371,7 @@ p.OpcionesLista.Count >= 2 &&
    {
   mostrarMensaje = true;
         esError = false;
-        mensajeRespuesta = "�Evaluaci�n te�rica creada exitosamente!";
+        mensajeRespuesta = "¡Evaluación teórica creada exitosamente!";
       await Task.Delay(2000);
       OnCancel();
    }
@@ -296,7 +380,7 @@ p.OpcionesLista.Count >= 2 &&
      var contenidoError = await responseEvaluacion.Content.ReadAsStringAsync();
    mostrarMensaje = true;
      esError = true;
-   mensajeRespuesta = $"Error al crear evaluaci�n: {responseEvaluacion.StatusCode} - {contenidoError}";
+   mensajeRespuesta = $"Error al crear evaluación: {responseEvaluacion.StatusCode} - {contenidoError}";
     }
         }
 catch (Exception ex)
@@ -311,6 +395,201 @@ catch (Exception ex)
         }
     }
 
+    // ===== HU11: Generar preguntas con IA (Gemini) =====
+    private async Task GenerarPreguntasConIA()
+    {
+        if (cargandoIA) return;
+
+        cargandoIA = true;
+        mostrarMensaje = false;
+
+        try
+        {
+            var request = new
+            {
+                subarea = subareaSeleccionada,
+                dificultad = dificultadSeleccionada,
+                cantidadAbiertas = 5,
+                cantidadMultiples = 5,
+                puntosAbiertas = 10,
+                puntosMultiples = 10
+            };
+
+            // Cliente dedicado con timeout amplio: la generación con IA puede tardar más de 30 s
+            var httpIa = HttpClientFactory.CreateClient("AI");
+            var response = await httpIa.PostAsJsonAsync("api/evaluaciones/generar-ia", request);
+            var contenido = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var detalle = ExtraerMensajeError(contenido);
+
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+                    response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    detalle = "Solo un usuario con rol Administrador (Inspector) puede usar el asistente de IA.";
+                }
+
+                mostrarMensaje = true;
+                esError = true;
+                mensajeRespuesta = $"No se pudieron generar las preguntas: {detalle}";
+                return;
+            }
+
+            var resultado = JsonSerializer.Deserialize<GenerarIAResponse>(
+                contenido,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (resultado == null)
+            {
+                mostrarMensaje = true;
+                esError = true;
+                mensajeRespuesta = "La IA devolvió una respuesta vacía. Intente nuevamente.";
+                return;
+            }
+
+            // --- Autocompletar preguntas abiertas ---
+            var abiertas = new List<Pregunta>();
+            if (resultado.PreguntasAbiertas != null)
+            {
+                foreach (var p in resultado.PreguntasAbiertas)
+                {
+                    if (string.IsNullOrWhiteSpace(p.Texto)) continue;
+
+                    abiertas.Add(new Pregunta
+                    {
+                        Texto = p.Texto.Trim(),
+                        TipoEvaluacion = true,
+                        Puntos = p.Puntos > 0 ? p.Puntos : 10,
+                        OpcionesLista = new List<Opcion>()
+                    });
+                }
+            }
+            while (abiertas.Count < 5)
+            {
+                abiertas.Add(new Pregunta
+                {
+                    Texto = string.Empty,
+                    TipoEvaluacion = true,
+                    Puntos = 10,
+                    OpcionesLista = new List<Opcion>()
+                });
+            }
+
+            // --- Autocompletar preguntas de opción múltiple ---
+            var multiples = new List<Pregunta>();
+            if (resultado.PreguntasMultiples != null)
+            {
+                foreach (var p in resultado.PreguntasMultiples)
+                {
+                    if (string.IsNullOrWhiteSpace(p.Texto) || p.Opciones == null) continue;
+
+                    var opciones = p.Opciones
+                        .Where(o => !string.IsNullOrWhiteSpace(o.Texto))
+                        .Select(o => new Opcion
+                        {
+                            Texto = o.Texto.Trim(),
+                            EsCorrecta = o.EsCorrecta
+                        })
+                        .ToList();
+
+                    // Garantizar mínimo 2 opciones y una marcada como correcta
+                    if (opciones.Count < 2) continue;
+                    if (!opciones.Any(o => o.EsCorrecta))
+                        opciones[0].EsCorrecta = true;
+
+                    multiples.Add(new Pregunta
+                    {
+                        Texto = p.Texto.Trim(),
+                        TipoEvaluacion = false,
+                        Puntos = p.Puntos > 0 ? p.Puntos : 10,
+                        OpcionesLista = opciones
+                    });
+                }
+            }
+            while (multiples.Count < 5)
+            {
+                multiples.Add(new Pregunta
+                {
+                    Texto = string.Empty,
+                    TipoEvaluacion = false,
+                    Puntos = 10,
+                    OpcionesLista = new List<Opcion>
+                    {
+                        new Opcion { Texto = string.Empty, EsCorrecta = false },
+                        new Opcion { Texto = string.Empty, EsCorrecta = false }
+                    }
+                });
+            }
+
+            modelo.PreguntasAbiertas = abiertas.Take(5).ToList();
+            modelo.PreguntasMultiples = multiples.Take(5).ToList();
+
+            mostrarMensaje = true;
+            esError = false;
+            mensajeRespuesta = $"✅ La IA generó {modelo.PreguntasAbiertas.Count} preguntas abiertas y {modelo.PreguntasMultiples.Count} de opción múltiple sobre \"{subareaSeleccionada}\" (nivel {dificultadSeleccionada}).";
+        }
+        catch (Exception ex)
+        {
+            mostrarMensaje = true;
+            esError = true;
+            mensajeRespuesta = $"Error al generar preguntas con IA: {ex.Message}";
+        }
+        finally
+        {
+            cargandoIA = false;
+        }
+    }
+
+    private static string ExtraerMensajeError(string contenido)
+    {
+        if (string.IsNullOrWhiteSpace(contenido)) return "Error desconocido del servidor.";
+
+        try
+        {
+            using var doc = JsonDocument.Parse(contenido);
+            string? mensaje = null;
+            string? detalle = null;
+
+            if (doc.RootElement.TryGetProperty("mensaje", out var m))
+                mensaje = m.GetString();
+            else if (doc.RootElement.TryGetProperty("error", out var e))
+                mensaje = e.GetString();
+
+            if (doc.RootElement.TryGetProperty("detalle", out var d))
+                detalle = d.GetString();
+
+            // Intentar extraer el mensaje de error real de Gemini
+            if (!string.IsNullOrWhiteSpace(detalle))
+            {
+                try
+                {
+                    using var gem = JsonDocument.Parse(detalle);
+                    if (gem.RootElement.TryGetProperty("error", out var ge) &&
+                        ge.TryGetProperty("message", out var gm))
+                    {
+                        return gm.GetString() ?? detalle;
+                    }
+                }
+                catch
+                {
+                    // detalle no es JSON de Gemini: se usa tal cual más abajo
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(mensaje) && !string.IsNullOrWhiteSpace(detalle))
+                return $"{mensaje} Detalle: {detalle}";
+            if (!string.IsNullOrWhiteSpace(detalle)) return detalle!;
+            if (!string.IsNullOrWhiteSpace(mensaje)) return mensaje!;
+        }
+        catch
+        {
+            // El contenido no es JSON: se devuelve tal cual.
+        }
+
+        return contenido;
+    }
+
     private void OnCancel()
     {
         NavigationManager.NavigateTo("/panelControlAdmin");
@@ -319,6 +598,30 @@ catch (Exception ex)
     private void CerrarMensaje()
     {
   mostrarMensaje = false;
+    }
+
+    // ===== HU11: DTOs para la respuesta de la IA =====
+    private class GenerarIAResponse
+    {
+        public List<PreguntaIADto>? PreguntasAbiertas { get; set; }
+        public List<PreguntaMultipleIADto>? PreguntasMultiples { get; set; }
+    }
+
+    private class PreguntaIADto
+    {
+        public string Texto { get; set; } = string.Empty;
+        public int Puntos { get; set; }
+    }
+
+    private class PreguntaMultipleIADto : PreguntaIADto
+    {
+        public List<OpcionIADto>? Opciones { get; set; }
+    }
+
+    private class OpcionIADto
+    {
+        public string Texto { get; set; } = string.Empty;
+        public bool EsCorrecta { get; set; }
     }
 }
 
@@ -632,5 +935,129 @@ width: 100%;
           flex-direction: column;
      align-items: flex-start;
    }
+    }
+
+    /* ===== HU11: Panel Asistente de IA ===== */
+    .panel-ia {
+        margin: 6px 0 26px;
+        padding: 20px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #fff7ed 0%, #ffffff 55%, #eef6ff 100%);
+        border: 1px solid #fed7aa;
+        box-shadow: 0 4px 16px rgba(245, 130, 32, 0.08);
+    }
+
+    .panel-ia-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .panel-ia-titulo {
+        font-size: 17px;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .panel-ia-badge {
+        background: #f58220;
+        color: #ffffff;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 999px;
+        letter-spacing: 0.3px;
+    }
+
+    .panel-ia-desc {
+        margin: 10px 0 16px;
+        font-size: 13.5px;
+        color: #4b5563;
+        line-height: 1.5;
+    }
+
+    .panel-ia-controles {
+        display: grid;
+        grid-template-columns: 1fr 1fr auto;
+        gap: 16px;
+        align-items: end;
+    }
+
+    .campo-ia {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .campo-ia-boton {
+        justify-content: flex-end;
+    }
+
+    .btn-ia {
+        background: #1a73e8;
+        color: #ffffff;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        white-space: nowrap;
+        padding: 12px 24px;
+        border-radius: 24px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.25s ease;
+    }
+
+    .btn-ia:hover:not(:disabled) {
+        background: #1558b0;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(26, 115, 232, 0.35);
+    }
+
+    .ia-cargando {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 16px;
+        padding: 12px 16px;
+        background: #eef6ff;
+        border: 1px dashed #93c5fd;
+        border-radius: 8px;
+        color: #1e40af;
+        font-size: 13.5px;
+    }
+
+    .spinner {
+        width: 18px;
+        height: 18px;
+        border: 3px solid rgba(255, 255, 255, 0.45);
+        border-top-color: #ffffff;
+        border-radius: 50%;
+        display: inline-block;
+        animation: girarIA 0.8s linear infinite;
+        flex-shrink: 0;
+    }
+
+    .ia-cargando .spinner {
+        border-color: rgba(30, 64, 175, 0.25);
+        border-top-color: #1e40af;
+    }
+
+    @@keyframes girarIA {
+        to { transform: rotate(360deg); }
+    }
+
+    @@media (max-width: 640px) {
+        .panel-ia-controles {
+            grid-template-columns: 1fr;
+        }
+
+        .btn-ia {
+            width: 100%;
+        }
     }
 </style>
