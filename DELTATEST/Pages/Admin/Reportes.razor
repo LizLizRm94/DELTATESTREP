@@ -1,4 +1,5 @@
-@page "/reportes"
+锘緻page "/reportes"
+@attribute [Authorize(Roles = "Administrador,Inspector")]
 @using DELTATEST.Services
 @using System.Text.Json
 @inject HttpClient Http
@@ -7,8 +8,8 @@
 
 <div class="reportes-container">
     <div class="reportes-header">
-        <h1 class="titulo-reportes">M覦ULO DE REPORTES</h1>
-        <p class="subtitulo-reportes">Sistema de Evaluaci髇 - DELTATEST</p>
+        <h1 class="titulo-reportes">M脫DULO DE REPORTES</h1>
+        <p class="subtitulo-reportes">Sistema de Evaluaci贸n - DELTATEST</p>
     </div>
 
     @if (cargando)
@@ -21,7 +22,7 @@
     else
     {
         <div class="reportes-content">
-            <!-- SECCI覰 1: EVALUACIONES PENDIENTES -->
+            <!-- SECCI脫N 1: EVALUACIONES PENDIENTES -->
             <div class="seccion-reportes">
                 <div class="seccion-header">
                     <h2 class="seccion-titulo">?? Evaluaciones Pendientes</h2>
@@ -31,7 +32,7 @@
                 @if (evaluacionesPendientes == null || evaluacionesPendientes.Count == 0)
                 {
                     <div class="alerta alerta-info">
-                        <p>No hay evaluaciones pendientes de calificaci髇.</p>
+                        <p>No hay evaluaciones pendientes de calificaci贸n.</p>
                     </div>
                 }
                 else
@@ -58,11 +59,11 @@
                                         <td>
                                             @if (eval.TipoEvaluacion == true)
                                             {
-                                                <span class="badge badge-teorica">Te髍ica</span>
+                                                <span class="badge badge-teorica">Te贸rica</span>
                                             }
                                             else
                                             {
-                                                <span class="badge badge-practica">Pr醕tica</span>
+                                                <span class="badge badge-practica">Pr谩ctica</span>
                                             }
                                         </td>
                                         <td>
@@ -71,7 +72,7 @@
                                         <td>
                                             <button class="btn-accion btn-calificar" 
                                                     @onclick="() => IrACalificar(eval.IdEvaluacion)"
-                                                    title="Calificar esta evaluaci髇">
+                                                    title="Calificar esta evaluaci贸n">
                                                 ? Calificar
                                             </button>
                                         </td>
@@ -85,7 +86,7 @@
 
             <hr class="divisor-secciones" />
 
-            <!-- SECCI覰 2: EVALUACIONES REVISADAS/COMPLETADAS -->
+            <!-- SECCI脫N 2: EVALUACIONES REVISADAS/COMPLETADAS -->
             <div class="seccion-reportes">
                 <div class="seccion-header">
                     <h2 class="seccion-titulo">? Evaluaciones Revisadas/Completadas</h2>
@@ -108,7 +109,7 @@
                                     <th>Evaluado</th>
                                     <th>Fecha</th>
                                     <th>Tipo</th>
-                                    <th>Calificaci髇</th>
+                                    <th>Calificaci贸n</th>
                                     <th>Estado</th>
                                     <th>Acciones</th>
                                 </tr>
@@ -124,11 +125,11 @@
                                         <td>
                                             @if (eval.TipoEvaluacion == true)
                                             {
-                                                <span class="badge badge-teorica">Te髍ica</span>
+                                                <span class="badge badge-teorica">Te贸rica</span>
                                             }
                                             else
                                             {
-                                                <span class="badge badge-practica">Pr醕tica</span>
+                                                <span class="badge badge-practica">Pr谩ctica</span>
                                             }
                                         </td>
                                         <td>
@@ -142,7 +143,7 @@
                                         <td>
                                             <button class="btn-accion btn-reporte" 
                                                     @onclick="() => GenerarReporte(eval.IdEvaluacion)"
-                                                    title="Generar reporte de esta evaluaci髇">
+                                                    title="Generar reporte de esta evaluaci贸n">
                                                 ?? Reporte
                                             </button>
                                         </td>
@@ -513,7 +514,7 @@
             cargando = true;
             mensajeError = null;
 
-            // Obtener todas las evaluaciones te髍icas
+            // Obtener todas las evaluaciones te贸ricas
             var response = await Http.GetAsync("api/evaluacionesteoricass/debug/todas");
 
             if (response.IsSuccessStatusCode)
@@ -543,7 +544,6 @@
         catch (Exception ex)
         {
             mensajeError = $"Error: {ex.Message}";
-            Console.WriteLine($"Error: {ex}");
         }
         finally
         {
@@ -558,7 +558,7 @@
 
     private void GenerarReporte(int idEvaluacion)
     {
-        // Redirigir a p醙ina de reporte
+        // Redirigir a p谩gina de reporte
         NavigationManager.NavigateTo($"/reporte/{idEvaluacion}");
     }
 

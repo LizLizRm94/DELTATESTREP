@@ -1,8 +1,9 @@
-@page "/estado/{IdUsuario:int}"
+锘緻page "/estado/{IdUsuario:int}"
+@attribute [Authorize]
 @using DELTATEST.Models
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
-@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject AuthenticationStateProvider AuthStateProvider
 @layout MainSinLayout
 
 @if (cargando)
@@ -14,7 +15,7 @@
 else
 {
 
-    <h2 class="text-center text-orange text-uppercase mb-4">Mi estado de evaluaci髇</h2>
+    <h2 class="text-center text-orange text-uppercase mb-4">Mi estado de evaluaci贸n</h2>
 
     <h2 class="text-center text-dark mb-2">Panel de Usuario</h2>
     
@@ -26,12 +27,12 @@ else
     <div class="col-md-6 d-flex flex-column align-items-center">
             <div class="d-flex flex-column align-items-center w-100" style="max-width: 420px;">
       
-      <!-- CUADRO DE 贚TIMA NOTA ENTREGADA CON ESTILO NARANJA INTENSO -->
+      <!-- CUADRO DE 脷LTIMA NOTA ENTREGADA CON ESTILO NARANJA INTENSO -->
       @if (ultimaEvaluacion != null)
       {
           <div class="card shadow-lg border-0 w-100" style="background: linear-gradient(135deg, #f58220 0%, #ff9c42 100%); color: white; margin-bottom: 20px;">
               <div class="card-body text-center p-5">
-                  <h5 class="card-title mb-4" style="font-size: 18px; font-weight: 600; letter-spacing: 0.5px;">趌tima Nota Entregada</h5>
+                  <h5 class="card-title mb-4" style="font-size: 18px; font-weight: 600; letter-spacing: 0.5px;">脷ltima Nota Entregada</h5>
                   <div class="mb-3">
                       <p style="font-size: 72px; font-weight: bold; margin: 0; line-height: 1;">
                           @(ultimaEvaluacion.Nota.HasValue ? ultimaEvaluacion.Nota.Value.ToString("F0") : "N/A")
@@ -134,18 +135,20 @@ else
         {
             cargando = true;
 
-            // 1. Obtener nombre del usuario
-            try
+            // 1. Obtener nombre y validar que el usuario solo vea su propio estado
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var currentUser = authState.User;
+            nombreUsuario = currentUser.Identity?.Name ?? "Usuario";
+
+            var isStaff = currentUser.IsInRole("Administrador") || currentUser.IsInRole("Inspector");
+            var idClaim = currentUser.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!isStaff && int.TryParse(idClaim, out var ownId) && ownId != IdUsuario)
             {
-                nombreUsuario = await LocalStorage.GetItemAsync<string>("userName") ?? "Usuario";
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error al cargar nombre: {ex.Message}");
-                nombreUsuario = "Usuario";
+                NavigationManager.NavigateTo($"/estado/{ownId}", replace: true);
+                return;
             }
 
-            // 2. Obtener 鷏tima evaluaci髇 PR罜TICA
+            // 2. Obtener 煤ltima evaluaci贸n PR脕CTICA
             try
             {
                 var evalsResponse = await Http.GetAsync($"api/evaluaciones/usuario/{IdUsuario}");
@@ -154,7 +157,7 @@ else
                     var evals = await evalsResponse.Content.ReadFromJsonAsync<List<EvaluacionPractica>>();
                     if (evals != null && evals.Count > 0)
                     {
-                        // Obtener la m醩 reciente (鷏tima)
+                        // Obtener la m谩s reciente (煤ltima)
                         var ultima = evals.OrderByDescending(e => e.FechaEvaluacion).FirstOrDefault();
                         if (ultima != null && ultima.NotaPractica.HasValue)
                         {
@@ -163,7 +166,7 @@ else
                                 IdEvaluacion = ultima.IdEvaluacion,
                                 FechaEvaluacion = ultima.FechaEvaluacion,
                                 Nota = ultima.NotaPractica,
-                                TipoEvaluacion = "Pr醕tica"
+                                TipoEvaluacion = "Pr谩ctica"
                             };
                         }
                     }
@@ -171,10 +174,9 @@ else
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error obteniendo evaluaci髇 pr醕tica: {ex.Message}");
             }
 
-            // 3. Si no hay evaluaci髇 pr醕tica con nota, obtener evaluaci髇 TE覴ICA
+            // 3. Si no hay evaluaci贸n pr谩ctica con nota, obtener evaluaci贸n TE脫RICA
             if (ultimaEvaluacion == null)
             {
                 try
@@ -185,7 +187,7 @@ else
                         var evals = await teoricaResponse.Content.ReadFromJsonAsync<List<EvaluacionTeorica>>();
                         if (evals != null && evals.Count > 0)
                         {
-                            // Obtener la m醩 reciente con nota
+                            // Obtener la m谩s reciente con nota
                             var ultima = evals.Where(e => e.Nota.HasValue)
                                 .OrderByDescending(e => e.FechaEvaluacion)
                                 .FirstOrDefault();
@@ -197,7 +199,7 @@ else
                                     IdEvaluacion = ultima.IdEvaluacion,
                                     FechaEvaluacion = ultima.FechaEvaluacion,
                                     Nota = ultima.Nota,
-                                    TipoEvaluacion = "Te髍ica"
+                                    TipoEvaluacion = "Te贸rica"
                                 };
                             }
                         }
@@ -205,7 +207,6 @@ else
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error obteniendo evaluaci髇 te髍ica: {ex.Message}");
                 }
             }
 
@@ -224,13 +225,11 @@ else
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Advertencia notificaciones: {ex.Message}");
                 notificaciones = new List<NotificacionSimple>();
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error general: {ex.Message}");
         }
         finally
         {

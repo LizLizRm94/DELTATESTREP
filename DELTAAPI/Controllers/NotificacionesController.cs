@@ -1,12 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DELTAAPI.Models;
+using DELTAAPI.Security;
 using Microsoft.AspNetCore.Authorization;
 
 namespace DELTAAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class NotificacionesController : ControllerBase
     {
         private readonly DeltaTestContext _context;
@@ -20,9 +22,11 @@ namespace DELTAAPI.Controllers
         /// Obtiene todas las notificaciones de un usuario
         /// </summary>
         [HttpGet("usuario/{idUsuario}")]
-        [AllowAnonymous]
         public async Task<IActionResult> GetNotificacionesUsuario(int idUsuario)
         {
+            if (!User.CanAccessUser(idUsuario))
+                return Forbid();
+
             var notificaciones = await _context.Notificacions
             .Where(n => n.IdUsuarioDestino == idUsuario)
             .OrderByDescending(n => n.FechaEnvio)

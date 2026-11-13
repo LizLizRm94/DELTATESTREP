@@ -1,11 +1,12 @@
-@page "/ver-recomendaciones/{IdEvaluacion:int}"
+ï»¿@page "/ver-recomendaciones/{IdEvaluacion:int}"
+@attribute [Authorize]
 @using DELTATEST.Models
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 @layout MainSinLayout
 
 <div class="container-recomendaciones">
-    <h2 class="titulo-recomendaciones">Recomendaciones de Evaluación</h2>
+    <h2 class="titulo-recomendaciones">Recomendaciones de EvaluaciÃ³n</h2>
 
     @if (cargando)
     {
@@ -23,13 +24,13 @@
     else if (evaluacion == null)
     {
         <div class="alerta alerta-info">
-            <span>No se encontró la evaluación</span>
+            <span>No se encontrÃ³ la evaluaciÃ³n</span>
         </div>
     }
     else
     {
         <div class="recomendaciones-card">
-            <!-- Información del evaluado -->
+            <!-- InformaciÃ³n del evaluado -->
     <div class="evaluado-seccion">
                 <h3>Evaluado</h3>
                 <p><strong>@evaluacion.NombreEvaluado</strong></p>
@@ -64,7 +65,7 @@
           }
     </div>
 
-       <!-- Botón volver -->
+       <!-- BotÃ³n volver -->
   <div class="botones-seccion">
 <button class="btn btn-volver" @onclick="VolverAtras">
         ? Volver
@@ -323,14 +324,13 @@ background: #e67e1a;
             if (evaluacion == null)
    {
     mostrarError = true;
-         mensajeError = "No se pudo cargar la evaluación";
+         mensajeError = "No se pudo cargar la evaluaciÃ³n";
         }
         }
         catch (Exception ex)
      {
    mostrarError = true;
      mensajeError = $"Error al cargar: {ex.Message}";
-            Console.WriteLine($"Error: {ex.Message}");
       }
      finally
         {
@@ -353,7 +353,7 @@ background: #e67e1a;
 
     private string ObtenerEstadoNota(decimal? nota)
     {
-        if (!nota.HasValue) return "Sin calificación";
+        if (!nota.HasValue) return "Sin calificaciÃ³n";
         if (nota >= 80) return "Excelente";
         if (nota >= 51) return "Bueno";
         return "Reprobado";

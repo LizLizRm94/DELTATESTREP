@@ -1,4 +1,4 @@
-namespace DELTATEST.Models
+ï»¿namespace DELTATEST.Models
 {
     public class UserViewModel
     {
@@ -9,7 +9,7 @@ namespace DELTATEST.Models
         public string? PuestoActual { get; set; }
         public string? PuestoSolicitado { get; set; }
         public string? Estado { get; set; } // uso para "Ingreso con"
-        public decimal? NotaPractica { get; set; } // Última calificación de evaluación práctica
+        public decimal? NotaPractica { get; set; } // Ãšltima calificaciÃ³n de evaluaciÃ³n prÃ¡ctica
         public string? Rol { get; set; } // Rol del usuario
     }
 }

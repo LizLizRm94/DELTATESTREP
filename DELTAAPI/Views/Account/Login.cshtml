@@ -1,20 +1,23 @@
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @{
-    ViewData["Title"] = "Iniciar sesi髇";
+    ViewData["Title"] = "Iniciar sesi贸n";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var clientUrl = Configuration["ClientBaseUrl"] ?? "https://localhost:7105/";
 }
 
 <div class="row justify-content-center">
     <div class="col-md-6">
-        <h2>Iniciar sesi髇</h2>
+        <h2>Iniciar sesi贸n</h2>
         <div id="message" class="text-danger mb-2"></div>
         <form id="loginForm">
             <div class="mb-3">
                 <label for="username" class="form-label">CI o correo</label>
-                <input type="text" id="username" name="username" class="form-control" required />
+                <input type="text" id="username" name="username" class="form-control" autocomplete="username" required />
             </div>
             <div class="mb-3">
-                <label for="password" class="form-label">Contrase馻</label>
-                <input type="password" id="password" name="password" class="form-control" required minlength="6" />
+                <label for="password" class="form-label">Contrase帽a</label>
+                <input type="password" id="password" name="password" class="form-control"
+                       autocomplete="current-password" required />
             </div>
             <button type="submit" class="btn btn-primary">Ingresar</button>
         </form>
@@ -34,21 +37,27 @@
         try {
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
                 body: JSON.stringify(payload)
             });
 
             if (!res.ok) {
                 const txt = await res.text();
-                document.getElementById('message').textContent = txt || 'Error de autenticaci髇';
+                let msg = txt || 'Error de autenticaci贸n';
+                try {
+                    const parsed = JSON.parse(txt);
+                    msg = typeof parsed === 'string' ? parsed : (parsed.mensaje || msg);
+                } catch { }
+                document.getElementById('message').textContent = msg;
                 return;
             }
 
-            const data = await res.json();
-            // Guardar token (para demo). En producci髇 usar cookie HttpOnly
-            localStorage.setItem('jwt', data.token);
-            // Redirigir al inicio
-            window.location.href = '/';
+            // La sesi贸n se guarda en una cookie HttpOnly emitida por el servidor.
+            window.location.href = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(clientUrl));
         } catch (err) {
             document.getElementById('message').textContent = 'Error de red';
         }

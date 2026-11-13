@@ -1,4 +1,4 @@
-using System.Net.Http.Json;
+锘縰sing System.Net.Http.Json;
 using System.Text;
 using DELTATEST.Models;
 
@@ -17,29 +17,23 @@ namespace DELTATEST.Services
         {
             try
             {
-                Console.WriteLine($"ReporteEvaluacionService - Requesting evaluation ID: {idEvaluacion}");
                 var response = await _http.GetAsync($"api/evaluaciones/{idEvaluacion}");
                 
-                Console.WriteLine($"ReporteEvaluacionService - Response status: {response.StatusCode}");
                 
                 if (response.IsSuccessStatusCode)
                 {
                     var result = await response.Content.ReadFromJsonAsync<DetalleEvaluacionDto>();
-                    Console.WriteLine($"ReporteEvaluacionService - Successfully deserialized evaluation");
                     return result;
                 }
                 else
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"ReporteEvaluacionService - Error response: {errorContent}");
                 }
                 
                 return null;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"ReporteEvaluacionService - Exception: {ex.Message}");
-                Console.WriteLine($"ReporteEvaluacionService - StackTrace: {ex.StackTrace}");
                 return null;
             }
         }
@@ -91,7 +85,7 @@ namespace DELTATEST.Services
 <head>
     <meta charset='UTF-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <title>Reporte de Evaluaci髇</title>
+    <title>Reporte de Evaluaci贸n</title>
     <style>
         * {{
             margin: 0;
@@ -333,57 +327,57 @@ namespace DELTATEST.Services
 <body>
     <div class='container'>
         <div class='header'>
-            <h1>REPORTE DE EVALUACI覰</h1>
-            <p>Sistema de Evaluaci髇 - DELTATEST</p>
+            <h1>REPORTE DE EVALUACI脫N</h1>
+            <p>Sistema de Evaluaci贸n - DELTATEST</p>
         </div>
 
         <div class='resultado-section'>
             <h2>Resultado Final</h2>
             <div class='nota'>{notaFormato}/100</div>
-            <p>Tipo de Evaluaci髇: <strong>{tipoEvaluacion}</strong></p>
+            <p>Tipo de Evaluaci贸n: <strong>{tipoEvaluacion}</strong></p>
             <span class='estado-badge {estadoClass}'>
                 {estado}
             </span>
         </div>
 
         <div class='section'>
-            <div class='section-title'>Informaci髇 del Evaluado</div>
+            <div class='section-title'>Informaci贸n del Evaluado</div>
             <div class='info-grid'>
                 <div class='info-item'>
                     <div class='info-label'>Nombre Completo</div>
                     <div class='info-value'>{nombreEvaluado}</div>
                 </div>
                 <div class='info-item'>
-                    <div class='info-label'>C閐ula de Identidad</div>
+                    <div class='info-label'>C茅dula de Identidad</div>
                     <div class='info-value'>{ciEvaluado}</div>
                 </div>
             </div>
         </div>
 
         <div class='section'>
-            <div class='section-title'>Detalles de la Evaluaci髇</div>
+            <div class='section-title'>Detalles de la Evaluaci贸n</div>
             <div class='info-grid'>
                 <div class='info-item'>
-                    <div class='info-label'>Fecha de Evaluaci髇</div>
+                    <div class='info-label'>Fecha de Evaluaci贸n</div>
                     <div class='info-value'>{fechaFormato}</div>
                 </div>
                 <div class='info-item'>
-                    <div class='info-label'>Tipo de Evaluaci髇</div>
+                    <div class='info-label'>Tipo de Evaluaci贸n</div>
                     <div class='info-value'>{tipoEvaluacion}</div>
                 </div>
                 <div class='info-item'>
-                    <div class='info-label'>Estado Evaluaci髇</div>
+                    <div class='info-label'>Estado Evaluaci贸n</div>
                     <div class='info-value'>{estadoEvaluacion}</div>
                 </div>
                 <div class='info-item'>
-                    <div class='info-label'>ID Evaluaci髇</div>
+                    <div class='info-label'>ID Evaluaci贸n</div>
                     <div class='info-value'>#{evaluacion.IdEvaluacion}</div>
                 </div>
             </div>
         </div>
 
         <div class='section'>
-            <div class='section-title'>Informaci髇 del Evaluador</div>
+            <div class='section-title'>Informaci贸n del Evaluador</div>
             <div class='info-grid'>
                 <div class='info-item'>
                     <div class='info-label'>Nombre del Evaluador/Calificador</div>
@@ -399,7 +393,7 @@ namespace DELTATEST.Services
         <div class='section firmas-section'>
             <div class='section-title'>Firmas y Autorizaciones</div>
             <p style='margin-bottom: 15px; color: #666; font-size: 12px;'>
-                Este documento debe ser firmado por el evaluado y el evaluador como confirmaci髇 de la evaluaci髇 realizada.
+                Este documento debe ser firmado por el evaluado y el evaluador como confirmaci贸n de la evaluaci贸n realizada.
             </p>
 
             <div class='firmas-container'>
@@ -426,7 +420,7 @@ namespace DELTATEST.Services
         </div>
 
         <div class='pie-pagina'>
-            <p>Este documento ha sido generado autom醫icamente por el sistema DELTATEST.</p>
+            <p>Este documento ha sido generado autom谩ticamente por el sistema DELTATEST.</p>
             <div class='timestamp'>Generado: {DateTime.Now:dd/MM/yyyy HH:mm:ss}</div>
         </div>
     </div>

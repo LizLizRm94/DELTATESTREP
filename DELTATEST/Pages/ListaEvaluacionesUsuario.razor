@@ -1,4 +1,5 @@
-@page "/lista-evaluaciones-usuario/{IdUsuario:int}"
+﻿@page "/lista-evaluaciones-usuario/{IdUsuario:int}"
+@attribute [Authorize]
 @using DELTATEST.Services
 @inject HttpClient Http
 @inject NavigationManager Nav
@@ -89,7 +90,6 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error: {ex.Message}");
         }
         finally
         {

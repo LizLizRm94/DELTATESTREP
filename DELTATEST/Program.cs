@@ -1,23 +1,22 @@
 using DELTATEST;
+using DELTATEST.Services;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Blazored.LocalStorage;
-using DELTATEST.Services;
-using System.Net.Http;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// Register Blazored LocalStorage
-builder.Services.AddBlazoredLocalStorage();
+// La URL de la API es configurable en wwwroot/appsettings.json.
+var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:7287/";
+if (!Uri.TryCreate(apiBaseUrl, UriKind.Absolute, out var apiBase))
+    throw new InvalidOperationException("ApiBaseUrl no es una URL absoluta válida.");
 
 // Register message handler for requests - DEBE IR ANTES de AddHttpClient
 builder.Services.AddTransient<AuthorizationMessageHandler>();
 
 // Configure a named HttpClient for API calls with credentials support for cookies
-// Use the local API URL for development. Change if your API runs on a different port.
-var apiBase = new Uri("https://localhost:7287/");
 builder.Services.AddHttpClient("API", client =>
 {
     client.BaseAddress = apiBase;
@@ -31,27 +30,27 @@ builder.Services.AddHttpClient("AI", client =>
 {
     client.BaseAddress = apiBase;
     client.DefaultRequestHeaders.Add("Accept", "application/json");
-    client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
     client.Timeout = TimeSpan.FromMinutes(3);
 })
 .AddHttpMessageHandler<AuthorizationMessageHandler>();
 
 // Provide an injectable HttpClient that uses the named client
-builder.Services.AddScoped(sp => 
+builder.Services.AddScoped(sp =>
 {
     var factory = sp.GetRequiredService<IHttpClientFactory>();
-    var httpClient = factory.CreateClient("API");
-    // Asegurar que las cookies se incluyan
-    httpClient.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
-    return httpClient;
+    return factory.CreateClient("API");
 });
+
+// HU12: el estado de autenticación vive en una cookie HttpOnly validada por el servidor.
+builder.Services.AddAuthorizationCore();
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddScoped<CookieAuthenticationStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
+    sp.GetRequiredService<CookieAuthenticationStateProvider>());
 
 // Register application services
 builder.Services.AddScoped<AuthService>();
-builder.Services.AddScoped<AuthStateService>();
 builder.Services.AddScoped<ReporteEvaluacionService>();
 builder.Services.AddScoped<EvaluadoService>();
-
-Console.WriteLine("Blazor app initializing...");
 
 await builder.Build().RunAsync();

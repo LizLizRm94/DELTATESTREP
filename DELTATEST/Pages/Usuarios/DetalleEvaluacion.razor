@@ -1,4 +1,5 @@
 ﻿@page "/detalle-evaluacion/{IdEvaluacion:int}"
+@attribute [Authorize]
 @using DELTATEST.Models
 @layout MainSinLayout
 @inject HttpClient Http
@@ -389,12 +390,9 @@
         try
         {
             cargando = true;
-            Console.WriteLine($"Cargando evaluación con ID: {IdEvaluacion}");
             
             var response = await Http.GetAsync($"api/evaluaciones/{IdEvaluacion}");
 
-            Console.WriteLine($"Status Code: {response.StatusCode}");
-            Console.WriteLine($"Is Success: {response.IsSuccessStatusCode}");
 
             if (response.IsSuccessStatusCode)
             {
@@ -403,11 +401,9 @@
                 {
                     mostrarError = true;
                     mensajeError = "No se encontró la evaluación";
-                    Console.WriteLine("Evaluación nula después de deserializar");
                 }
                 else
                 {
-                    Console.WriteLine($"Evaluación cargada: {evaluacion.NombreEvaluado}");
                 }
             }
             else
@@ -415,15 +411,12 @@
                 mostrarError = true;
                 var content = await response.Content.ReadAsStringAsync();
                 mensajeError = $"Error {response.StatusCode}: {content}";
-                Console.WriteLine($"Error response: {content}");
             }
         }
         catch (Exception ex)
         {
             mostrarError = true;
             mensajeError = ex.Message;
-            Console.WriteLine($"Exception: {ex.Message}");
-            Console.WriteLine($"Stack: {ex.StackTrace}");
         }
         finally
         {

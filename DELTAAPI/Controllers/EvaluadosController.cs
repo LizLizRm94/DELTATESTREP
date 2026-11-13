@@ -1,11 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DELTAAPI.Models;
+using DELTAAPI.Security;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DELTAAPI.Controllers
 {
     [ApiController]
     [Route("api/evaluados")]
+    [Authorize]
     public class EvaluadosController : ControllerBase
     {
         private readonly DeltaTestContext _context;
@@ -18,6 +21,9 @@ namespace DELTAAPI.Controllers
         [HttpGet("estado/{idUsuario}")]
         public async Task<ActionResult<EvaluadoEstado>> ObtenerEstado(int idUsuario)
         {
+            if (!User.CanAccessUser(idUsuario))
+                return Forbid();
+
             var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.IdUsuario == idUsuario);
             if (usuario == null) return NotFound();
 

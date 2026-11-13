@@ -1,4 +1,4 @@
-using System.Net.Http.Json;
+ï»¿using System.Net.Http.Json;
 using DELTATEST.Models;
 
 namespace DELTATEST.Services
@@ -13,7 +13,7 @@ namespace DELTATEST.Services
         }
 
         /// <summary>
-        /// Obtiene todas las preguntas de una evaluación específica
+        /// Obtiene todas las preguntas de una evaluaciÃ³n especÃ­fica
         /// </summary>
         public async Task<List<PreguntaDto>?> ObtenerPreguntasPorEvaluacion(int idEvaluacion)
         {
@@ -23,13 +23,12 @@ namespace DELTATEST.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error al obtener preguntas: {ex.Message}");
                 return null;
             }
         }
 
         /// <summary>
-        /// Obtiene todas las respuestas de una evaluación específica
+        /// Obtiene todas las respuestas de una evaluaciÃ³n especÃ­fica
         /// </summary>
         public async Task<List<RespuestaDto>?> ObtenerRespuestasPorEvaluacion(int idEvaluacion)
         {
@@ -39,7 +38,6 @@ namespace DELTATEST.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error al obtener respuestas: {ex.Message}");
                 return null;
             }
         }
@@ -55,7 +53,6 @@ namespace DELTATEST.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error al obtener respuestas del usuario: {ex.Message}");
                 return null;
             }
         }

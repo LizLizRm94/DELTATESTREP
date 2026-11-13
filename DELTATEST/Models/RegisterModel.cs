@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace DELTATEST.Models
 {
@@ -14,7 +14,7 @@ namespace DELTATEST.Models
         public string? Expedicion { get; set; }
 
         [Required(ErrorMessage = "Correo es obligatorio")]
-        [EmailAddress(ErrorMessage = "Correo no v�lido")]
+        [EmailAddress(ErrorMessage = "Correo no válido")]
         public string Correo { get; set; } = string.Empty;
 
         public string? Telefono { get; set; }
@@ -29,11 +29,13 @@ namespace DELTATEST.Models
         public string? PuestoSolicitado { get; set; }
         public string? PuestoARotar { get; set; }
 
-        [Required(ErrorMessage = "Contrase�a es obligatoria")]
-        [MinLength(6, ErrorMessage = "La contrase�a debe tener al menos 6 caracteres")]
+        [Required(ErrorMessage = "Contraseña es obligatoria")]
+        [StringLength(128, MinimumLength = 10, ErrorMessage = "La contraseña debe tener entre 10 y 128 caracteres")]
+        [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9])\S+$",
+            ErrorMessage = "La contraseña debe incluir mayúscula, minúscula, número y símbolo, sin espacios")]
         public string Password { get; set; } = string.Empty;
 
-        [Compare("Password", ErrorMessage = "Las contrase�as no coinciden")]
+        [Compare("Password", ErrorMessage = "Las contraseñas no coinciden")]
         [DataType(DataType.Password)]
         public string? ConfirmPassword { get; set; }
     }

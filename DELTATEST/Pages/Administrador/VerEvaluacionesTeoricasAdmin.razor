@@ -1,4 +1,5 @@
-@page "/admin/evaluaciones-teoricas"
+锘緻page "/admin/evaluaciones-teoricas"
+@attribute [Authorize(Roles = "Administrador,Inspector")]
 @using DELTATEST.Models
 @using DELTATEST.Services
 @using System.Text.Json
@@ -8,7 +9,7 @@
 @layout MainSinLayout
 
   <div class="container-admin mt-5">
-    <h2 class="text-orange text-center text-uppercase mb-4">Evaluaciones Te髍icas - Panel de Admin</h2>
+    <h2 class="text-orange text-center text-uppercase mb-4">Evaluaciones Te贸ricas - Panel de Admin</h2>
 
     @if (cargando)
     {
@@ -22,9 +23,9 @@
     {
       <div class="row">
         <div class="col-md-4">
-            <!-- EVALUACIONES TE覴ICAS - TODAS -->
+            <!-- EVALUACIONES TE脫RICAS - TODAS -->
             <div class="mb-4">
-                <h5 class="text-orange mb-3">Evaluaciones Te髍icas</h5>
+                <h5 class="text-orange mb-3">Evaluaciones Te贸ricas</h5>
                 @if (evaluacionesPendientes == null || evaluacionesPendientes.Count == 0)
                 {
                     <div class="alert alert-info small">
@@ -76,7 +77,7 @@
                           </div>
                       <div class="mb-3">
                       <strong class="text-orange">@(item.EsOpcionMultiple ? "Respuesta Seleccionada:" : "Respuesta:")</strong>
-                      <p class="mb-0 bg-white p-2 rounded @(item.EsOpcionMultiple && !item.RespuestaEsCorrecta ? "text-danger" : item.EsOpcionMultiple && item.RespuestaEsCorrecta ? "text-success fw-bold" : "")">
+                      <p class="mb-0 bg-white p-2 rounded @(item.EsOpcionMultiple && !item.RespuestaEsCorrecta ? "text-danger" : item.EsOpcionMultiple && item.RespuestaEsCorrecta ? "text-success fw-bold" : "")" style="white-space: pre-wrap;">
                       @if (item.EsOpcionMultiple && !item.RespuestaEsCorrecta)
                       {
                         <span class="badge bg-danger me-2">? Incorrecta</span>
@@ -85,7 +86,7 @@
                       {
                           <span class="badge bg-success me-2">? Correcta</span>
                       }
-                      @((MarkupString)item.Respuesta.Replace("\n", "<br/>"))
+                      @item.Respuesta
                   </p>
                  </div>
                  <div class="row">
@@ -110,10 +111,10 @@
            <div class="alert alert-info">No hay respuestas disponibles.</div>
              }
 
-                    <!-- CALIFICACI覰 GLOBAL -->
+                    <!-- CALIFICACI脫N GLOBAL -->
                 <hr />
                  <div class="form-group mt-4">
-                   <label for="calificacionGlobal" class="form-label fw-bold text-orange">Calificaci髇 Global (0-100)</label>
+                   <label for="calificacionGlobal" class="form-label fw-bold text-orange">Calificaci贸n Global (0-100)</label>
                  <div class="input-group">
                    <input type="number" 
                            class="form-control form-control-lg" 
@@ -121,7 +122,7 @@
                    @bind="calificacionGlobal" 
                     min="0" 
                 max="100"
-                    placeholder="Ingrese calificaci髇">
+                    placeholder="Ingrese calificaci贸n">
                        <span class="input-group-text fw-bold">/100</span>
                   </div>
                </div>
@@ -166,7 +167,7 @@
                }
                 else
               {
-                   <span>Guardar Calificaci髇</span>
+                   <span>Guardar Calificaci贸n</span>
                  }
                </button>
                  </div>
@@ -176,7 +177,7 @@
             else
             {
                 <div class="alert alert-secondary text-center">
-                    <p class="mb-0">Selecciona una evaluaci髇 de la lista para comenzar a calificar.</p>
+                    <p class="mb-0">Selecciona una evaluaci贸n de la lista para comenzar a calificar.</p>
                 </div>
             }
           </div>
@@ -252,7 +253,7 @@
         box-shadow: 0 0 0 0.2rem rgba(245, 130, 32, 0.25);
     }
 
-    /* Estilos para respuestas de opci髇 m鷏tiple */
+    /* Estilos para respuestas de opci贸n m煤ltiple */
   .border-danger {
         border: 2px solid #dc3545 !important;
     }
@@ -366,7 +367,7 @@
                                     Estado = estado
                                 };
 
-                                // Agregar todas las evaluaciones a la lista 鷑ica
+                                // Agregar todas las evaluaciones a la lista 煤nica
                                 evaluacionesPendientes.Add(evaluacion);
                             }
                         }
@@ -377,7 +378,6 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error: {ex.Message}");
         }
         finally
         {
@@ -394,34 +394,27 @@
 
         try
         {
-            Console.WriteLine($"Cargando evaluaci髇 {eval.IdEvaluacion}");
             var response = await Http.GetAsync($"api/evaluacionesteoricass/calificar/{eval.IdEvaluacion}");
-            Console.WriteLine($"Response status: {response.StatusCode}");
 
             if (response.IsSuccessStatusCode)
             {
                 var contenido = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Contenido recibido: {contenido}");
 
                 var evaluacionCompleta = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(contenido);
 
                 if (evaluacionCompleta != null && evaluacionCompleta.ContainsKey("preguntas"))
                 {
-                    Console.WriteLine($"Se encontraron preguntas");
                     var preguntasJson = evaluacionCompleta["preguntas"];
                     if (preguntasJson is JsonElement je)
                     {
-                        Console.WriteLine($"Preguntas JSON: {je.GetRawText()}");
                         var preguntas = System.Text.Json.JsonSerializer.Deserialize<List<Dictionary<string, object>>>(je.GetRawText());
                         if (preguntas != null)
                         {
-                            Console.WriteLine($"Total preguntas: {preguntas.Count}");
                             preguntasRespuestas = new List<PreguntaRespuesta>();
                             foreach (var preg in preguntas)
                             {
                                 var pregunta = preg.ContainsKey("pregunta") ? preg["pregunta"]?.ToString() ?? "Sin pregunta" : "Sin pregunta";
                                 var respuestaTexto = preg.ContainsKey("respuesta") ? preg["respuesta"]?.ToString() ?? "Sin respuesta" : "Sin respuesta";
-                                Console.WriteLine($"Pregunta: {pregunta}, Respuesta: {respuestaTexto}");
 
                                 var tipoEvaluacion = false;
                                 var opciones = "";
@@ -474,7 +467,6 @@
                                     }
                                     catch (Exception ex)
                                     {
-                                        Console.WriteLine($"Error procesando opci髇 m鷏tiple: {ex.Message}");
                                     }
                                 }
 
@@ -488,35 +480,29 @@
                                     Puntos = puntos
                                 });
                             }
-                            Console.WriteLine($"Total respuestas procesadas: {preguntasRespuestas.Count}");
                         }
                     }
                     else
                     {
-                        Console.WriteLine($"No es JsonElement: {preguntasJson.GetType()}");
                     }
                 }
                 else
                 {
-                    Console.WriteLine($"No contiene 'preguntas' en la respuesta");
                 }
             }
             else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 preguntasRespuestas = new List<PreguntaRespuesta>();
-                MostrarMensaje("Esta evaluaci髇 no tiene respuestas registradas a鷑. El usuario debe responderla primero.", false);
+                MostrarMensaje("Esta evaluaci贸n no tiene respuestas registradas a煤n. El usuario debe responderla primero.", false);
             }
             else
             {
                 var contenidoError = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Error response: {contenidoError}");
                 MostrarMensaje($"Error al cargar: {response.StatusCode}", true);
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error completo: {ex.Message}");
-            Console.WriteLine($"Stack: {ex.StackTrace}");
             preguntasRespuestas = new List<PreguntaRespuesta>();
             MostrarMensaje($"Error: {ex.Message}", true);
         }
@@ -526,7 +512,7 @@
     {
         if (evalSeleccionada == null || calificacionGlobal < 0 || calificacionGlobal > 100)
         {
-            MostrarMensaje("La calificaci髇 debe estar entre 0 y 100", true);
+            MostrarMensaje("La calificaci贸n debe estar entre 0 y 100", true);
             return;
         }
 
@@ -538,7 +524,6 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error al generar reporte: {ex.Message}");
             MostrarMensaje($"Error al generar reporte: {ex.Message}", true);
         }
         finally
@@ -551,7 +536,7 @@
     {
         if (evalSeleccionada == null || calificacionGlobal < 0 || calificacionGlobal > 100)
         {
-            MostrarMensaje("La calificaci髇 debe estar entre 0 y 100", true);
+            MostrarMensaje("La calificaci贸n debe estar entre 0 y 100", true);
             return;
         }
 
@@ -568,7 +553,7 @@
 
             if (response.IsSuccessStatusCode)
             {
-                MostrarMensaje($"Calificaci髇 guardada exitosamente: {calificacionGlobal}/100", false);
+                MostrarMensaje($"Calificaci贸n guardada exitosamente: {calificacionGlobal}/100", false);
                 await Task.Delay(1500);
                 LimpiarSeleccion();
                 await CargarEvaluaciones();
@@ -576,13 +561,11 @@
             else
             {
                 var contenidoError = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Error: {contenidoError}");
-                MostrarMensaje("Error al guardar la calificaci髇", true);
+                MostrarMensaje("Error al guardar la calificaci贸n", true);
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error: {ex.Message}");
             MostrarMensaje($"Error: {ex.Message}", true);
         }
         finally

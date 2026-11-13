@@ -1,4 +1,5 @@
-@page "/reporte-evaluacion/{IdEvaluacion:int}"
+ï»¿@page "/reporte-evaluacion/{IdEvaluacion:int}"
+@attribute [Authorize]
 @using DELTATEST.Services
 @layout ReportePrintLayout
 @inject ReporteEvaluacionService ReporteService
@@ -11,14 +12,14 @@
         <div class="spinner-border text-warning" role="status">
             <span class="visually-hidden">Cargando...</span>
         </div>
-        <p class="mt-3">Cargando reporte de evaluación...</p>
+        <p class="mt-3">Cargando reporte de evaluaciÃ³n...</p>
     </div>
 }
 else if (evaluacion != null && !string.IsNullOrEmpty(htmlReporte))
 {
     <div class="container-fluid py-4">
         <div class="d-flex justify-content-between align-items-center mb-4 no-print">
-            <h3 class="fw-bold text-warning">Reporte de Evaluación</h3>
+            <h3 class="fw-bold text-warning">Reporte de EvaluaciÃ³n</h3>
             <div class="d-flex gap-2">
                 <button class="btn btn-primary" @onclick="ImprimirReporte" title="Imprimir o descargar como PDF">
                     <i class="bi bi-printer"></i> Imprimir/Descargar
@@ -35,7 +36,7 @@ else if (evaluacion != null && !string.IsNullOrEmpty(htmlReporte))
 else if (loadError)
 {
     <div class="alert alert-danger text-center m-5">
-        <h4>Error al cargar la evaluación</h4>
+        <h4>Error al cargar la evaluaciÃ³n</h4>
         <p>@errorMessage</p>
         <button class="btn btn-warning" @onclick="IrAtras">Volver</button>
     </div>
@@ -43,8 +44,8 @@ else if (loadError)
 else
 {
     <div class="alert alert-danger text-center m-5">
-        <h4>Error al cargar la evaluación</h4>
-        <p>No se encontró la evaluación solicitada o hubo un error al generar el reporte.</p>
+        <h4>Error al cargar la evaluaciÃ³n</h4>
+        <p>No se encontrÃ³ la evaluaciÃ³n solicitada o hubo un error al generar el reporte.</p>
         <button class="btn btn-warning" @onclick="IrAtras">Volver</button>
     </div>
 }
@@ -81,7 +82,6 @@ else
     {
         try
         {
-            Console.WriteLine($"ReporteEvaluacion - Loading evaluation ID: {IdEvaluacion}");
             isLoading = true;
             loadError = false;
             errorMessage = string.Empty;
@@ -93,37 +93,31 @@ else
             
             if (evaluacion != null)
             {
-                Console.WriteLine($"ReporteEvaluacion - Evaluation loaded successfully");
                 try
                 {
                     htmlReporte = ReporteService.GenerarHtmlReporte(evaluacion);
                     if (string.IsNullOrEmpty(htmlReporte))
                     {
-                        Console.WriteLine($"ReporteEvaluacion - HTML generation returned empty");
                         loadError = true;
                         errorMessage = "El reporte no pudo ser generado correctamente.";
                     }
                 }
                 catch (Exception exHtml)
                 {
-                    Console.WriteLine($"ReporteEvaluacion - HTML generation error: {exHtml.Message}");
                     loadError = true;
                     errorMessage = $"Error al generar el HTML: {exHtml.Message}";
                 }
             }
             else
             {
-                Console.WriteLine($"ReporteEvaluacion - Failed to load evaluation, service returned null");
                 loadError = true;
-                errorMessage = "No se pudo cargar la información de la evaluación.";
+                errorMessage = "No se pudo cargar la informaciÃ³n de la evaluaciÃ³n.";
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"ReporteEvaluacion - Error: {ex.Message}");
-            Console.WriteLine($"ReporteEvaluacion - StackTrace: {ex.StackTrace}");
             loadError = true;
-            errorMessage = $"Error al cargar la evaluación: {ex.Message}";
+            errorMessage = $"Error al cargar la evaluaciÃ³n: {ex.Message}";
         }
         finally
         {
@@ -139,7 +133,6 @@ else
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"ReporteEvaluacion - Print error: {ex.Message}");
         }
     }
 
@@ -151,7 +144,6 @@ else
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"ReporteEvaluacion - Navigation error: {ex.Message}");
             Nav.NavigateTo("/");
         }
     }

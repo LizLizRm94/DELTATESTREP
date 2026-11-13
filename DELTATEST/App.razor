@@ -1,28 +1,46 @@
 ﻿<ErrorBoundary>
     <ChildContent>
-        <Router AppAssembly="@typeof(App).Assembly">
-            <Found Context="routeData">
-                <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
-                <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-            </Found>
-            <NotFound>
-                <PageTitle>Not found</PageTitle>
-                <LayoutView Layout="@typeof(MainLayout)">
-                    <p role="alert">Sorry, there's nothing at this address.</p>
-                </LayoutView>
-            </NotFound>
-        </Router>
+        <CascadingAuthenticationState>
+            <Router AppAssembly="@typeof(App).Assembly">
+                <Found Context="routeData">
+                    <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                        <Authorizing>
+                            <div class="d-flex justify-content-center align-items-center vh-100">
+                                <div class="spinner-border text-warning" role="status"></div>
+                            </div>
+                        </Authorizing>
+                        <NotAuthorized>
+                            @if (context.User.Identity?.IsAuthenticated == true)
+                            {
+                                <div class="container my-5 text-center">
+                                    <h3>Acceso denegado</h3>
+                                    <p>No tiene permisos para acceder a esta página.</p>
+                                    <a class="btn btn-warning" href="/">Volver al inicio</a>
+                                </div>
+                            }
+                            else
+                            {
+                                <RedirectToLogin />
+                            }
+                        </NotAuthorized>
+                    </AuthorizeRouteView>
+                    <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+                </Found>
+                <NotFound>
+                    <PageTitle>Not found</PageTitle>
+                    <LayoutView Layout="@typeof(MainLayout)">
+                        <p role="alert">Sorry, there's nothing at this address.</p>
+                    </LayoutView>
+                </NotFound>
+            </Router>
+        </CascadingAuthenticationState>
     </ChildContent>
     <ErrorContent Context="exception">
         <div class="alert alert-danger p-5 m-5">
-            <h4>Oops! An error occurred</h4>
-            <p>@exception?.Message</p>
-            <details>
-                <summary>Stack trace</summary>
-                <pre>@exception?.StackTrace</pre>
-            </details>
+            <h4>Ocurrió un error</h4>
+            <p>No se pudo completar la operación. Intente nuevamente.</p>
             <p>
-                <a href="javascript:location.reload()" class="btn btn-warning mt-3">Reload Page</a>
+                <a href="javascript:location.reload()" class="btn btn-warning mt-3">Recargar página</a>
             </p>
         </div>
     </ErrorContent>

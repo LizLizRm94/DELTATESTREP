@@ -1,268 +1,197 @@
+﻿using System.Net;
 using System.Net.Http.Json;
-using DELTATEST.Models;
-using Blazored.LocalStorage;
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using DELTATEST.Models;
 
 namespace DELTATEST.Services
 {
     public class AuthService
     {
         private readonly HttpClient _http;
-        private readonly ILocalStorageService _localStorage;
+        private readonly CookieAuthenticationStateProvider _authStateProvider;
 
-    public AuthService(HttpClient http, ILocalStorageService localStorage)
-    {
-        _http = http;
-        _localStorage = localStorage;
-    }
-
-    public async Task<(bool success, string? rol, string? message, int? idUsuario)> LoginAsync(LoginModel model)
-    {
-        try
+        public AuthService(HttpClient http, CookieAuthenticationStateProvider authStateProvider)
         {
-            // Enviar Username (CI o correo) y Password
-            var payload = new { Username = model.Username, Password = model.Contrasena };
-            var response = await _http.PostAsJsonAsync("api/auth/login", payload);
-            if (response.IsSuccessStatusCode)
-            {
-                var result = await response.Content.ReadFromJsonAsync<LoginResponse?>();
-                if (result != null)
-                {
-                    // Guardar informaci�n del usuario en localStorage para acceso r�pido
-                    // Esto es especialmente importante en WebAssembly donde las cookies pueden no funcionar directamente
-                    await _localStorage.SetItemAsync("userName", result.NombreCompleto);
-                    await _localStorage.SetItemAsync("userRole", result.Rol);
-                    await _localStorage.SetItemAsync("userId", result.IdUsuario);
-                    await _localStorage.SetItemAsync("isAuthenticated", true);
-
-                    Console.WriteLine($"Login exitoso: {result.NombreCompleto}, Rol: {result.Rol}");
-                    return (true, result.Rol, null, result.IdUsuario);
-                }
-
-                return (false, null, "Respuesta inv�lida del servidor.", null);
-            }
-
-            var error = await response.Content.ReadAsStringAsync();
-            return (false, null, string.IsNullOrWhiteSpace(error) ? response.ReasonPhrase : error, null);
+            _http = http;
+            _authStateProvider = authStateProvider;
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Login error: {ex.Message}");
-            return (false, null, ex.Message, null);
-        }
-    }
 
-    public async Task<(bool success, string? rol, string? message, string? nombre)> RegisterAsync(RegisterModel model)
-    {
-        try
+        public async Task<(bool success, string? rol, string? message, int? idUsuario)> LoginAsync(LoginModel model)
         {
-            // Aseguramos que FechaIngreso se serialice en formato yyyy-MM-dd si existe
-            string? fechaStr = null;
-            if (model.FechaIngreso.HasValue)
-            {
-                fechaStr = model.FechaIngreso.Value.ToString("yyyy-MM-dd");
-            }
-
-            // Id del usuario autenticado que está creando la cuenta.
-            // El servidor lo valida contra la base de datos antes de asignarlo.
-            int? idCreadoPor = null;
             try
             {
-                idCreadoPor = await _localStorage.GetItemAsync<int?>("userId");
+                // Enviar Username (CI o correo) y Password
+                var payload = new { Username = model.Username, Password = model.Contrasena };
+                var response = await _http.PostAsJsonAsync("api/auth/login", payload);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<LoginResponse?>();
+                    // La cookie ya fue emitida por el servidor; refrescar el estado.
+                    await _authStateProvider.RefreshAsync();
+
+                    if (result != null)
+                        return (true, result.Rol, null, result.IdUsuario);
+
+                    return (false, null, "Respuesta inválida del servidor.", null);
+                }
+
+                if (response.StatusCode == HttpStatusCode.TooManyRequests)
+                {
+                    var message = await ReadErrorMessage(
+                        response,
+                        "Demasiados intentos. Intente nuevamente en un minuto.");
+                    return (false, null, message, null);
+                }
+
+                if (response.StatusCode == HttpStatusCode.Unauthorized ||
+                    response.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    var message = await ReadErrorMessage(
+                        response,
+                        "Usuario o contraseña incorrectos");
+                    return (false, null, message, null);
+                }
+
+                return (false, null, "No se pudo iniciar sesión. Intente nuevamente.", null);
             }
-            catch
+            catch (Exception)
             {
-                idCreadoPor = null;
+                return (false, null, "No se pudo conectar con el servidor. Intente nuevamente.", null);
             }
-
-            var payload = new
-            {
-                IdCreadoPor = idCreadoPor,
-                NombreCompleto = model.NombreCompleto,
-                Ci = model.Ci,
-                Expedicion = model.Expedicion,
-                Correo = model.Correo,
-                Telefono = model.Telefono,
-                Role = model.Rol,
-                FechaIngreso = fechaStr,
-                Estado = model.Estado,
-                PuestoActual = model.PuestoActual,
-                PuestoSolicitado = model.PuestoSolicitado,
-                PuestoARotar = model.PuestoARotar,
-                Password = model.Password
-            };
-
-            var response = await _http.PostAsJsonAsync("api/auth/register", payload);
-            if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.Created)
-            {
-                return (true, model.Rol, null, model.NombreCompleto);
-            }
-
-            var error = await response.Content.ReadAsStringAsync();
-            return (false, null, string.IsNullOrWhiteSpace(error) ? response.ReasonPhrase : error, null);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Register error: {ex.Message}");
-            return (false, null, ex.Message, null);
-        }
-    }
-
-    public async Task LogoutAsync()
-    {
-        try
-        {
-            // Enviar solicitud de logout al servidor para limpiar la cookie
-            await _http.PostAsync("api/auth/logout", null);
-            Console.WriteLine("Logout request sent to server");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Logout error: {ex.Message}");
         }
 
-        // Limpiar almacenamiento local
-        await _localStorage.RemoveItemAsync("userName");
-        await _localStorage.RemoveItemAsync("userRole");
-        await _localStorage.RemoveItemAsync("userId");
-        await _localStorage.RemoveItemAsync("isAuthenticated");
-        Console.WriteLine("Local storage cleared");
-    }
-
-    public async Task<(bool isAuthenticated, string? userName, string? userRole, int? userId)> GetCurrentUserAsync()
-    {
-        try
+        public async Task<(bool success, string? rol, string? message, string? nombre)> RegisterAsync(RegisterModel model)
         {
-            // Primero, intentar obtener del localStorage (es m�s confiable en WebAssembly)
-            bool isAuth = false;
             try
             {
-                isAuth = await _localStorage.GetItemAsync<bool>("isAuthenticated");
-            }
-            catch
-            {
-                // Si hay error al obtener, isAuth permanece como false
-                isAuth = false;
-            }
-            
-            Console.WriteLine($"GetCurrentUserAsync - isAuthenticated flag from localStorage: {isAuth}");
-            
-            if (isAuth)
-            {
-                var userName = await _localStorage.GetItemAsync<string>("userName");
-                var userRole = await _localStorage.GetItemAsync<string>("userRole");
-                var userId = await _localStorage.GetItemAsync<int?>("userId");
-                
-                Console.WriteLine($"Auth found in localStorage: {userName}, Role: {userRole}");
-                
-                // Si tenemos datos en localStorage, consideramos al usuario como autenticado
-                if (!string.IsNullOrEmpty(userName))
+                // Aseguramos que FechaIngreso se serialice en formato yyyy-MM-dd si existe
+                string? fechaStr = null;
+                if (model.FechaIngreso.HasValue)
                 {
-                    Console.WriteLine($"? Returning authenticated user from localStorage: {userName}");
-                    return (true, userName, userRole, userId);
+                    fechaStr = model.FechaIngreso.Value.ToString("yyyy-MM-dd");
                 }
-            }
-            
-            Console.WriteLine($"No auth data in localStorage, attempting server validation...");
-            
-            // Si no hay en localStorage, intentar obtener del servidor
-            var response = await _http.GetAsync("api/auth/current-user");
-            
-            Console.WriteLine($"GetCurrentUser response status: {response.StatusCode}");
-            
-            if (response.IsSuccessStatusCode)
-            {
-                var result = await response.Content.ReadFromJsonAsync<CurrentUserResponse?>();
-                if (result != null)
-                {
-                    await _localStorage.SetItemAsync("userName", result.NombreCompleto);
-                    await _localStorage.SetItemAsync("userRole", result.Rol);
-                    await _localStorage.SetItemAsync("userId", result.IdUsuario);
-                    await _localStorage.SetItemAsync("isAuthenticated", true);
-                    
-                    Console.WriteLine($"? Auth confirmed from server: {result.NombreCompleto}");
-                    return (true, result.NombreCompleto, result.Rol, result.IdUsuario);
-                }
-            }
-            else
-            {
-                Console.WriteLine($"GetCurrentUser failed with status: {response.StatusCode}");
-            }
 
-            Console.WriteLine($"? No authentication found");
-            return (false, null, null, null);
+                // El servidor decide el rol y toma el creador desde la cookie.
+                var payload = new
+                {
+                    NombreCompleto = model.NombreCompleto,
+                    Ci = model.Ci,
+                    Expedicion = model.Expedicion,
+                    Correo = model.Correo,
+                    Telefono = model.Telefono,
+                    Role = model.Rol,
+                    FechaIngreso = fechaStr,
+                    Estado = model.Estado,
+                    PuestoActual = model.PuestoActual,
+                    PuestoSolicitado = model.PuestoSolicitado,
+                    PuestoARotar = model.PuestoARotar,
+                    Password = model.Password
+                };
+
+                var response = await _http.PostAsJsonAsync("api/auth/register", payload);
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<RegisterResponse?>();
+                    return (true, result?.Rol ?? model.Rol ?? "Usuario", null, model.NombreCompleto);
+                }
+
+                var error = await ReadErrorMessage(response, "No se pudo crear la cuenta.");
+                return (false, null, error, null);
+            }
+            catch (Exception)
+            {
+                return (false, null, "No se pudo conectar con el servidor. Intente nuevamente.", null);
+            }
         }
-        catch (Exception ex)
+
+        public async Task LogoutAsync()
         {
-            Console.WriteLine($"GetCurrentUserAsync error: {ex.Message}");
-            
-            // Fallback: intentar obtener del local storage en caso de error
             try
             {
-                bool isAuth = false;
-                try
-                {
-                    isAuth = await _localStorage.GetItemAsync<bool>("isAuthenticated");
-                }
-                catch
-                {
-                    isAuth = false;
-                }
-                
-                if (isAuth)
-                {
-                    var userName = await _localStorage.GetItemAsync<string>("userName");
-                    var userRole = await _localStorage.GetItemAsync<string>("userRole");
-                    var userId = await _localStorage.GetItemAsync<int?>("userId");
-                    
-                    Console.WriteLine($"? Using cached auth data (from fallback): {userName}");
-                    return (true, userName, userRole, userId);
-                }
+                await _http.PostAsync("api/auth/logout", null);
             }
-            catch (Exception fallbackEx) 
-            { 
-                Console.WriteLine($"Fallback error: {fallbackEx.Message}");
+            catch (Exception)
+            {
+                // Aunque falle la red, el estado local debe quedar anónimo.
             }
-            
-            return (false, null, null, null);
+            finally
+            {
+                await _authStateProvider.RefreshAsync();
+            }
+        }
+
+        public async Task<(bool isAuthenticated, string? userName, string? userRole, int? userId)> GetCurrentUserAsync()
+        {
+            var state = await _authStateProvider.GetAuthenticationStateAsync();
+            var user = state.User;
+
+            if (user.Identity?.IsAuthenticated != true)
+                return (false, null, null, null);
+
+            var idValue = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            int? id = int.TryParse(idValue, out var parsed) ? parsed : null;
+
+            return (
+                true,
+                user.Identity.Name,
+                user.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value,
+                id);
+        }
+
+        public async Task<bool> UpdateUsuario(int id, UserViewModel model)
+        {
+            var response = await _http.PutAsJsonAsync($"api/usuarios/{id}", model);
+            return response.IsSuccessStatusCode;
+        }
+
+        private static async Task<string> ReadErrorMessage(HttpResponseMessage response, string fallback)
+        {
+            var text = await response.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(text))
+                return fallback;
+
+            try
+            {
+                using var document = JsonDocument.Parse(text);
+                if (document.RootElement.ValueKind == JsonValueKind.String)
+                    return document.RootElement.GetString() ?? fallback;
+
+                if (document.RootElement.TryGetProperty("mensaje", out var message) &&
+                    message.ValueKind == JsonValueKind.String)
+                    return message.GetString() ?? fallback;
+            }
+            catch (JsonException)
+            {
+                // Respuesta de texto plano.
+            }
+
+            return text.Trim();
+        }
+
+        public sealed class LoginResponse
+        {
+            [JsonPropertyName("idUsuario")]
+            public int IdUsuario { get; set; }
+
+            [JsonPropertyName("nombreCompleto")]
+            public string NombreCompleto { get; set; } = string.Empty;
+
+            [JsonPropertyName("rol")]
+            public string Rol { get; set; } = string.Empty;
+
+            [JsonPropertyName("mensaje")]
+            public string? Mensaje { get; set; }
+        }
+
+        public sealed class RegisterResponse
+        {
+            [JsonPropertyName("idUsuario")]
+            public int IdUsuario { get; set; }
+
+            [JsonPropertyName("rol")]
+            public string? Rol { get; set; }
         }
     }
-
-    private class LoginResponse
-    {
-        [JsonPropertyName("idUsuario")]
-        public int IdUsuario { get; set; }
-
-        [JsonPropertyName("nombreCompleto")]
-        public string NombreCompleto { get; set; } = string.Empty;
-
-        [JsonPropertyName("rol")]
-        public string Rol { get; set; } = string.Empty;
-
-        [JsonPropertyName("mensaje")]
-        public string? Mensaje { get; set; }
-    }
-
-    private class CurrentUserResponse
-    {
-        [JsonPropertyName("idUsuario")]
-        public int IdUsuario { get; set; }
-
-        [JsonPropertyName("nombreCompleto")]
-        public string NombreCompleto { get; set; } = string.Empty;
-
-        [JsonPropertyName("correo")]
-        public string? Correo { get; set; }
-
-        [JsonPropertyName("rol")]
-        public string Rol { get; set; } = string.Empty;
-    }
-
-    public async Task<bool> UpdateUsuario(int id, UserViewModel model)
-    {
-        var response = await _http.PutAsJsonAsync($"api/usuarios/{id}", model);
-        return response.IsSuccessStatusCode;
-    }
-    }
-
 }

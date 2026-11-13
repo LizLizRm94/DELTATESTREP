@@ -1,12 +1,14 @@
-using Microsoft.AspNetCore.Mvc;
+锘縰sing Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DELTAAPI.Models;
+using DELTAAPI.Security;
 using Microsoft.AspNetCore.Authorization;
 
 namespace DELTAAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class PreguntasController : ControllerBase
     {
         private readonly DeltaTestContext _context;
@@ -17,20 +19,20 @@ namespace DELTAAPI.Controllers
         }
 
         /// <summary>
-        /// Guarda un lote de preguntas de evaluaci髇 te髍ica en la base de datos
+        /// Guarda un lote de preguntas de evaluaci贸n te贸rica en la base de datos
         /// </summary>
         [HttpPost("crear-evaluacion-teorica")]
-        [AllowAnonymous]
+        [Authorize(Roles = "Administrador,Inspector")]
         public async Task<IActionResult> CrearEvaluacionTeorica([FromBody] CrearPreguntasRequest request)
         {
             if (request == null || request.Preguntas == null || request.Preguntas.Count == 0)
             {
-                return BadRequest(new { mensaje = "La lista de preguntas no puede estar vac韆" });
+                return BadRequest(new { mensaje = "La lista de preguntas no puede estar vac铆a" });
             }
 
             try
             {
-                // Filtrar preguntas que tengan texto (no guardar preguntas vac韆s)
+                // Filtrar preguntas que tengan texto (no guardar preguntas vac铆as)
                 var preguntasValidas = request.Preguntas
                 .Where(p => !string.IsNullOrWhiteSpace(p.Texto))
                 .ToList();
@@ -40,8 +42,8 @@ namespace DELTAAPI.Controllers
                     return BadRequest(new { mensaje = "Debe ingresar al menos una pregunta con texto" });
                 }
 
-                // OPCI覰: Guardar solo las preguntas sin crear una evaluaci髇
-                // Las preguntas se asociar醤 con una evaluaci髇 cuando se asigne un evaluado
+                // OPCI脫N: Guardar solo las preguntas sin crear una evaluaci贸n
+                // Las preguntas se asociar谩n con una evaluaci贸n cuando se asigne un evaluado
                 foreach (var preguntaDto in preguntasValidas)
                 {
                     var pregunta = new Pregunta
@@ -57,37 +59,31 @@ namespace DELTAAPI.Controllers
 
                 return Ok(new
                 {
-                    mensaje = "Preguntas de evaluaci髇 te髍ica guardadas exitosamente",
+                    mensaje = "Preguntas de evaluaci贸n te贸rica guardadas exitosamente",
                     cantidadPreguntas = preguntasValidas.Count
                 });
             }
-            catch (DbUpdateException dbEx)
+            catch (DbUpdateException)
             {
-                var innerMessage = dbEx.InnerException?.Message ?? "Sin detalles";
                 return StatusCode(500, new
                 {
-                    mensaje = "Error de base de datos al guardar",
-                    error = dbEx.Message,
-                    details = innerMessage
+                    mensaje = "Error de base de datos al guardar"
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500, new
                 {
-                    mensaje = "Error al guardar la evaluaci髇",
-                    error = ex.Message,
-                    innerException = ex.InnerException?.Message,
-                    stackTrace = ex.StackTrace
+                    mensaje = "Error al guardar la evaluaci贸n"
                 });
             }
         }
 
         /// <summary>
-        /// Obtiene todas las preguntas de tipo te髍ico
+        /// Obtiene todas las preguntas de tipo te贸rico
         /// </summary>
         [HttpGet("teoricas")]
-        [AllowAnonymous]
+        [Authorize(Roles = "Administrador,Inspector")]
         public async Task<IActionResult> GetPreguntasTeorica()
         {
             try
@@ -98,23 +94,33 @@ namespace DELTAAPI.Controllers
 
                 return Ok(preguntas);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new { mensaje = "Error al obtener las preguntas", error = ex.Message });
+                return StatusCode(500, new { mensaje = "Error al obtener las preguntas" });
             }
         }
 
         /// <summary>
-        /// Obtiene SOLO las preguntas asignadas a una evaluaci髇 te髍ica espec韋ica
-        /// por medio de las respuestas registradas, o las preguntas m醩 recientes si no hay respuestas a鷑
+        /// Obtiene SOLO las preguntas asignadas a una evaluaci贸n te贸rica espec铆fica
+        /// por medio de las respuestas registradas, o las preguntas m谩s recientes si no hay respuestas a煤n
         /// </summary>
         [HttpGet("evaluacion/{idEvaluacion}")]
-        [AllowAnonymous]
         public async Task<IActionResult> GetPreguntasPorEvaluacion(int idEvaluacion)
         {
             try
             {
-                // Obtener preguntas directamente asociadas a esta evaluaci髇
+                var evaluacion = await _context.Evaluacions
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e => e.IdEvaluacion == idEvaluacion);
+
+                if (evaluacion == null)
+                    return NotFound(new { mensaje = "Evaluaci贸n no encontrada" });
+
+                // Un usuario solo puede consultar las preguntas de su propia evaluaci贸n.
+                if (!User.IsStaff() && evaluacion.IdEvaluado != User.GetUserId())
+                    return Forbid();
+
+                // Obtener preguntas directamente asociadas a esta evaluaci贸n
                 var preguntas = await _context.Preguntas
                 .Where(p => p.IdEvaluacion == idEvaluacion)
                 .OrderBy(p => p.IdPregunta)
@@ -131,23 +137,34 @@ namespace DELTAAPI.Controllers
 
                 if (preguntas.Count == 0)
                 {
-                    return NotFound(new { mensaje = "No hay preguntas para esta evaluaci髇" });
+                    return NotFound(new { mensaje = "No hay preguntas para esta evaluaci贸n" });
                 }
 
-                return Ok(preguntas);
+                // Nunca exponer la respuesta correcta al evaluado.
+                if (User.IsStaff())
+                    return Ok(preguntas);
+
+                return Ok(preguntas.Select(p => new
+                {
+                    p.IdPregunta,
+                    p.Texto,
+                    p.TipoEvaluacion,
+                    p.Opciones,
+                    p.Puntos
+                }));
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error en GetPreguntasPorEvaluacion: {ex.Message}");
-                return StatusCode(500, new { mensaje = "Error al obtener las preguntas de la evaluaci髇", error = ex.Message });
+                return StatusCode(500, new { mensaje = "Error al obtener las preguntas de la evaluaci贸n" });
             }
         }
 
         /// <summary>
-        /// Obtiene una pregunta espec韋ica por ID
+        /// Obtiene una pregunta espec铆fica por ID
         /// </summary>
         [HttpGet("{id}")]
-        [AllowAnonymous]
+        [Authorize(Roles = "Administrador,Inspector")]
         public async Task<IActionResult> GetPreguntaById(int id)
         {
             try
@@ -159,9 +176,9 @@ namespace DELTAAPI.Controllers
 
                 return Ok(pregunta);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new { mensaje = "Error al obtener la pregunta", error = ex.Message });
+                return StatusCode(500, new { mensaje = "Error al obtener la pregunta" });
             }
         }
 
@@ -169,11 +186,11 @@ namespace DELTAAPI.Controllers
         /// Actualiza una pregunta existente
         /// </summary>
         [HttpPut("{id}")]
-        [AllowAnonymous]
+        [Authorize(Roles = "Administrador,Inspector")]
         public async Task<IActionResult> UpdatePregunta(int id, [FromBody] PreguntaDto preguntaDto)
         {
             if (string.IsNullOrWhiteSpace(preguntaDto.Texto))
-                return BadRequest(new { mensaje = "El texto de la pregunta no puede estar vac韔" });
+                return BadRequest(new { mensaje = "El texto de la pregunta no puede estar vac铆o" });
 
             try
             {
@@ -190,9 +207,9 @@ namespace DELTAAPI.Controllers
 
                 return Ok(new { mensaje = "Pregunta actualizada exitosamente" });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new { mensaje = "Error al actualizar la pregunta", error = ex.Message });
+                return StatusCode(500, new { mensaje = "Error al actualizar la pregunta" });
             }
         }
 
@@ -200,7 +217,7 @@ namespace DELTAAPI.Controllers
         /// Elimina una pregunta
         /// </summary>
         [HttpDelete("{id}")]
-        [AllowAnonymous]
+        [Authorize(Roles = "Administrador,Inspector")]
         public async Task<IActionResult> DeletePregunta(int id)
         {
             try
@@ -215,9 +232,9 @@ namespace DELTAAPI.Controllers
 
                 return Ok(new { mensaje = "Pregunta eliminada exitosamente" });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new { mensaje = "Error al eliminar la pregunta", error = ex.Message });
+                return StatusCode(500, new { mensaje = "Error al eliminar la pregunta" });
             }
         }
     }

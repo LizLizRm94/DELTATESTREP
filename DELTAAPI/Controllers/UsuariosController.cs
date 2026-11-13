@@ -1,19 +1,21 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DELTAAPI.Models;
+using DELTAAPI.Security;
 using Microsoft.AspNetCore.Authorization;
 
 namespace DELTAAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class UsuariosController : ControllerBase
     {
         private readonly DeltaTestContext _context;
         public UsuariosController(DeltaTestContext context) => _context = context;
 
         [HttpGet]
-        [AllowAnonymous]
+        [Authorize(Roles = "Administrador,Inspector")]
         public async Task<IActionResult> GetAll()
         {
             var list = await _context.Usuarios
@@ -43,6 +45,9 @@ IdUsuario = u.IdUsuario,
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
+            if (!User.CanAccessUser(id))
+                return Forbid();
+
             var user = await _context.Usuarios.FindAsync(id);
             if (user == null) return NotFound();
 
@@ -72,8 +77,12 @@ IdUsuario = u.IdUsuario,
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> Delete(int id)
         {
+            if (User.GetUserId() == id)
+                return BadRequest("No puede eliminar su propia cuenta.");
+
             var user = await _context.Usuarios.FindAsync(id);
             if (user == null) return NotFound();
             _context.Usuarios.Remove(user);
@@ -104,6 +113,60 @@ IdUsuario = u.IdUsuario,
             var user = await _context.Usuarios.FindAsync(id);
             if (user == null) return NotFound("Usuario no encontrado.");
 
+            var currentId = User.GetUserId();
+            var isAdmin = User.IsAdministrador();
+            var isInspector = User.IsInspector();
+            var isSelf = currentId == id;
+
+            if (!isAdmin && !isInspector && !isSelf)
+                return Forbid();
+
+            var validRoles = new[] { "Usuario", "Inspector", "Administrador" };
+            if (!string.IsNullOrWhiteSpace(dto.Rol)
+                && !validRoles.Contains(dto.Rol.Trim(), StringComparer.OrdinalIgnoreCase))
+                return BadRequest("Rol no válido.");
+
+            if (!string.IsNullOrWhiteSpace(dto.Estado)
+                && !dto.Estado.Trim().Equals("Activo", StringComparison.OrdinalIgnoreCase)
+                && !dto.Estado.Trim().Equals("Inactivo", StringComparison.OrdinalIgnoreCase))
+                return BadRequest("Estado no válido.");
+
+            // Un usuario normal solo puede editar su propio perfil y no puede
+            // cambiar su rol ni su estado.
+            if (!isAdmin && !isInspector)
+            {
+                if (!string.IsNullOrWhiteSpace(dto.Rol)
+                    && !dto.Rol.Trim().Equals(user.Rol, StringComparison.OrdinalIgnoreCase))
+                    return Forbid();
+
+                if (!string.IsNullOrWhiteSpace(dto.Estado)
+                    && !dto.Estado.Trim().Equals(user.Estado, StringComparison.OrdinalIgnoreCase))
+                    return Forbid();
+            }
+
+            // Un inspector no puede modificar administradores ni crear nuevos.
+            if (isInspector && !isAdmin)
+            {
+                if (string.Equals(user.Rol, "Administrador", StringComparison.OrdinalIgnoreCase))
+                    return Forbid();
+
+                if (!string.IsNullOrWhiteSpace(dto.Rol)
+                    && dto.Rol.Trim().Equals("Administrador", StringComparison.OrdinalIgnoreCase))
+                    return Forbid();
+            }
+
+            // Evitar que un administrador se quite a sí mismo el acceso.
+            if (isAdmin && isSelf)
+            {
+                if (!string.IsNullOrWhiteSpace(dto.Rol)
+                    && !dto.Rol.Trim().Equals("Administrador", StringComparison.OrdinalIgnoreCase))
+                    return BadRequest("No puede quitarse el rol de Administrador.");
+
+                if (!string.IsNullOrWhiteSpace(dto.Estado)
+                    && dto.Estado.Trim().Equals("Inactivo", StringComparison.OrdinalIgnoreCase))
+                    return BadRequest("No puede desactivar su propia cuenta.");
+            }
+
             // Optional: validate uniqueness of correo/ci if they changed
             if (!string.IsNullOrWhiteSpace(dto.Correo) && dto.Correo != user.Correo)
             {
@@ -125,8 +188,10 @@ IdUsuario = u.IdUsuario,
             user.PuestoActual = dto.PuestoActual;
             user.PuestoSolicitado = dto.PuestoSolicitado;
             user.PuestoARotar = dto.PuestoARotar;
-            user.Estado = dto.Estado;
-            if (!string.IsNullOrWhiteSpace(dto.Rol)) user.Rol = dto.Rol;
+            if (!string.IsNullOrWhiteSpace(dto.Estado))
+                user.Estado = dto.Estado.Trim();
+            if (!string.IsNullOrWhiteSpace(dto.Rol))
+                user.Rol = validRoles.First(r => r.Equals(dto.Rol.Trim(), StringComparison.OrdinalIgnoreCase));
 
             // Parse FechaIngreso (string yyyy-MM-dd) into DateOnly
             if (!string.IsNullOrWhiteSpace(dto.FechaIngreso))

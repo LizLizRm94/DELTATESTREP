@@ -1,4 +1,4 @@
-using System;
+Ôªøusing System;
 using System.Collections.Generic;
 
 namespace DELTAAPI.Models;
@@ -10,7 +10,7 @@ public partial class Pregunta
     public bool TipoEvaluacion { get; set; }
     public int? IdEvaluacion { get; set; }
     public string? Opciones { get; set; } // JSON con opciones
-    public int? RespuestaCorrectaIndex { get; set; } // Õndice de la opciÛn correcta
+    public int? RespuestaCorrectaIndex { get; set; } // √çndice de la opci√≥n correcta
     public int Puntos { get; set; } = 0; // Puntos que vale esta pregunta
 
     public virtual Evaluacion? IdEvaluacionNavigation { get; set; }

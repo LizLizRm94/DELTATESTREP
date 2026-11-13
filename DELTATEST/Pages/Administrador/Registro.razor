@@ -1,4 +1,5 @@
-@page "/Registro"
+ï»¿@page "/Registro"
+@attribute [Authorize(Roles = "Administrador")]
 
 @using Microsoft.AspNetCore.Components.Forms
 @using DELTATEST.Models
@@ -14,7 +15,8 @@
 
     <div class="form-container">
         <div class="form-box">
-            <h2>Registro</h2>
+            <h2>Registro de usuarios</h2>
+            <p class="text-muted small">Solo un administrador puede crear cuentas.</p>
 
             @if (isSubmitting)
             {
@@ -63,7 +65,7 @@
                 </div>
 
                 <div class="mb-2">
-                    <label>Teléfono (opcional)</label>
+                    <label>TelÃ©fono (opcional)</label>
                     <InputText @bind-Value="model.Telefono" class="form-control" />
                 </div>
 
@@ -75,20 +77,20 @@
                 <div class="mb-2">
                     <label>Rol</label>
                     <InputSelect @bind-Value="model.Rol" class="form-control">
-                        <option value="">Seleccionar rol</option>
-                        <option value="Inspector">Inspector</option>
                         <option value="Usuario">Usuario</option>
+                        <option value="Inspector">Inspector</option>
+                        <option value="Administrador">Administrador</option>
                     </InputSelect>
                 </div>
 
                 <div class="mb-2">
-                    <label>Contraseña</label>
+                    <label>ContraseÃ±a</label>
                     <InputText @bind-Value="model.Password" type="password" class="form-control" />
                     <ValidationMessage For="() => model.Password" />
                 </div>
 
                 <div class="mb-2">
-                    <label>Confirmar contraseña</label>
+                    <label>Confirmar contraseÃ±a</label>
                     <InputText @bind-Value="model.ConfirmPassword" type="password" class="form-control" />
                     <ValidationMessage For="() => model.ConfirmPassword" />
                 </div>
@@ -112,14 +114,14 @@
             </EditForm>
 
             <div style="margin-top:10px">
-                <a href="/IniciarSesion">¿Ya tienes cuenta? Inicia sesión</a>
+                <a href="/panelControlAdmin">Volver al panel</a>
             </div>
         </div>
     </div>
 
 
 @code {
-    private RegisterModel model = new();
+    private RegisterModel model = new() { Rol = "Usuario" };
     private string? message;
     private bool isSubmitting = false;
 
@@ -133,11 +135,7 @@
 
         if (success)
         {
-            if (string.Equals(rol, "Inspector", StringComparison.OrdinalIgnoreCase))
-                Navigation.NavigateTo("/panelControlAdmin", forceLoad: true);
-            else
-                Navigation.NavigateTo("/", forceLoad: true);
-
+            Navigation.NavigateTo("/panelControlAdmin", forceLoad: true);
             return;
         }
 

@@ -1,4 +1,5 @@
 ﻿@page "/EvaluacionTeorica"
+@attribute [Authorize(Roles = "Administrador,Inspector")]
 @using DELTATEST.Models
 @using System.Text.Json
 @inject HttpClient Http
@@ -231,7 +232,6 @@
    }
         catch (Exception ex)
         {
-       Console.WriteLine($"Error cargando usuarios: {ex.Message}");
    usuarios = new List<UserViewModel>();
    mostrarMensaje = true;
        esError = true;
@@ -262,7 +262,6 @@ modelo.PreguntasMultiples = Enumerable.Range(1, 5)
         }
         catch (Exception ex)
  {
-          Console.WriteLine($"Error en InicializarPreguntas: {ex.Message}");
    }
     }
 

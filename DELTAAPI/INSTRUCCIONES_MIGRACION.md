@@ -1,16 +1,16 @@
-# Solución: Error 500 al Guardar Evaluaciones
+# Soluciï¿½n: Error 500 al Guardar Evaluaciones
 
 ## Problema
 El error "InternalServerError" ocurre porque la tabla `PREGUNTA` no existe en tu base de datos.
 
-## Solución - Opción 1: Ejecutar Script SQL (Más rápido)
+## Soluciï¿½n - Opciï¿½n 1: Ejecutar Script SQL (Mï¿½s rï¿½pido)
 
 1. Abre **SQL Server Management Studio (SSMS)**
-2. Conecta a tu servidor: `DESKTOP-V5J0U51\DELTATEST`
+2. Conecta al servidor configurado en `ConnectionStrings:DefaultConnection` (PostgreSQL/Supabase)
 3. Selecciona la base de datos: `DeltaTest`
 4. Ejecuta el contenido del archivo `DELTAAPI\Scripts\CreatePreguntaTable.sql`
 
-## Solución - Opción 2: Usar Entity Framework Migrations
+## Soluciï¿½n - Opciï¿½n 2: Usar Entity Framework Migrations
 
 Si prefieres usar migraciones (recomendado para el futuro):
 
@@ -23,24 +23,24 @@ Add-Migration AddPreguntaTable
 Update-Database
 ```
 
-## Cómo verificar que funcionó
+## Cï¿½mo verificar que funcionï¿½
 
-Después de ejecutar la migración o script:
+Despuï¿½s de ejecutar la migraciï¿½n o script:
 
 1. Ve a tu base de datos SQL Server
 2. Expande `DeltaTest` ? `Tables`
-3. Deberías ver una tabla `PREGUNTA` con las columnas:
+3. Deberï¿½as ver una tabla `PREGUNTA` con las columnas:
    - `id_pregunta` (INT, Primary Key)
    - `texto` (NVARCHAR(500))
    - `tipo_evaluacion` (BIT)
 
-4. Intenta guardar una evaluación desde la aplicación
+4. Intenta guardar una evaluaciï¿½n desde la aplicaciï¿½n
 
-## Si aún hay error
+## Si aï¿½n hay error
 
 Abre la consola del navegador (F12) y verifica:
-- El mensaje de error ahora mostrará más detalles (InnerException y StackTrace)
-- Esto te ayudará a identificar exactamente qué está fallando
+- El mensaje de error ahora mostrarï¿½ mï¿½s detalles (InnerException y StackTrace)
+- Esto te ayudarï¿½ a identificar exactamente quï¿½ estï¿½ fallando
 
 ## Modelo de la tabla
 
@@ -53,4 +53,4 @@ CREATE TABLE [dbo].[PREGUNTA]
 );
 ```
 
-Asegúrate de que esta tabla existe antes de intentar guardar preguntas.
+Asegï¿½rate de que esta tabla existe antes de intentar guardar preguntas.

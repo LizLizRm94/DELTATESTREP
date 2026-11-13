@@ -1,9 +1,9 @@
-@page "/IniciarSesion"
+锘緻page "/IniciarSesion"
+@attribute [AllowAnonymous]
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Components.Forms
 @inject NavigationManager Navigation
 @inject DELTATEST.Services.AuthService AuthService
-@inject DELTATEST.Services.AuthStateService AuthStateService
 
 <style>
     /* Contenedor centrado */
@@ -26,7 +26,7 @@
         box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
 
-    /* Bot髇 personalizado */
+    /* Bot贸n personalizado */
     .btn-login {
         background: #e5a650;
         color: white;
@@ -77,7 +77,7 @@
 <div class="login-container">
     <div class="login-box">
 
-        <h1 class="mb-4">INICIAR SESI覰</h1>
+        <h1 class="mb-4">INICIAR SESI脫N</h1>
 
         <EditForm EditContext="@editContext">
             <DataAnnotationsValidator />
@@ -91,7 +91,7 @@
             </div>
 
             <div class="form-group">
-                <label>Contrase馻</label>
+                <label>Contrase帽a</label>
                 <InputText id="password" type="password"
                            class="form-control" @bind-Value="model.Contrasena" autocomplete="current-password" />
                 <ValidationMessage For="(() => model.Contrasena)" />
@@ -110,11 +110,11 @@
                 @if (isLoading)
                 {
                     <span class="spinner-border spinner-border-sm"></span>
-                    <span>Iniciando sesi髇...</span>
+                    <span>Iniciando sesi贸n...</span>
                 }
                 else
                 {
-                    <span>Iniciar Sesi髇</span>
+                    <span>Iniciar Sesi贸n</span>
                 }
             </button>
         </EditForm>
@@ -153,16 +153,8 @@
 
         if (success)
         {
-            // Obtener el nombre del usuario del AuthService
-            var (_, userName, userRole, userId) = await AuthService.GetCurrentUserAsync();
-            
-            // Actualizar el estado de autenticaci髇 en el servicio
-            await AuthStateService.SetAuthenticatedAsync(userName ?? "Usuario", rol ?? "Usuario", idUsuario ?? 0);
-            
-            // Esperar a que localStorage se sincronice completamente
-            await Task.Delay(500);
-            
-            if (string.Equals(rol, "Inspector", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(rol, "Inspector", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(rol, "Administrador", StringComparison.OrdinalIgnoreCase))
             {
                 Navigation.NavigateTo("/panelControlAdmin", true);
             }
@@ -179,7 +171,7 @@
             return;
         }
 
-        errorMessage = message ?? "Error al iniciar sesi髇.";
+        errorMessage = message ?? "Error al iniciar sesi贸n.";
         isLoading = false;
         StateHasChanged();
     }

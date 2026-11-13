@@ -1,4 +1,5 @@
 ﻿@page "/EvaluacionPractica/{IdUsuario:int}/{NombreUsuario}"
+@attribute [Authorize(Roles = "Administrador,Inspector")]
 @using DELTATEST.Models
 @inject HttpClient Http
 @inject IJSRuntime JS
@@ -772,7 +773,6 @@ padding: 20px;
     mostrarMensaje = true;
       esError = true;
   mensajeRespuesta = $"Error al cargar la evaluación: {ex.Message}";
-      Console.WriteLine($"Error: {ex.Message}");
         }
         finally
    {

@@ -15,7 +15,11 @@ namespace DELTATEST.Services
         {
             // Configurar para enviar cookies con cada solicitud
             request.SetBrowserRequestCredentials(BrowserRequestCredentials.Include);
-            
+
+            // CSRF: cabecera que un formulario de otro origen no puede establecer
+            // sin superar la validación CORS del servidor.
+            request.Headers.TryAddWithoutValidation("X-Requested-With", "XMLHttpRequest");
+
             return await base.SendAsync(request, cancellationToken);
         }
     }

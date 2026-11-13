@@ -1,9 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using DELTAAPI.Models;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
-using BCrypt.Net;
+using DELTAAPI.Security;
 
 
 namespace DELTAAPI.Controllers
@@ -13,19 +16,28 @@ namespace DELTAAPI.Controllers
     public class AuthController : ControllerBase
     {
         private readonly DeltaTestContext _context;
-        private readonly IConfiguration _configuration;
         private readonly ILogger<AuthController> _logger;
+        private readonly SessionRevocationStore _sessionRevocationStore;
 
         private static readonly HashSet<string> ExtensionesValidas = new(StringComparer.Ordinal)
         {
             "LP", "SC", "CB", "OR", "PT", "TJ", "BN", "CH", "PD"
         };
 
-        public AuthController(DeltaTestContext context, IConfiguration configuration, ILogger<AuthController> logger)
+        // HU13: hash de relleno para que el tiempo de respuesta no revele si el usuario existe.
+        private static readonly string DummyPasswordHash =
+            BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString("N"), workFactor: 11);
+
+        private const string MensajeCredencialesInvalidas = "Usuario o contraseña incorrectos";
+
+        public AuthController(
+            DeltaTestContext context,
+            ILogger<AuthController> logger,
+            SessionRevocationStore sessionRevocationStore)
         {
             _context = context;
-            _configuration = configuration;
             _logger = logger;
+            _sessionRevocationStore = sessionRevocationStore;
         }
 
         public class RegisterDto
@@ -38,14 +50,23 @@ namespace DELTAAPI.Controllers
             public string? FechaIngreso { get; set; } // formato ISO yyyy-MM-dd esperado desde <input type="date">
             public string? Password { get; set; }
             public string? Role { get; set; }
-            public int? IdCreadoPor { get; set; }
         }
 
         [HttpPost("register")]
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto?.NombreCompleto) || string.IsNullOrWhiteSpace(dto.Password))
                 return BadRequest("Nombre completo y contraseña son obligatorios.");
+
+            if (string.IsNullOrWhiteSpace(dto.Correo) || !System.Net.Mail.MailAddress.TryCreate(dto.Correo.Trim(), out _))
+                return BadRequest("Correo no válido.");
+
+            var passwordError = PasswordPolicy.Validate(dto.Password);
+            if (passwordError != null)
+                return BadRequest(passwordError);
+
+            var correo = dto.Correo.Trim();
 
             // Normalizar y validar la extensión (sigla del departamento)
             string? expedicion = null;
@@ -56,18 +77,18 @@ namespace DELTAAPI.Controllers
                     return BadRequest("Extensión no válida.");
             }
 
-            // Validar correo/ci únicos si se proporcionan
+            // Validar correo/ci únicos si se proporcionan (sin distinguir mayúsculas)
             try
             {
-                if (!string.IsNullOrWhiteSpace(dto.Correo))
-                {
-                    var existsCorreo = await _context.Usuarios.AnyAsync(u => u.Correo == dto.Correo);
-                    if (existsCorreo) return BadRequest("Correo ya registrado.");
-                }
+                var existsCorreo = await _context.Usuarios
+                    .AnyAsync(u => u.Correo != null && u.Correo.ToLower() == correo.ToLower());
+                if (existsCorreo) return BadRequest("Correo ya registrado.");
 
                 if (!string.IsNullOrWhiteSpace(dto.Ci))
                 {
-                    var existsCi = await _context.Usuarios.AnyAsync(u => u.Ci == dto.Ci);
+                    var ci = dto.Ci.Trim();
+                    var existsCi = await _context.Usuarios
+                        .AnyAsync(u => u.Ci != null && u.Ci.ToLower() == ci.ToLower());
                     if (existsCi) return BadRequest("CI ya registrado.");
                 }
             }
@@ -82,49 +103,26 @@ namespace DELTAAPI.Controllers
                 return StatusCode(500, "Error interno del servidor.");
             }
 
-            var roleNormalized = "Usuario"; 
-            if (!string.IsNullOrWhiteSpace(dto.Role) && dto.Role.Trim().Equals("Inspector", System.StringComparison.OrdinalIgnoreCase))
-            {
-                roleNormalized = "Inspector";
-            }
+            // Política de roles: solo un Administrador autenticado puede crear cuentas.
+            // Si no se indica rol, se crea un "Usuario".
+            var requestedRole = string.IsNullOrWhiteSpace(dto.Role) ? "Usuario" : dto.Role.Trim();
+            var roleNormalized = NormalizeRole(requestedRole);
 
+            if (roleNormalized == null)
+                return BadRequest("Rol no válido.");
 
-            // Resolver el usuario que creó la cuenta (viene de la cookie de autenticación)
-            int? idCreadoPor = null;
-            var idCreadoPorClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (int.TryParse(idCreadoPorClaim, out var idCreadorClaim))
-            {
-                idCreadoPor = idCreadorClaim;
-            }
-            else if (dto.IdCreadoPor.HasValue)
-            {
-                // Fallback: en WebAssembly la cookie cross-origin puede no enviarse,
-                // por lo que el cliente envía el id y se valida contra la base de datos.
-                idCreadoPor = dto.IdCreadoPor.Value;
-            }
-
-            if (idCreadoPor.HasValue)
-            {
-                var existeCreador = await _context.Usuarios
-                    .AsNoTracking()
-                    .AnyAsync(u => u.IdUsuario == idCreadoPor.Value);
-
-                if (!existeCreador)
-                {
-                    _logger.LogWarning("Register: el usuario creador {IdCreador} no existe en la base de datos", idCreadoPor);
-                    idCreadoPor = null;
-                }
-            }
+            // El creador SIEMPRE se toma de la cookie autenticada. Nunca del cuerpo.
+            var idCreadoPor = User.GetUserId();
 
             var hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
             var usuario = new Usuario
             {
                 NombreCompleto = dto.NombreCompleto!.Trim(),
-                Ci = dto.Ci ?? string.Empty,
+                Ci = string.IsNullOrWhiteSpace(dto.Ci) ? string.Empty : dto.Ci.Trim(),
                 Expedicion = expedicion,
-                Correo = dto.Correo,
-                Telefono = dto.Telefono,
+                Correo = correo,
+                Telefono = string.IsNullOrWhiteSpace(dto.Telefono) ? null : dto.Telefono.Trim(),
                 Contraseña = hashedPassword, 
                 Rol = roleNormalized,
                 Estado = "Activo",
@@ -140,10 +138,64 @@ namespace DELTAAPI.Controllers
                 }
             }
 
-            _context.Usuarios.Add(usuario);
-            await _context.SaveChangesAsync();
+            try
+            {
+                _context.Usuarios.Add(usuario);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Register: no se pudo guardar el usuario.");
+                return StatusCode(500, "No se pudo completar el registro.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Register: error inesperado al guardar el usuario.");
+                return StatusCode(500, "Error interno del servidor.");
+            }
 
-            return StatusCode(201);
+            return StatusCode(StatusCodes.Status201Created, new
+            {
+                idUsuario = usuario.IdUsuario,
+                rol = usuario.Rol
+            });
+        }
+
+        /// <summary>
+        /// Verifica la contraseña sin lanzar excepciones si el hash almacenado es
+        /// inválido o está vacío. Siempre consume tiempo de BCrypt para no revelar
+        /// si la cuenta existe o si su hash es válido.
+        /// </summary>
+        private static bool VerifyPassword(string password, string? hash)
+        {
+            if (string.IsNullOrWhiteSpace(hash))
+            {
+                BCrypt.Net.BCrypt.Verify(password, DummyPasswordHash);
+                return false;
+            }
+
+            try
+            {
+                return BCrypt.Net.BCrypt.Verify(password, hash);
+            }
+            catch
+            {
+                BCrypt.Net.BCrypt.Verify(password, DummyPasswordHash);
+                return false;
+            }
+        }
+
+        private static string? NormalizeRole(string? role)
+        {
+            if (string.IsNullOrWhiteSpace(role))
+                return "Usuario";
+
+            var normalized = role.Trim();
+            if (normalized.Equals("Usuario", StringComparison.OrdinalIgnoreCase)) return "Usuario";
+            if (normalized.Equals("Inspector", StringComparison.OrdinalIgnoreCase)) return "Inspector";
+            if (normalized.Equals("Administrador", StringComparison.OrdinalIgnoreCase)) return "Administrador";
+
+            return null;
         }
 
         // Login DTO esperado por el cliente
@@ -154,6 +206,8 @@ namespace DELTAAPI.Controllers
         }
 
         [HttpPost("login")]
+        [AllowAnonymous]
+        [EnableRateLimiting("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
             if (dto == null || string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Password))
@@ -162,73 +216,101 @@ namespace DELTAAPI.Controllers
             var usernameNormalized = dto.Username.Trim();
             var usernameLower = usernameNormalized.ToLowerInvariant();
 
-            _logger.LogInformation("Login attempt for {User}", usernameNormalized);
-
-            // Buscar usuario por correo o CI, comparando en minusculas y sin espacios
-            var user = await _context.Usuarios
-                .FirstOrDefaultAsync(u =>
-                    (!string.IsNullOrEmpty(u.Correo) && u.Correo.ToLower() == usernameLower) ||
-                    (!string.IsNullOrEmpty(u.Ci) && u.Ci.ToLower() == usernameLower)
-                );
-
-            if (user == null)
+            try
             {
-                _logger.LogWarning("Login failed: user not found {User}", usernameNormalized);
-                return NotFound("Usuario no encontrado.");
+                // Buscar usuario por correo o CI, comparando en minusculas y sin espacios
+                var user = await _context.Usuarios
+                    .FirstOrDefaultAsync(u =>
+                        (!string.IsNullOrEmpty(u.Correo) && u.Correo.ToLower() == usernameLower) ||
+                        (!string.IsNullOrEmpty(u.Ci) && u.Ci.ToLower() == usernameLower)
+                    );
+
+                // HU13: misma respuesta y mismo tiempo cuando el usuario no existe.
+                if (user == null)
+                {
+                    VerifyPassword(dto.Password, null);
+                    _logger.LogWarning("Login failed.");
+                    return Unauthorized(MensajeCredencialesInvalidas);
+                }
+
+                // Un usuario deshabilitado no debe poder iniciar sesión.
+                if (string.IsNullOrWhiteSpace(user.Estado) ||
+                    !user.Estado.Equals("Activo", StringComparison.OrdinalIgnoreCase))
+                {
+                    VerifyPassword(dto.Password, user.Contraseña);
+                    _logger.LogWarning("Login blocked: inactive user {UserId}.", user.IdUsuario);
+                    return Unauthorized(MensajeCredencialesInvalidas);
+                }
+
+                // No recortar la contraseña: debe coincidir exactamente con la registrada.
+                if (!VerifyPassword(dto.Password, user.Contraseña))
+                {
+                    _logger.LogWarning("Login failed.");
+                    return Unauthorized(MensajeCredencialesInvalidas);
+                }
+
+                // HU12: identificador de sesión para poder revocarla en el servidor.
+                var sessionId = Guid.NewGuid().ToString("N");
+                _sessionRevocationStore.RemoveOlderThan(TimeSpan.FromHours(24));
+
+                // Crear claims para la cookie
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.NameIdentifier, user.IdUsuario.ToString()),
+                    new Claim(ClaimTypes.Name, user.NombreCompleto ?? string.Empty),
+                    new Claim(ClaimTypes.Role, user.Rol ?? "Usuario"),
+                    new Claim("sid", sessionId)
+                };
+
+                if (!string.IsNullOrWhiteSpace(user.Correo))
+                    claims.Add(new Claim(ClaimTypes.Email, user.Correo));
+
+                // Crear la identidad y principal para la cookie
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
+
+                // HU12: sesión no persistente y expiración por inactividad (30 min deslizantes).
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    claimsPrincipal,
+                    new AuthenticationProperties
+                    {
+                        ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(30),
+                        IsPersistent = false,
+                        AllowRefresh = true
+                    });
+
+                var result = new
+                {
+                    IdUsuario = user.IdUsuario,
+                    NombreCompleto = user.NombreCompleto,
+                    Rol = user.Rol,
+                    Mensaje = "Login exitoso"
+                };
+
+                _logger.LogInformation("Login successful for user {UserId}.", user.IdUsuario);
+
+                return Ok(result);
             }
-
-            var providedPassword = dto.Password.Trim();
-            var storedPassword = (user.Contraseña ?? string.Empty).Trim();
-
-            if (!BCrypt.Net.BCrypt.Verify(providedPassword, storedPassword))
+            catch (Exception ex)
             {
-                _logger.LogWarning("Login failed: invalid credentials for {User}", usernameNormalized);
-                return Unauthorized("Credenciales inválidas.");
+                _logger.LogError(ex, "Login error.");
+                return StatusCode(500, "Error interno del servidor.");
             }
-
-            // Crear claims para la cookie
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.IdUsuario.ToString()),
-                new Claim(ClaimTypes.Name, user.NombreCompleto ?? string.Empty),
-                new Claim(ClaimTypes.Role, user.Rol ?? "Usuario")
-            };
-
-            if (!string.IsNullOrWhiteSpace(user.Correo))
-                claims.Add(new Claim(ClaimTypes.Email, user.Correo));
-
-            // Crear la identidad y principal para la cookie
-            var claimsIdentity = new ClaimsIdentity(claims, "Cookies");
-            var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
-
-            // Establecer la cookie
-            await HttpContext.SignInAsync("Cookies", claimsPrincipal, new Microsoft.AspNetCore.Authentication.AuthenticationProperties
-            {
-                ExpiresUtc = DateTime.UtcNow.AddHours(8),
-                IsPersistent = true
-            });
-
-            var result = new
-            {
-                IdUsuario = user.IdUsuario,
-                NombreCompleto = user.NombreCompleto,
-                Rol = user.Rol,
-                Mensaje = "Login exitoso"
-            };
-
-            _logger.LogInformation("Login successful for {User}", usernameNormalized);
-
-            return Ok(result);
         }
 
         [HttpPost("logout")]
+        [Authorize]
         public async Task<IActionResult> Logout()
         {
-            await HttpContext.SignOutAsync("Cookies");
+            // HU12: revocar la sesión en el servidor antes de borrar la cookie.
+            _sessionRevocationStore.Revoke(User.FindFirst("sid")?.Value);
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return Ok(new { mensaje = "Logout exitoso" });
         }
 
         [HttpGet("current-user")]
+        [Authorize]
         public async Task<IActionResult> GetCurrentUser()
         {
             try
@@ -253,7 +335,7 @@ namespace DELTAAPI.Controllers
                     return NotFound("Usuario no encontrado");
                 }
 
-                _logger.LogInformation($"Current-user verified: {user.NombreCompleto}");
+                _logger.LogInformation("Current-user verified for id {UserId}.", user.IdUsuario);
 
                 return Ok(new
                 {

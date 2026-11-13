@@ -1,12 +1,14 @@
-using Microsoft.AspNetCore.Mvc;
+锘縰sing Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DELTAAPI.Models;
+using DELTAAPI.Security;
 using Microsoft.AspNetCore.Authorization;
 
 namespace DELTAAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class RespuestasController : ControllerBase
     {
         private readonly DeltaTestContext _context;
@@ -17,25 +19,42 @@ namespace DELTAAPI.Controllers
         }
 
         /// <summary>
-        /// Guardar las respuestas de un usuario en una evaluaci髇 te髍ica
+        /// Guardar las respuestas de un usuario en una evaluaci贸n te贸rica
         /// </summary>
      [HttpPost("guardar")]
-        [AllowAnonymous]
    public async Task<IActionResult> GuardarRespuestas([FromBody] GuardarRespuestasRequest request)
         {
-            if (request == null || request.IdEvaluacion <= 0)
+            if (request == null || request.IdEvaluacion <= 0 || request.Respuestas == null)
        {
-         return BadRequest(new { mensaje = "El ID de la evaluaci髇 es requerido" });
+         return BadRequest(new { mensaje = "El ID de la evaluaci贸n es requerido" });
      }
 
             try
           {
-      // Verificar que la evaluaci髇 existe
+      // Verificar que la evaluaci贸n existe
           var evaluacion = await _context.Evaluacions.FindAsync(request.IdEvaluacion);
      if (evaluacion == null)
                 {
-       return NotFound(new { mensaje = "Evaluaci髇 no encontrada" });
+       return NotFound(new { mensaje = "Evaluaci贸n no encontrada" });
       }
+
+            if (evaluacion.TipoEvaluacion != true)
+                return BadRequest(new { mensaje = "La evaluaci贸n no es te贸rica." });
+
+            // El evaluado solo puede guardar respuestas de su propia evaluaci贸n.
+            if (!User.IsStaff() && evaluacion.IdEvaluado != User.GetUserId())
+                return Forbid();
+
+            if (evaluacion.EstadoEvaluacion is "Aprobada" or "Reprobada" or "Calificado")
+                return Conflict(new { mensaje = "La evaluaci贸n ya fue calificada y no admite cambios." });
+
+            var preguntasValidas = await _context.Preguntas
+                .Where(p => p.IdEvaluacion == request.IdEvaluacion)
+                .Select(p => p.IdPregunta)
+                .ToListAsync();
+
+            if (request.Respuestas.Any(r => !preguntasValidas.Contains(r.IdPregunta)))
+                return BadRequest(new { mensaje = "Una o m谩s preguntas no pertenecen a la evaluaci贸n." });
 
              // Eliminar respuestas anteriores si existen
           var respuestasAnteriores = await _context.Respuestas
@@ -67,7 +86,7 @@ _context.Respuestas.Add(respuesta);
         await _context.SaveChangesAsync();
      }
 
- // Actualizar estado de la evaluaci髇 a "Respondida"
+ // Actualizar estado de la evaluaci贸n a "Respondida"
         evaluacion.EstadoEvaluacion = "Respondida";
          _context.Evaluacions.Update(evaluacion);
                 await _context.SaveChangesAsync();
@@ -86,9 +105,7 @@ catch (DbUpdateException dbEx)
                 Console.WriteLine($"Inner Exception: {innerMessage}");
    return StatusCode(500, new
       {
-    mensaje = "Error de base de datos al guardar las respuestas",
-  error = dbEx.Message,
-                  details = innerMessage
+    mensaje = "Error de base de datos al guardar las respuestas"
  });
             }
  catch (Exception ex)
@@ -97,22 +114,29 @@ catch (DbUpdateException dbEx)
      Console.WriteLine($"StackTrace: {ex.StackTrace}");
           return StatusCode(500, new
        {
-         mensaje = "Error al guardar las respuestas",
-      error = ex.Message,
-          innerException = ex.InnerException?.Message
+         mensaje = "Error al guardar las respuestas"
         });
      }
         }
 
       /// <summary>
-        /// Obtener las respuestas de un usuario en una evaluaci髇
+        /// Obtener las respuestas de un usuario en una evaluaci贸n
   /// </summary>
    [HttpGet("evaluacion/{idEvaluacion}")]
-        [AllowAnonymous]
         public async Task<IActionResult> GetRespuestasByEvaluacion(int idEvaluacion)
         {
   try
             {
+     var evaluacion = await _context.Evaluacions
+         .AsNoTracking()
+         .FirstOrDefaultAsync(e => e.IdEvaluacion == idEvaluacion);
+
+     if (evaluacion == null)
+         return NotFound(new { mensaje = "Evaluaci贸n no encontrada" });
+
+     if (!User.IsStaff() && evaluacion.IdEvaluado != User.GetUserId())
+         return Forbid();
+
      var respuestas = await _context.Respuestas
          .Where(r => r.IdEvaluacion == idEvaluacion)
           .Select(r => new
@@ -130,7 +154,7 @@ catch (DbUpdateException dbEx)
      catch (Exception ex)
           {
        Console.WriteLine($"Error en GetRespuestasByEvaluacion: {ex.Message}");
-     return StatusCode(500, new { mensaje = "Error al obtener las respuestas", error = ex.Message });
+     return StatusCode(500, new { mensaje = "Error al obtener las respuestas" });
         }
 }
 
@@ -138,9 +162,11 @@ catch (DbUpdateException dbEx)
      /// Obtener todas las respuestas de un usuario
         /// </summary>
         [HttpGet("usuario/{idUsuario}")]
-        [AllowAnonymous]
         public async Task<IActionResult> GetRespuestasByUsuario(int idUsuario)
         {
+       if (!User.CanAccessUser(idUsuario))
+           return Forbid();
+
        try
     {
     var respuestas = await _context.Respuestas
@@ -159,7 +185,7 @@ catch (DbUpdateException dbEx)
       catch (Exception ex)
        {
      Console.WriteLine($"Error en GetRespuestasByUsuario: {ex.Message}");
-     return StatusCode(500, new { mensaje = "Error al obtener las respuestas del usuario", error = ex.Message });
+     return StatusCode(500, new { mensaje = "Error al obtener las respuestas del usuario" });
        }
         }
 
@@ -167,7 +193,7 @@ catch (DbUpdateException dbEx)
         /// Eliminar una respuesta
   /// </summary>
       [HttpDelete("{idRespuesta}")]
-   [AllowAnonymous]
+   [Authorize(Roles = "Administrador,Inspector")]
       public async Task<IActionResult> DeleteRespuesta(int idRespuesta)
       {
    try
@@ -186,7 +212,7 @@ catch (DbUpdateException dbEx)
       catch (Exception ex)
         {
          Console.WriteLine($"Error en DeleteRespuesta: {ex.Message}");
- return StatusCode(500, new { mensaje = "Error al eliminar la respuesta", error = ex.Message });
+ return StatusCode(500, new { mensaje = "Error al eliminar la respuesta" });
      }
         }
     }

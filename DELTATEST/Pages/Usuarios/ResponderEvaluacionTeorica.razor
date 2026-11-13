@@ -1,4 +1,5 @@
-@page "/responder-evaluacion-teorica/{IdEvaluacion:int}"
+ï»¿@page "/responder-evaluacion-teorica/{IdEvaluacion:int}"
+@attribute [Authorize]
 @using DELTATEST.Models
 @using System.Text.Json
 @inject HttpClient Http
@@ -6,13 +7,13 @@
 @layout MainSinLayout
 
 <div class="container-responder">
-    <h2 class="titulo-evaluacion">RESPONDER EVALUACIÓN TEÓRICA</h2>
+    <h2 class="titulo-evaluacion">RESPONDER EVALUACIÃ“N TEÃ“RICA</h2>
 
    @if (cargando)
    {
       <div class="loading">
            <div class="spinner"></div>
-   <p>Cargando evaluación...</p>
+   <p>Cargando evaluaciÃ³n...</p>
        </div>
    }
   else if (mostrarError)
@@ -26,7 +27,7 @@
       <form @onsubmit="SubmitRespuestas">
             <div class="preguntas-container">
 
-           <!-- SECCIÓN 1: Preguntas Abiertas -->
+           <!-- SECCIÃ“N 1: Preguntas Abiertas -->
       @if (preguntasAbiertas != null && preguntasAbiertas.Count > 0)
        {
      <div class="seccion">
@@ -44,18 +45,18 @@
        </div>
    <textarea class="textarea-respuesta"
       @bind="respuesta.TextoRespuesta"
-         placeholder="Escriba su respuesta aquí..."
+         placeholder="Escriba su respuesta aquÃ­..."
        required></textarea>
             </div>
          }
       </div>
       }
 
-             <!-- SECCIÓN 2: Preguntas Múltiple -->
+             <!-- SECCIÃ“N 2: Preguntas MÃºltiple -->
        @if (preguntasMultiples != null && preguntasMultiples.Count > 0)
  {
       <div class="seccion">
-   <h3 class="titulo-seccion">Preguntas de Opción Múltiple</h3>
+   <h3 class="titulo-seccion">Preguntas de OpciÃ³n MÃºltiple</h3>
 
          @foreach (var pregunta in preguntasMultiples)
       {
@@ -116,8 +117,8 @@
     {
       <div class="mensaje-finalizado">
          <div class="icono-exito">?</div>
-  <h3>¡Respuestas Enviadas!</h3>
-    <p>Tu evaluación ha sido registrada correctamente.</p>
+  <h3>Â¡Respuestas Enviadas!</h3>
+    <p>Tu evaluaciÃ³n ha sido registrada correctamente.</p>
      <button class="btn btn-volver" @onclick="Volver">Volver a Evaluaciones</button>
       </div>
   }
@@ -173,9 +174,8 @@
     }
     catch (Exception ex)
   {
-      Console.WriteLine($"Error: {ex.Message}");
         mostrarError = true;
-   mensajeError = "Error al cargar la evaluación";
+   mensajeError = "Error al cargar la evaluaciÃ³n";
     }
       finally
  {

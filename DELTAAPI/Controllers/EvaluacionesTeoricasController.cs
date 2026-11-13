@@ -1,17 +1,17 @@
-using Microsoft.AspNetCore.Mvc;
+Ôªøusing Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DELTAAPI.Models;
+using DELTAAPI.Security;
 using Microsoft.AspNetCore.Authorization;
-using System.Text;
-using System.Globalization;
-using System.Linq;
-using iTextSharp.text;
-using iTextSharp.text.pdf;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 
 namespace DELTAAPI.Controllers
 {
     [ApiController]
     [Route("api/evaluacionesteoricass")]
+    [Authorize]
     public class EvaluacionesTeoricasController : ControllerBase
     {
         private readonly DeltaTestContext _context;
@@ -24,15 +24,15 @@ namespace DELTAAPI.Controllers
         }
 
         /// <summary>
-        /// Guarda las respuestas del usuario para una evaluaciÛn teÛrica
+        /// Guarda las respuestas del usuario para una evaluaci√≥n te√≥rica
         /// </summary>
         [HttpPost("guardar-respuestas")]
-        [AllowAnonymous]
         public async Task<IActionResult> GuardarRespuestasTeoricas([FromBody] GuardarRespuestasRequest request)
         {
-            if (request == null || request.IdUsuario <= 0 || request.IdEvaluacion <= 0)
+            if (request == null || request.IdUsuario <= 0 || request.IdEvaluacion <= 0
+                || request.Respuestas == null || request.Respuestas.Count == 0)
             {
-                return BadRequest(new { mensaje = "Datos inv·lidos" });
+                return BadRequest(new { mensaje = "Datos inv√°lidos" });
             }
 
             try
@@ -42,10 +42,40 @@ namespace DELTAAPI.Controllers
                 if (usuario == null)
                     return NotFound(new { mensaje = "Usuario no encontrado" });
 
-                // Verificar que la evaluaciÛn existe
+                // Verificar que la evaluaci√≥n existe
                 var evaluacion = await _context.Evaluacions.FindAsync(request.IdEvaluacion);
                 if (evaluacion == null)
-                    return NotFound(new { mensaje = "EvaluaciÛn no encontrada" });
+                    return NotFound(new { mensaje = "Evaluaci√≥n no encontrada" });
+
+                if (evaluacion.TipoEvaluacion != true)
+                    return BadRequest(new { mensaje = "La evaluaci√≥n no es te√≥rica." });
+
+                if (evaluacion.IdEvaluado != request.IdUsuario)
+                    return BadRequest(new { mensaje = "La evaluaci√≥n no pertenece al usuario indicado." });
+
+                if (!User.IsStaff() && User.GetUserId() != request.IdUsuario)
+                    return Forbid();
+
+                if (evaluacion.EstadoEvaluacion is "Aprobada" or "Reprobada" or "Calificado")
+                    return Conflict(new { mensaje = "La evaluaci√≥n ya fue calificada y no admite cambios." });
+
+                // Solo se aceptan preguntas que pertenezcan a esta evaluaci√≥n.
+                var preguntasValidas = await _context.Preguntas
+                    .Where(p => p.IdEvaluacion == request.IdEvaluacion)
+                    .Select(p => p.IdPregunta)
+                    .ToListAsync();
+
+                var preguntasSolicitadas = request.Respuestas.Select(r => r.IdPregunta).Distinct().ToList();
+                if (preguntasSolicitadas.Any(id => !preguntasValidas.Contains(id)))
+                    return BadRequest(new { mensaje = "Una o m√°s preguntas no pertenecen a la evaluaci√≥n." });
+
+                // Reemplazar respuestas anteriores para evitar duplicados.
+                var anteriores = await _context.Respuestas
+                    .Where(r => r.IdEvaluacion == request.IdEvaluacion && r.IdUsuario == request.IdUsuario)
+                    .ToListAsync();
+
+                if (anteriores.Count > 0)
+                    _context.Respuestas.RemoveRange(anteriores);
 
                 // Guardar las respuestas
                 foreach (var respuestaDto in request.Respuestas)
@@ -55,38 +85,40 @@ namespace DELTAAPI.Controllers
                         IdUsuario = request.IdUsuario,
                         IdPregunta = respuestaDto.IdPregunta,
                         IdEvaluacion = request.IdEvaluacion,
-                        TextoRespuesta = respuestaDto.TextoRespuesta
+                        TextoRespuesta = respuestaDto.TextoRespuesta ?? string.Empty
                     };
 
                     _context.Respuestas.Add(respuesta);
                 }
 
-                // Actualizar estado de la evaluaciÛn a "Respondida" SIN guardar nota
-                // La nota solo se guardar· cuando el administrador la califique
+                // Actualizar estado de la evaluaci√≥n a "Respondida" SIN guardar nota
+                // La nota solo se guardar√° cuando el administrador la califique
                 evaluacion.EstadoEvaluacion = "Respondida";
 
                 await _context.SaveChangesAsync();
 
                 return Ok(new
                 {
-                    mensaje = "Respuestas guardadas exitosamente. Pendiente de calificaciÛn.",
+                    mensaje = "Respuestas guardadas exitosamente. Pendiente de calificaci√≥n.",
                     cantidadRespuestas = request.Respuestas.Count
                 });
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Error al guardar respuestas: {ex.Message}");
-                return StatusCode(500, new { mensaje = "Error al guardar las respuestas", error = ex.Message });
+                return StatusCode(500, new { mensaje = "Error al guardar las respuestas" });
             }
         }
 
         /// <summary>
-        /// Obtiene las respuestas de un usuario para una evaluaciÛn teÛrica especÌfica
+        /// Obtiene las respuestas de un usuario para una evaluaci√≥n te√≥rica espec√≠fica
         /// </summary>
         [HttpGet("respuestas/{idUsuario}/{idEvaluacion}")]
-        [AllowAnonymous]
         public async Task<IActionResult> GetRespuestasUsuario(int idUsuario, int idEvaluacion)
         {
+            if (!User.CanAccessUser(idUsuario))
+                return Forbid();
+
             try
             {
                 var respuestas = await _context.Respuestas
@@ -97,7 +129,7 @@ namespace DELTAAPI.Controllers
 
                 if (!respuestas.Any())
                 {
-                    _logger.LogWarning($"No se encontraron respuestas para usuario {idUsuario} en evaluaciÛn {idEvaluacion}");
+                    _logger.LogWarning($"No se encontraron respuestas para usuario {idUsuario} en evaluaci√≥n {idEvaluacion}");
                     return NotFound(new { mensaje = "No se encontraron respuestas" });
                 }
 
@@ -115,17 +147,19 @@ namespace DELTAAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError($"Error al obtener respuestas: {ex.Message}");
-                return StatusCode(500, new { mensaje = "Error al obtener las respuestas", error = ex.Message });
+                return StatusCode(500, new { mensaje = "Error al obtener las respuestas" });
             }
         }
 
         /// <summary>
-        /// Genera un PDF con las preguntas y respuestas de la evaluaciÛn teÛrica
+        /// Genera un PDF con las preguntas y respuestas de la evaluaci√≥n te√≥rica
         /// </summary>
         [HttpGet("descargar-pdf/{idUsuario}/{idEvaluacion}")]
-        [AllowAnonymous]
         public async Task<IActionResult> DescargarPDF(int idUsuario, int idEvaluacion)
         {
+            if (!User.CanAccessUser(idUsuario))
+                return Forbid();
+
             try
             {
                 // Obtener usuario
@@ -133,10 +167,13 @@ namespace DELTAAPI.Controllers
                 if (usuario == null)
                     return NotFound(new { mensaje = "Usuario no encontrado" });
 
-                // Obtener evaluaciÛn
+                // Obtener evaluaci√≥n
                 var evaluacion = await _context.Evaluacions.FindAsync(idEvaluacion);
                 if (evaluacion == null)
-                    return NotFound(new { mensaje = "EvaluaciÛn no encontrada" });
+                    return NotFound(new { mensaje = "Evaluaci√≥n no encontrada" });
+
+                if (evaluacion.IdEvaluado != idUsuario || evaluacion.TipoEvaluacion != true)
+                    return BadRequest(new { mensaje = "La evaluaci√≥n no corresponde al usuario indicado." });
 
                 // Obtener respuestas con preguntas
                 var respuestas = await _context.Respuestas
@@ -148,104 +185,83 @@ namespace DELTAAPI.Controllers
                 if (!respuestas.Any())
                     return NotFound(new { mensaje = "No hay respuestas para generar el PDF" });
 
-                // Crear documento PDF
-                Document doc = new Document(PageSize.A4, 25, 25, 30, 30);
-                MemoryStream ms = new MemoryStream();
-                PdfWriter writer = PdfWriter.GetInstance(doc, ms);
-
-                doc.Open();
-
-                // TÌtulo
-                iTextSharp.text.Font titleFont = new iTextSharp.text.Font(BaseFont.CreateFont(BaseFont.HELVETICA, BaseFont.CP1252, BaseFont.NOT_EMBEDDED), 18, iTextSharp.text.Font.BOLD);
-                Paragraph title = new Paragraph("EVALUACI”N TE”RICA", titleFont)
+                var pdf = Document.Create(container =>
                 {
-                    Alignment = Element.ALIGN_CENTER,
-                    SpacingAfter = 20
-                };
-                doc.Add(title);
-
-                // InformaciÛn del usuario
-                iTextSharp.text.Font infoFont = new iTextSharp.text.Font(BaseFont.CreateFont(BaseFont.HELVETICA, BaseFont.CP1252, BaseFont.NOT_EMBEDDED), 11, iTextSharp.text.Font.NORMAL);
-                doc.Add(new Paragraph($"Evaluado: {usuario.NombreCompleto}", infoFont));
-                doc.Add(new Paragraph($"Correo: {usuario.Correo}", infoFont));
-                doc.Add(new Paragraph($"Fecha de EvaluaciÛn: {evaluacion.FechaEvaluacion?.ToString("dd/MM/yyyy")}", infoFont));
-                if (evaluacion.Nota.HasValue)
-                    doc.Add(new Paragraph($"CalificaciÛn: {evaluacion.Nota.Value} / 100", infoFont));
-
-                doc.Add(new Paragraph("\n"));
-
-                // Tabla con preguntas y respuestas
-                PdfPTable table = new PdfPTable(2);
-                table.WidthPercentage = 100;
-                table.SetWidths(new float[] { 50, 50 });
-
-                // Encabezados
-                iTextSharp.text.Font headerFont = new iTextSharp.text.Font(BaseFont.CreateFont(BaseFont.HELVETICA, BaseFont.CP1252, BaseFont.NOT_EMBEDDED), 12, iTextSharp.text.Font.BOLD);
-                PdfPCell headerCell1 = new PdfPCell(new Phrase("PREGUNTA", headerFont))
-                {
-                    BackgroundColor = new BaseColor(245, 130, 32),
-                    Padding = 10,
-                    HorizontalAlignment = Element.ALIGN_CENTER,
-                    VerticalAlignment = Element.ALIGN_MIDDLE
-                };
-
-                PdfPCell headerCell2 = new PdfPCell(new Phrase("RESPUESTA", headerFont))
-                {
-                    BackgroundColor = new BaseColor(245, 130, 32),
-                    Padding = 10,
-                    HorizontalAlignment = Element.ALIGN_CENTER,
-                    VerticalAlignment = Element.ALIGN_MIDDLE
-                };
-
-                table.AddCell(headerCell1);
-                table.AddCell(headerCell2);
-
-                // Contenido
-                iTextSharp.text.Font contentFont = new iTextSharp.text.Font(BaseFont.CreateFont(BaseFont.HELVETICA, BaseFont.CP1252, BaseFont.NOT_EMBEDDED), 10, iTextSharp.text.Font.NORMAL);
-                foreach (var respuesta in respuestas)
-                {
-                    PdfPCell preguntaCell = new PdfPCell(new Phrase(respuesta.IdPreguntaNavigation?.Texto ?? "", contentFont))
+                    container.Page(page =>
                     {
-                        Padding = 10,
-                        HorizontalAlignment = Element.ALIGN_LEFT,
-                        VerticalAlignment = Element.ALIGN_TOP,
-                        MinimumHeight = 40
-                    };
+                        page.Size(PageSizes.A4);
+                        page.Margin(25);
+                        page.DefaultTextStyle(x => x.FontSize(10));
 
-                    PdfPCell respuestaCell = new PdfPCell(new Phrase(respuesta.TextoRespuesta ?? "", contentFont))
-                    {
-                        Padding = 10,
-                        HorizontalAlignment = Element.ALIGN_LEFT,
-                        VerticalAlignment = Element.ALIGN_TOP,
-                        MinimumHeight = 40
-                    };
+                        page.Header().Column(header =>
+                        {
+                            header.Item().AlignCenter().Text("EVALUACI√ìN TE√ìRICA").FontSize(18).Bold();
+                            header.Item().PaddingTop(8).Text($"Evaluado: {usuario.NombreCompleto}");
+                            header.Item().Text($"Correo: {usuario.Correo}");
+                            header.Item().Text($"Fecha de Evaluaci√≥n: {evaluacion.FechaEvaluacion?.ToString("dd/MM/yyyy")}");
+                            if (evaluacion.Nota.HasValue)
+                                header.Item().Text($"Calificaci√≥n: {evaluacion.Nota.Value} / 100");
+                            header.Item().PaddingBottom(12);
+                        });
 
-                    table.AddCell(preguntaCell);
-                    table.AddCell(respuestaCell);
-                }
+                        page.Content().Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                            });
 
-                doc.Add(table);
-                doc.Close();
+                            table.Header(header =>
+                            {
+                                header.Cell().Background("#F58220").Padding(6)
+                                    .Text("PREGUNTA").Bold().FontColor(Colors.White);
+                                header.Cell().Background("#F58220").Padding(6)
+                                    .Text("RESPUESTA").Bold().FontColor(Colors.White);
+                            });
 
-                byte[] pdfBytes = ms.ToArray();
-                ms.Close();
+                            foreach (var respuesta in respuestas)
+                            {
+                                table.Cell().Border(0.5f).Padding(6)
+                                    .Text(respuesta.IdPreguntaNavigation?.Texto ?? string.Empty);
+                                table.Cell().Border(0.5f).Padding(6)
+                                    .Text(respuesta.TextoRespuesta ?? string.Empty);
+                            }
+                        });
 
-                return File(pdfBytes, "application/pdf", $"Evaluacion_Teorica_{usuario.NombreCompleto}_{DateTime.Now:yyyyMMdd}.pdf");
+                        page.Footer().AlignCenter().Text(text =>
+                        {
+                            text.Span("P√°gina ");
+                            text.CurrentPageNumber();
+                            text.Span(" de ");
+                            text.TotalPages();
+                        });
+                    });
+                });
+
+                var pdfBytes = pdf.GeneratePdf();
+                var invalid = Path.GetInvalidFileNameChars();
+                var safeName = string.Concat((usuario.NombreCompleto ?? "usuario")
+                    .Select(c => invalid.Contains(c) ? '_' : c));
+
+                return File(pdfBytes, "application/pdf", $"Evaluacion_Teorica_{safeName}_{DateTime.Now:yyyyMMdd}.pdf");
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error al generar PDF: {ex.Message}");
-                return StatusCode(500, new { mensaje = "Error al generar el PDF", error = ex.Message });
+                _logger.LogError(ex, "Error al generar el PDF.");
+                return StatusCode(500, new { mensaje = "Error al generar el PDF" });
             }
         }
 
         /// <summary>
-        /// Obtiene todas las evaluaciones teÛricas de un usuario
+        /// Obtiene todas las evaluaciones te√≥ricas de un usuario
         /// </summary>
         [HttpGet("usuario/{idUsuario}")]
-        [AllowAnonymous]
         public async Task<IActionResult> GetEvaluacionesTeoricasUsuario(int idUsuario)
         {
+            if (!User.CanAccessUser(idUsuario))
+                return Forbid();
+
             try
             {
                 var evaluaciones = await _context.Evaluacions
@@ -265,15 +281,15 @@ namespace DELTAAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError($"Error al obtener evaluaciones: {ex.Message}");
-                return StatusCode(500, new { mensaje = "Error al obtener las evaluaciones", error = ex.Message });
+                return StatusCode(500, new { mensaje = "Error al obtener las evaluaciones" });
             }
         }
 
         /// <summary>
-        /// Obtiene todas las evaluaciones teÛricas del sistema
+        /// Obtiene todas las evaluaciones te√≥ricas del sistema
         /// </summary>
         [HttpGet]
-        [AllowAnonymous]
+        [Authorize(Roles = "Administrador,Inspector")]
         public async Task<IActionResult> GetTodasEvaluacionesTeoricass()
         {
             try
@@ -305,15 +321,15 @@ namespace DELTAAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError($"Error al obtener evaluaciones: {ex.Message}");
-                return StatusCode(500, new { mensaje = "Error al obtener las evaluaciones", error = ex.Message });
+                return StatusCode(500, new { mensaje = "Error al obtener las evaluaciones" });
             }
         }
 
         /// <summary>
-        /// Obtiene todas las evaluaciones teÛricas del sistema (SIN FILTROS - para depuraciÛn)
+        /// Obtiene todas las evaluaciones te√≥ricas del sistema (SIN FILTROS - para depuraci√≥n)
         /// </summary>
         [HttpGet("debug/todas")]
-        [AllowAnonymous]
+        [Authorize(Roles = "Administrador,Inspector")]
         public async Task<IActionResult> GetTodasEvaluacionesDebug()
         {
             try
@@ -334,7 +350,7 @@ namespace DELTAAPI.Controllers
                 })
                .ToListAsync();
 
-                _logger.LogInformation($"DEBUG: Total evaluaciones teÛricas: {evaluaciones.Count}");
+                _logger.LogInformation($"DEBUG: Total evaluaciones te√≥ricas: {evaluaciones.Count}");
                 foreach (var e in evaluaciones)
                 {
                     _logger.LogInformation($"DEBUG: ID={e.IdEvaluacion}, Estado={e.EstadoEvaluacion}, Nota={e.Nota}, Respuestas={e.cantidadPreguntas}");
@@ -345,15 +361,15 @@ namespace DELTAAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError($"Error al obtener evaluaciones debug: {ex.Message}");
-                return StatusCode(500, new { mensaje = "Error al obtener las evaluaciones", error = ex.Message });
+                return StatusCode(500, new { mensaje = "Error al obtener las evaluaciones" });
             }
         }
 
         /// <summary>
-        /// Obtiene evaluaciones teÛricas RESPONDIDAS (simpler version)
+        /// Obtiene evaluaciones te√≥ricas RESPONDIDAS (simpler version)
         /// </summary>
         [HttpGet("pendientes")]
-        [AllowAnonymous]
+        [Authorize(Roles = "Administrador,Inspector")]
         public async Task<IActionResult> GetEvaluacionesPendientesCalificacion()
         {
             try
@@ -387,22 +403,22 @@ namespace DELTAAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError($"Error al obtener evaluaciones: {ex.Message}");
-                return StatusCode(500, new { mensaje = "Error", error = ex.Message });
+                return StatusCode(500, new { mensaje = "Error" });
             }
         }
 
         /// <summary>
-        /// Obtiene preguntas con respuestas para calificaciÛn (para admin)
+        /// Obtiene preguntas con respuestas para calificaci√≥n (para admin)
         /// </summary>
         [HttpGet("calificar/{idEvaluacion}")]
-        [AllowAnonymous]
+        [Authorize(Roles = "Administrador,Inspector")]
         public async Task<IActionResult> GetPreguntasParaCalificar(int idEvaluacion)
         {
             try
             {
-                _logger.LogInformation($"=== GetPreguntasParaCalificar - EvaluaciÛn ID: {idEvaluacion} ===");
+                _logger.LogInformation($"=== GetPreguntasParaCalificar - Evaluaci√≥n ID: {idEvaluacion} ===");
 
-                // Obtener la evaluaciÛn con todas sus relaciones
+                // Obtener la evaluaci√≥n con todas sus relaciones
                 var evaluacion = await _context.Evaluacions
                   .Include(e => e.IdEvaluadoNavigation)
                   .Include(e => e.Respuestas)
@@ -410,8 +426,8 @@ namespace DELTAAPI.Controllers
 
                 if (evaluacion == null)
                 {
-                    _logger.LogWarning($"EvaluaciÛn no encontrada: {idEvaluacion}");
-                    return NotFound(new { mensaje = "EvaluaciÛn no encontrada" });
+                    _logger.LogWarning($"Evaluaci√≥n no encontrada: {idEvaluacion}");
+                    return NotFound(new { mensaje = "Evaluaci√≥n no encontrada" });
                 }
 
                 // Obtener preguntas por separado
@@ -420,7 +436,7 @@ namespace DELTAAPI.Controllers
                .OrderBy(p => p.IdPregunta)
                  .ToListAsync();
 
-                _logger.LogInformation($"EvaluaciÛn encontrada. Preguntas: {preguntas.Count}, Respuestas: {evaluacion.Respuestas.Count}");
+                _logger.LogInformation($"Evaluaci√≥n encontrada. Preguntas: {preguntas.Count}, Respuestas: {evaluacion.Respuestas.Count}");
 
                 // Obtener preguntas con sus respuestas
                 var preguntasConRespuestas = new List<object>();
@@ -467,54 +483,66 @@ namespace DELTAAPI.Controllers
                 _logger.LogError($"Error en GetPreguntasParaCalificar: {ex.Message}\n{ex.StackTrace}");
                 return StatusCode(500, new
                 {
-                    mensaje = "Error al obtener preguntas y respuestas",
-                    error = ex.Message,
-                    stackTrace = ex.StackTrace
+                    mensaje = "Error al obtener preguntas y respuestas"
                 });
             }
         }
 
         [HttpPut("calificar/{idEvaluacion}")]
-        [AllowAnonymous]
+        [Authorize(Roles = "Administrador,Inspector")]
         public async Task<IActionResult> CalificarEvaluacion(int idEvaluacion, [FromBody] CalificarEvaluacionRequest request)
         {
         try
         {
             if (request == null || request.Nota < 0 || request.Nota > 100)
             {
-                return BadRequest(new { mensaje = "La calificaciÛn debe estar entre 0 y 100" });
+                return BadRequest(new { mensaje = "La calificaci√≥n debe estar entre 0 y 100" });
             }
 
             var evaluacion = await _context.Evaluacions.FindAsync(idEvaluacion);
             if (evaluacion == null)
             {
-                return NotFound(new { mensaje = "EvaluaciÛn no encontrada" });
+                return NotFound(new { mensaje = "Evaluaci√≥n no encontrada" });
+            }
+
+            if (evaluacion.TipoEvaluacion != true)
+                return BadRequest(new { mensaje = "La evaluaci√≥n no es te√≥rica." });
+
+            // Verificar que las preguntas enviadas pertenecen a esta evaluaci√≥n.
+            if (request.PreguntasConPuntos != null && request.PreguntasConPuntos.Count > 0)
+            {
+                if (request.PreguntasConPuntos.Any(p => p.Puntos < 0))
+                    return BadRequest(new { mensaje = "Los puntos no pueden ser negativos." });
+
+                var idsValidos = await _context.Preguntas
+                    .Where(p => p.IdEvaluacion == idEvaluacion)
+                    .Select(p => p.IdPregunta)
+                    .ToListAsync();
+
+                if (request.PreguntasConPuntos.Any(p => !idsValidos.Contains(p.IdPregunta)))
+                    return BadRequest(new { mensaje = "Una o m√°s preguntas no pertenecen a la evaluaci√≥n." });
+
+                foreach (var preguntaRequest in request.PreguntasConPuntos)
+                {
+                    var pregunta = await _context.Preguntas.FindAsync(preguntaRequest.IdPregunta);
+                    if (pregunta != null)
+                    {
+                        pregunta.Puntos = preguntaRequest.Puntos;
+                        _context.Preguntas.Update(pregunta);
+                    }
+                }
             }
 
             evaluacion.Nota = request.Nota;
             evaluacion.Recomendaciones = request.Recomendaciones ?? string.Empty;
             evaluacion.EstadoEvaluacion = request.Nota >= 80 ? "Aprobada" : "Reprobada";
 
-            // Actualizar puntos de las preguntas si se envÌan
-            if (request.PreguntasConPuntos != null && request.PreguntasConPuntos.Count > 0)
-            {
-                foreach (var preguntaRequest in request.PreguntasConPuntos)
-            {
-                   var pregunta = await _context.Preguntas.FindAsync(preguntaRequest.IdPregunta);
-                   if (pregunta != null)
-                   {
-                       pregunta.Puntos = preguntaRequest.Puntos;
-                       _context.Preguntas.Update(pregunta);
-                   }
-                }
-            }
-
                     _context.Evaluacions.Update(evaluacion);
                     await _context.SaveChangesAsync();
 
            return Ok(new
            {
-              mensaje = "EvaluaciÛn calificada exitosamente",
+              mensaje = "Evaluaci√≥n calificada exitosamente",
               idEvaluacion = evaluacion.IdEvaluacion,
               nota = evaluacion.Nota,
               estado = evaluacion.EstadoEvaluacion
@@ -523,7 +551,7 @@ namespace DELTAAPI.Controllers
         catch (Exception ex)
         {
              _logger.LogError($"Error en CalificarEvaluacion: {ex.Message}");
-             return StatusCode(500, new { mensaje = "Error al calificar la evaluaciÛn", error = ex.Message });
+             return StatusCode(500, new { mensaje = "Error al calificar la evaluaci√≥n" });
             }
         }
     }

@@ -1,4 +1,5 @@
 ﻿@page "/editarUsuario/{IdUsuario:int}"
+@attribute [Authorize(Roles = "Administrador,Inspector")]
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @layout MainSinLayout

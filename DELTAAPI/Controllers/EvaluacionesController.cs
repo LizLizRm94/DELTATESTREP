@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DELTAAPI.Models;
+using DELTAAPI.Security;
 using Microsoft.AspNetCore.Authorization;
 using System.Text;
 using System.Text.Json;
@@ -9,6 +10,7 @@ namespace DELTAAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class EvaluacionesController : ControllerBase
     {
         private readonly DeltaTestContext _context;
@@ -29,7 +31,7 @@ namespace DELTAAPI.Controllers
         }
 
         [HttpPost("crear-evaluacion-practica")]
-        [AllowAnonymous]
+        [Authorize(Roles = "Administrador,Inspector")]
         public async Task<IActionResult> CrearEvaluacionPractica([FromBody] CrearEvaluacionPracticaRequest request)
         {
             if (request == null || request.IdUsuario <= 0)
@@ -48,6 +50,7 @@ namespace DELTAAPI.Controllers
             var evaluacion = new Evaluacion
             {
                 IdEvaluado = request.IdUsuario,
+                IdAdministrador = User.GetUserId(),
                 FechaEvaluacion = DateOnly.FromDateTime(DateTime.Now),
                 TipoEvaluacion = false,
                 EstadoEvaluacion = "Completada",
@@ -66,29 +69,24 @@ await _context.SaveChangesAsync();
              calificacion = evaluacion.Nota
         });
             }
-  catch (DbUpdateException dbEx)
+  catch (DbUpdateException)
          {
-                var innerMessage = dbEx.InnerException?.Message ?? "Sin detalles";
           return StatusCode(500, new
       {
-        mensaje = "Error de base de datos al guardar",
-    error = dbEx.Message,
-   details = innerMessage
+        mensaje = "Error de base de datos al guardar"
                 });
       }
-       catch (Exception ex)
+       catch (Exception)
   {
           return StatusCode(500, new
        {
-  mensaje = "Error al guardar la evaluación",
-      error = ex.Message,
-    innerException = ex.InnerException?.Message
+  mensaje = "Error al guardar la evaluación"
         });
          }
         }
 
    [HttpGet]
-        [AllowAnonymous]
+        [Authorize(Roles = "Administrador,Inspector")]
         public async Task<IActionResult> GetEvaluaciones()
         {
             try
@@ -109,14 +107,13 @@ await _context.SaveChangesAsync();
 
                 return Ok(evaluaciones);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new { mensaje = "Error al obtener las evaluaciones", error = ex.Message });
+                return StatusCode(500, new { mensaje = "Error al obtener las evaluaciones" });
             }
         }
 
         [HttpGet("{id}")]
-        [AllowAnonymous]
         public async Task<IActionResult> GetEvaluacionById(int id)
         {
             try
@@ -129,6 +126,9 @@ await _context.SaveChangesAsync();
 
                 if (evaluacion == null)
                     return NotFound(new { mensaje = "Evaluación no encontrada" });
+
+                if (!User.IsStaff() && evaluacion.IdEvaluado != User.GetUserId())
+                    return Forbid();
 
                 // Validar que el usuario evaluado existe
                 if (evaluacion.IdEvaluadoNavigation == null)
@@ -154,17 +154,17 @@ await _context.SaveChangesAsync();
                 Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return StatusCode(500, new
                 {
-                    mensaje = "Error al obtener la evaluación",
-                    error = ex.Message,
-                    stackTrace = ex.StackTrace
+                    mensaje = "Error al obtener la evaluación"
                 });
             }
         }
 
         [HttpGet("usuario/{idUsuario}")]
-   [AllowAnonymous]
         public async Task<IActionResult> GetEvaluacionesByUsuario(int idUsuario)
         {
+      if (!User.CanAccessUser(idUsuario))
+          return Forbid();
+
       try
 {
        var evaluaciones = await _context.Evaluacions
@@ -181,16 +181,18 @@ await _context.SaveChangesAsync();
 
          return Ok(evaluaciones);
        }
-catch (Exception ex)
+catch (Exception)
   {
- return StatusCode(500, new { mensaje = "Error al obtener las evaluaciones", error = ex.Message });
+ return StatusCode(500, new { mensaje = "Error al obtener las evaluaciones" });
         }
         }
 
     [HttpGet("ultima-practica/{idUsuario}")]
-        [AllowAnonymous]
         public async Task<IActionResult> GetUltimaPracticaByUsuario(int idUsuario)
         {
+   if (!User.CanAccessUser(idUsuario))
+       return Forbid();
+
    try
             {
        var ultimaEvaluacion = await _context.Evaluacions
@@ -211,16 +213,19 @@ catch (Exception ex)
          estado = ultimaEvaluacion.EstadoEvaluacion
     });
      }
-catch (Exception ex)
+catch (Exception)
       {
-    return StatusCode(500, new { mensaje = "Error al obtener la última evaluación práctica", error = ex.Message });
+    return StatusCode(500, new { mensaje = "Error al obtener la última evaluación práctica" });
             }
         }
 
         [HttpPut("{id}")]
-    [AllowAnonymous]
+        [Authorize(Roles = "Administrador,Inspector")]
         public async Task<IActionResult> UpdateEvaluacion(int id, [FromBody] UpdateEvaluacionRequest request)
         {
+            if (request?.Nota is < 0 or > 100)
+                return BadRequest(new { mensaje = "La calificación debe estar entre 0 y 100" });
+
             try
          {
       var evaluacion = await _context.Evaluacions.FindAsync(id);
@@ -241,14 +246,14 @@ catch (Exception ex)
 
      return Ok(new { mensaje = "Evaluación actualizada exitosamente" });
             }
-  catch (Exception ex)
+  catch (Exception)
             {
-         return StatusCode(500, new { mensaje = "Error al actualizar la evaluación", error = ex.Message });
+         return StatusCode(500, new { mensaje = "Error al actualizar la evaluación" });
    }
         }
 
       [HttpDelete("{id}")]
-        [AllowAnonymous]
+        [Authorize(Roles = "Administrador,Inspector")]
   public async Task<IActionResult> DeleteEvaluacion(int id)
         {
        try
@@ -262,9 +267,9 @@ _context.Evaluacions.Remove(evaluacion);
 
    return Ok(new { mensaje = "Evaluación eliminada exitosamente" });
             }
-    catch (Exception ex)
+    catch (Exception)
         {
-     return StatusCode(500, new { mensaje = "Error al eliminar la evaluación", error = ex.Message });
+     return StatusCode(500, new { mensaje = "Error al eliminar la evaluación" });
 }
         }
 
@@ -287,7 +292,7 @@ _context.Evaluacions.Remove(evaluacion);
         }
 
       [HttpPost("crear-evaluacion-teorica")]
-   [AllowAnonymous]
+   [Authorize(Roles = "Administrador,Inspector")]
      public async Task<IActionResult> CrearEvaluacionTeorica([FromBody] CrearEvaluacionTeoricaRequest request)
  {
  if (request == null || request.IdUsuario <= 0)
@@ -313,7 +318,7 @@ return BadRequest(new { mensaje = "El ID del usuario es requerido" });
    var evaluacion = new Evaluacion
         {
   IdEvaluado = request.IdUsuario,
-  IdAdministrador = null,
+  IdAdministrador = User.GetUserId(),
   FechaEvaluacion = DateOnly.FromDateTime(DateTime.Now),
 TipoEvaluacion = true, // true = teórica
  EstadoEvaluacion = "Pendiente",
@@ -372,9 +377,7 @@ mensaje = "Evaluación teórica creada exitosamente",
       Console.WriteLine($"Stack Trace: {dbEx.StackTrace}");
       return StatusCode(500, new
  {
- mensaje = "Error de base de datos al guardar",
-   error = dbEx.Message,
-  details = innerMessage
+ mensaje = "Error de base de datos al guardar"
   });
   }
   catch (Exception ex)
@@ -383,9 +386,7 @@ mensaje = "Evaluación teórica creada exitosamente",
       Console.WriteLine($"StackTrace: {ex.StackTrace}");
        return StatusCode(500, new
   {
- mensaje = "Error al crear la evaluación",
-  error = ex.Message,
-        innerException = ex.InnerException?.Message
+ mensaje = "Error al crear la evaluación"
   });
        }
         }
@@ -571,7 +572,7 @@ mensaje = "Evaluación teórica creada exitosamente",
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al generar preguntas con IA");
-                return StatusCode(500, new { mensaje = "Error al generar preguntas con IA", error = ex.Message });
+                return StatusCode(500, new { mensaje = "Error al generar preguntas con IA" });
             }
         }
 
@@ -674,8 +675,12 @@ mensaje = "Evaluación teórica creada exitosamente",
 
 // En el método para calificar evaluaciones:
 [HttpPost("calificar/{idEvaluacion}")]
+[Authorize(Roles = "Administrador,Inspector")]
 public async Task<IActionResult> CalificarEvaluacion(int idEvaluacion, [FromBody] decimal nota)
 {
+    if (nota < 0 || nota > 100)
+        return BadRequest(new { mensaje = "La calificación debe estar entre 0 y 100" });
+
     var evaluacion = await _context.Evaluacions.FindAsync(idEvaluacion);
     if (evaluacion == null) return NotFound(new { mensaje = "Evaluación no encontrada" });
 

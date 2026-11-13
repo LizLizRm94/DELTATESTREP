@@ -15,8 +15,8 @@ namespace DELTAAPI.Controllers
             return Ok(new { message = "Valor accesible para cualquier usuario autenticado", user = User.Identity?.Name });
         }
 
-        // Este endpoint solo es accesible por usuarios con el rol "Admin"
-        [Authorize(Roles = "Admin")]
+        // Este endpoint solo es accesible por usuarios con el rol "Administrador"
+        [Authorize(Roles = "Administrador")]
         [HttpGet("admin")]
         public IActionResult GetAdminValues()
         {

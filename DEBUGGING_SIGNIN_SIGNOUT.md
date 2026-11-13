@@ -1,149 +1,108 @@
-# Debugging: Sign In/Sign Out Issue
+# AutenticaciÃ³n y depuraciÃ³n (HU12 / HU13)
 
-## Problema
-El botón sigue mostrando "Sign In" aunque el usuario esté autenticado y se vea "Bienvenido admin".
+> Documento actualizado. La autenticaciÃ³n anterior basada en `localStorage` y el
+> script `wwwroot/js/auth-debug.js` fueron eliminados. Ya no se guardan tokens,
+> roles ni nombres de usuario en el navegador.
 
-## Cambios Realizados
+## Arquitectura actual
 
-### 1. **Mejorado AuthService.GetCurrentUserAsync()**
-- Mejor manejo de valores booleanos en localStorage
-- Logging más detallado con prefijo `?` y `?`
-- Fallback más robusto en caso de excepciones
+- El login se valida en `DELTAAPI` y la sesiÃ³n se guarda en una cookie
+  **HttpOnly**, **Secure** y **SameSite=None** llamada `__Host-DeltaAuth`.
+- La cookie tiene expiraciÃ³n deslizante de **30 minutos** y no es persistente.
+- El cliente Blazor nunca lee la cookie: consulta `GET /api/auth/current-user`
+  para obtener el estado de autenticaciÃ³n.
+- El logout revoca la sesiÃ³n en el servidor y elimina la cookie.
+- Las peticiones que modifican estado (`POST`, `PUT`, `DELETE`, `PATCH`) deben
+  enviar la cabecera `X-Requested-With: XMLHttpRequest` (protecciÃ³n CSRF).
 
-### 2. **Agregado delay en MainLayout**
-- Espera 100ms en `OnInitializedAsync` para que localStorage se inicialice
-- Asegura que Blazored.LocalStorage esté listo antes de leer datos
+## Flujo de login
 
-### 3. **Agregado delay en IniciarSesion.razor**
-- Espera 500ms después del login antes de hacer forceLoad
-- Permite que localStorage se sincronice completamente
+1. `IniciarSesion.razor` llama a `AuthService.LoginAsync()`.
+2. El cliente envÃ­a `POST /api/auth/login` con `credentials: include` y la
+   cabecera CSRF.
+3. La API valida las credenciales y emite la cookie `__Host-DeltaAuth`.
+4. El cliente refresca el estado con `GET /api/auth/current-user` y redirige
+   segÃºn el rol.
 
-### 4. **Agregado script de debug: auth-debug.js**
-- Disponible en la consola del navegador
-- Comandos útiles:
-  - `authDebug.checkAuth()` - Ver estado actual
-  - `authDebug.simulateLogin('Nombre', 'Inspector', '1')` - Simular login
-  - `authDebug.clearAuth()` - Limpiar datos
-  - `authDebug.monitorStorage()` - Monitorear cambios en localStorage
+## Flujo de logout
 
-## Cómo Debuggear
+1. `MainLayout` / `MainSinLayout` llama a `AuthService.LogoutAsync()`.
+2. El cliente envÃ­a `POST /api/auth/logout` con la cabecera CSRF.
+3. La API revoca el identificador de sesiÃ³n y borra la cookie.
+4. El cliente recarga la aplicaciÃ³n y queda como anÃ³nimo.
 
-### En Google Chrome/Edge DevTools:
+## CÃ³mo verificar en el navegador
 
-1. **Abrir la consola**: F12 ? Pestaña "Console"
+### Cookies (no localStorage)
 
-2. **Verificar estado actual**:
-   ```javascript
-   authDebug.checkAuth()
-   ```
-   Debería mostrar:
-   ```
-   === AUTH DEBUG ===
-   isAuthenticated: true
-   userName: [Tu nombre]
-   userRole: Inspector
-   userId: [Tu ID]
-   ==================
-   ```
+1. Abrir DevTools (F12).
+2. Ir a **Application â†’ Cookies â†’ https://localhost:7287**.
+3. Debe aparecer `__Host-DeltaAuth` con las columnas `HttpOnly` y `Secure`
+   marcadas.
+4. En **Application â†’ Local Storage** no debe existir `isAuthenticated`,
+   `userName`, `userRole` ni `userId`.
 
-3. **Hacer login normalmente** y verificar que localStorage se actualiza:
-   - Abre DevTools
-   - Pestaña "Application" ? "Local Storage"
-   - Verifica que aparecen las claves: `isAuthenticated`, `userName`, `userRole`, `userId`
+### Red
 
-4. **Verificar logs de consola**:
-   Después del login, busca mensajes como:
-   ```
-   ? Returning authenticated user from localStorage: [Tu nombre]
-   [MainLayout] Auth Status: true, User: [Tu nombre]
-   ```
+En la pestaÃ±a **Network**, al iniciar sesiÃ³n:
 
-### Escenarios de Test:
+- `POST /api/auth/login` debe responder `200`.
+- La respuesta debe incluir `Set-Cookie: __Host-DeltaAuth=...`.
+- `GET /api/auth/current-user` debe responder `200` con `idUsuario`,
+  `nombreCompleto`, `correo` y `rol`.
 
-**Escenario 1: Login exitoso**
-- [ ] Loguearse con credenciales válidas
-- [ ] Verificar localStorage en DevTools
-- [ ] Debería redirigir a `/panelControlAdmin` o `/estado/{id}`
-- [ ] Debería mostrar "Sign Out" en la navbar
+Al cerrar sesiÃ³n:
 
-**Escenario 2: Reload de página**
-- [ ] Loguearse
-- [ ] Presionar F5 para recargar
-- [ ] Debería seguir mostrando "Sign Out"
-- [ ] Verificar que localStorage persiste
+- `POST /api/auth/logout` debe responder `200`.
+- La cookie debe desaparecer o quedar expirada.
+- `GET /api/auth/current-user` debe responder `401`.
 
-**Escenario 3: Logout**
-- [ ] Click en "Sign Out"
-- [ ] Verificar que localStorage se borra
-- [ ] Debería redirigir a home
-- [ ] Debería mostrar "Sign In"
+## Errores frecuentes
 
-## Logs Importantes a Buscar
+| CÃ³digo | Causa probable | SoluciÃ³n |
+|--------|----------------|----------|
+| `400` en `POST`/`PUT`/`DELETE` | Falta la cabecera `X-Requested-With` | Usar el `HttpClient` registrado con `AuthorizationMessageHandler`. |
+| `401` | Cookie ausente, expirada o revocada | Volver a iniciar sesiÃ³n. |
+| `403` | El rol no tiene permiso para el recurso | Verificar el rol del usuario y la polÃ­tica del endpoint. |
+| `429` | MÃ¡s de 5 intentos de login por minuto desde la misma IP | Esperar un minuto. |
+| Error CORS | El origen del cliente no estÃ¡ permitido | Revisar la polÃ­tica `AllowClient` en `Program.cs`. |
+| La cookie no se guarda | La API no se estÃ¡ usando por HTTPS | Usar el perfil `https` de `DELTAAPI` (`https://localhost:7287`). |
+| Se cierra la sesiÃ³n al recargar | `Auth:CookieSameSite` o CORS mal configurados | Revisar `SameSite=None`, `Secure` y `AllowCredentials`. |
 
-```
-GetCurrentUserAsync - isAuthenticated flag from localStorage: true
-Auth found in localStorage: [Tu nombre], Role: [Tu rol]
-? Returning authenticated user from localStorage: [Tu nombre]
-[MainLayout] Auth Status: true, User: [Tu nombre], Role: [Tu rol]
-```
+## ConfiguraciÃ³n
 
-## Si Aún No Funciona
+`DELTAAPI/appsettings.json` (ignorado por Git; crear a partir de
+`appsettings.Example.json`):
 
-### Opción 1: Forzar un Reload Manual
-```javascript
-// En la consola:
-location.reload(true);
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=...;Database=...;Username=...;Password=...;SSL Mode=VerifyFull;Trust Server Certificate=false"
+  },
+  "GEMINI_API_KEY": "",
+  "GEMINI_MODEL": "gemini-flash-latest",
+  "ClientBaseUrl": "https://localhost:7105/",
+  "Auth": {
+    "CookieSameSite": "None"
+  }
+}
 ```
 
-### Opción 2: Simular el Login
-```javascript
-// En la consola (reemplaza con valores reales):
-authDebug.simulateLogin('Tu Nombre', 'Inspector', '1');
-location.reload(true);
+`DELTATEST/wwwroot/appsettings.json`:
+
+```json
+{
+  "ApiBaseUrl": "https://localhost:7287/"
+}
 ```
 
-### Opción 3: Verificar Base de Datos
-- Asegurate que el usuario existe en la tabla `Usuarios`
-- Verifica que el `Rol` está correcto (exactamente "Inspector" o "Usuario")
-- Verifica que el usuario está `Activo`
+## Notas de seguridad
 
-## Información de Configuración
-
-**Endpoints:**
-- API Base: `https://localhost:7287/`
-- Login: `POST /api/auth/login`
-- Current User: `GET /api/auth/current-user`
-- Logout: `POST /api/auth/logout`
-
-**LocalStorage Keys:**
-- `isAuthenticated` - Boolean (true/false)
-- `userName` - String (nombre completo)
-- `userRole` - String ("Inspector" o "Usuario")
-- `userId` - Number (ID del usuario)
-
-## Stack de Autenticación
-
-```
-IniciarSesion.razor
-    ?
-AuthService.LoginAsync()
-    ? (Guarda en localStorage)
-localStorage: {isAuthenticated, userName, userRole, userId}
-    ?
-forceLoad: true (Reload de página)
-    ?
-MainLayout.OnInitializedAsync()
-    ? (Espera 100ms)
-AuthService.GetCurrentUserAsync()
-    ? (Lee de localStorage)
-isAuthenticated = true
-    ?
-MainLayout muestra "Sign Out"
-```
-
-## Próximas Acciones
-
-Si después de estos cambios sigue sin funcionar, reporta:
-1. Mensaje exacto en la consola del navegador
-2. Contenido de localStorage (DevTools ? Application)
-3. Estado esperado vs actual
+- No agregar tokens, contraseÃ±as ni datos personales a `localStorage`.
+- No registrar contraseÃ±as ni tokens en consola o en logs.
+- La clave JWT y las credenciales que hayan estado en el historial de Git deben
+  rotarse y el historial debe purgarse antes de publicar el repositorio.
+- El registro estÃ¡ cerrado al pÃºblico: solo un `Administrador` autenticado puede
+  crear cuentas con rol `Usuario`, `Inspector` o `Administrador`.
+- Antes de desplegar con el registro cerrado, verifique que exista al menos un
+  usuario con rol `Administrador` en la base de datos.
