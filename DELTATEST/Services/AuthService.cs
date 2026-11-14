@@ -8,6 +8,12 @@ namespace DELTATEST.Services
 {
     public class AuthService
     {
+        private const string MensajeCredencialesInvalidas =
+            "El usuario o la contraseña son incorrectos. Por favor, verifica tus credenciales e inténtalo nuevamente.";
+
+        private const string MensajeSolicitudInvalida =
+            "No se pudo procesar la solicitud. Verifica los datos e inténtalo nuevamente.";
+
         private readonly HttpClient _http;
         private readonly CookieAuthenticationStateProvider _authStateProvider;
 
@@ -45,13 +51,17 @@ namespace DELTATEST.Services
                     return (false, null, message, null);
                 }
 
-                if (response.StatusCode == HttpStatusCode.Unauthorized ||
-                    response.StatusCode == HttpStatusCode.BadRequest)
+                if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
-                    var message = await ReadErrorMessage(
-                        response,
-                        "Usuario o contraseña incorrectos");
-                    return (false, null, message, null);
+                    // No se muestra el texto del servidor: usuario inexistente,
+                    // contraseña incorrecta y usuario inactivo deben ser indistinguibles.
+                    return (false, null, MensajeCredencialesInvalidas, null);
+                }
+
+                if (response.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    // Nunca mostrar el JSON ni detalles técnicos del cuerpo de la respuesta.
+                    return (false, null, MensajeSolicitudInvalida, null);
                 }
 
                 return (false, null, "No se pudo iniciar sesión. Intente nuevamente.", null);

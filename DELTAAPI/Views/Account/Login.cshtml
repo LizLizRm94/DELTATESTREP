@@ -46,12 +46,16 @@
             });
 
             if (!res.ok) {
-                const txt = await res.text();
-                let msg = txt || 'Error de autenticación';
-                try {
-                    const parsed = JSON.parse(txt);
-                    msg = typeof parsed === 'string' ? parsed : (parsed.mensaje || msg);
-                } catch { }
+                let msg;
+                if (res.status === 401) {
+                    msg = 'El usuario o la contraseña son incorrectos. Por favor, verifica tus credenciales e inténtalo nuevamente.';
+                } else if (res.status === 400) {
+                    msg = 'No se pudo procesar la solicitud. Verifica los datos e inténtalo nuevamente.';
+                } else if (res.status === 429) {
+                    msg = 'Demasiados intentos. Intente nuevamente en un minuto.';
+                } else {
+                    msg = 'No se pudo iniciar sesión. Intente nuevamente.';
+                }
                 document.getElementById('message').textContent = msg;
                 return;
             }
@@ -59,7 +63,7 @@
             // La sesión se guarda en una cookie HttpOnly emitida por el servidor.
             window.location.href = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(clientUrl));
         } catch (err) {
-            document.getElementById('message').textContent = 'Error de red';
+            document.getElementById('message').textContent = 'No se pudo iniciar sesión. Intente nuevamente.';
         }
     });
 </script>

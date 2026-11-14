@@ -28,7 +28,8 @@ namespace DELTAAPI.Controllers
         private static readonly string DummyPasswordHash =
             BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString("N"), workFactor: 11);
 
-        private const string MensajeCredencialesInvalidas = "Usuario o contraseña incorrectos";
+        private const string MensajeCredencialesInvalidas =
+            "El usuario o la contraseña son incorrectos. Por favor, verifica tus credenciales e inténtalo nuevamente.";
 
         public AuthController(
             DeltaTestContext context,
