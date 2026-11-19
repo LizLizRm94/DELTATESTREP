@@ -23,7 +23,7 @@ else if (notFound)
 }
 else
 {
-    <div class="card shadow-sm p-4 mx-auto" style="max-width: 550px; border-radius: 15px;">
+    <div class="card shadow-sm p-4 mx-auto" style="width: 100%; max-width: 550px; border-radius: 15px;">
         <EditForm Model="usuario">
             <DataAnnotationsValidator />
             <ValidationSummary />
@@ -91,6 +91,18 @@ else
     </div>
 }
 
+<style>
+    @@media (max-width: 767.98px) {
+        h3 { font-size: 1.35rem !important; }
+        .card.p-4 { padding: 1rem !important; }
+        .btn { min-height: 44px; }
+    }
+
+    @@media (max-width: 575.98px) {
+        .col-12.mt-3.text-center .btn { width: 100%; }
+        .col-12.mt-3.text-center .ms-2 { margin-left: 0 !important; margin-top: .5rem; }
+    }
+</style>
 
 @code {
     [Parameter] public int IdUsuario { get; set; }

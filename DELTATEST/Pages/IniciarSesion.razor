@@ -6,24 +6,36 @@
 @inject DELTATEST.Services.AuthService AuthService
 
 <style>
-    /* Contenedor centrado */
+    /* Contenedor centrado (responsive: crece con el contenido) */
     .login-container {
         display: flex;
         align-items: center;
         justify-content: center;
-        height: 100vh;
+        min-height: 100vh;
+        padding: 1rem;
         background: #f8f9fa;
+        overflow-y: auto;
     }
 
-    /* Caja del login */
+    /* Caja del login: ancho fluido con máximo de diseño */
     .login-box {
-        width: 400px;
-        padding: 40px;
+        width: 100%;
+        max-width: 400px;
+        padding: clamp(1.25rem, 5vw, 2.5rem);
         border: 1px solid #e6e6e6;
         border-radius: 12px;
         background: #fff;
         text-align: center;
         box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    @@media (max-width: 575.98px) {
+        .login-container { padding: 0.75rem; align-items: flex-start; }
+        .login-box { border-radius: 10px; }
+        .login-box h1 { font-size: 1.5rem; }
+        .form-group { margin-bottom: 14px; }
+        .form-control { min-height: 44px; font-size: 16px; }
+        .btn-login { min-height: 46px; }
     }
 
     /* Botón personalizado */

@@ -9,6 +9,13 @@
 
 <button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
 
+<style>
+    @@media (max-width: 767.98px) {
+        h1 { font-size: 1.6rem; }
+        .btn { min-height: 44px; }
+    }
+</style>
+
 @code {
     private int currentCount = 0;
 

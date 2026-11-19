@@ -39,7 +39,7 @@
     else
     {
         <div class="table-responsive">
-            <table class="table table-hover table-bordered table-sm">
+            <table class="table table-hover table-bordered table-sm responsive-cards">
                 <thead class="table-warning text-dark">
                     <tr>
                         <th style="width: 8%">ID Eval.</th>
@@ -55,15 +55,15 @@
                     @foreach (var eval in evaluacionesFiltradas)
                     {
                         <tr>
-                            <td class="fw-bold text-warning">#@eval.IdEvaluacion</td>
-                            <td>@eval.NombreEvaluado</td>
-                            <td>@(eval.FechaEvaluacion?.ToString("dd/MM/yyyy") ?? "-")</td>
-                            <td>
+                            <td class="fw-bold text-warning" data-label="ID Eval.">#@eval.IdEvaluacion</td>
+                            <td data-label="Evaluado">@eval.NombreEvaluado</td>
+                            <td data-label="Fecha">@(eval.FechaEvaluacion?.ToString("dd/MM/yyyy") ?? "-")</td>
+                            <td data-label="Tipo">
                                 <span class="badge @(eval.TipoEvaluacion == "Teórica" ? "bg-info" : "bg-secondary")">
                                     @eval.TipoEvaluacion
                                 </span>
                             </td>
-                            <td class="text-center">
+                            <td class="text-center" data-label="Nota">
                                 @if (eval.Nota.HasValue)
                                 {
                                     <span class="badge @(eval.Nota >= 80 ? "bg-success" : "bg-danger") p-2">
@@ -75,8 +75,8 @@
                                     <span class="text-muted">-</span>
                                 }
                             </td>
-                            <td>@(eval.NombreAdministrador ?? "-")</td>
-                            <td class="text-center">
+                            <td data-label="Evaluador">@(eval.NombreAdministrador ?? "-")</td>
+                            <td class="text-center" data-label="Acciones">
                                 <button class="btn btn-sm btn-warning" 
                                         @onclick="() => VerReporte(eval.IdEvaluacion)"
                                         title="Ver reporte de evaluación con espacios para firmas">
@@ -115,6 +115,21 @@
     .btn-sm {
         padding: 0.4rem 0.6rem;
         font-size: 0.85rem;
+    }
+
+    @@media (max-width: 767.98px) {
+        h3.fw-bold { font-size: 1.25rem !important; }
+        .search-container { width: 100%; }
+        .btn-sm { min-height: 44px; }
+    }
+
+    @@media (max-width: 575.98px) {
+        .container-fluid > .d-flex.justify-content-between {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: .75rem;
+        }
+        .container-fluid > .d-flex.justify-content-between .btn { width: 100%; }
     }
 </style>
 

@@ -111,6 +111,25 @@
             footer a:hover {
                 text-decoration: underline;
             }
+
+    /* ---------- Responsivo ---------- */
+    @@media (max-width: 767.98px) {
+        header { padding: 30px 15px 25px; }
+        header h1 { font-size: 26px; }
+        header h2 { font-size: 20px; }
+        header p { font-size: 15px; }
+        section { padding: 25px 15px; }
+        section h3 { font-size: 18px; flex-wrap: wrap; }
+        .card { width: 100%; margin: 15px auto; padding: 15px; }
+        .card iframe { height: 300px !important; }
+        .btn { min-height: 44px; }
+        footer a { display: inline-block; margin: 4px 8px; }
+    }
+
+    @@media (max-width: 575.98px) {
+        .card iframe { height: 240px !important; }
+        footer .d-flex { flex-wrap: wrap; gap: .75rem !important; }
+    }
 </style>
 
 <header>

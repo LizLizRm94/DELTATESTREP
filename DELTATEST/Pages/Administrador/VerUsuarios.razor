@@ -23,7 +23,7 @@ else if (users == null || users.Count == 0)
 else
 {
     <div class="table-container">
-        <table class="table-evaluacion">
+        <table class="table-evaluacion responsive-cards">
        <thead>
               <tr>
      <th>Id</th>
@@ -40,14 +40,14 @@ else
    @foreach (var u in users)
       {
      <tr>
-          <td>@u.IdUsuario.ToString("D4")</td>
-         <td>@u.NombreCompleto</td>
-          <td>@u.Correo</td>
-         <td>@(u.FechaIngreso.HasValue ? u.FechaIngreso.Value.ToString("dd/MM/yyyy") : "-")</td>
-             <td>@u.PuestoActual</td>
-   <td>@u.PuestoSolicitado</td>
-        <td>@u.Estado</td>
-  <td class="acciones-cell">
+          <td data-label="Id">@u.IdUsuario.ToString("D4")</td>
+         <td data-label="Nombre">@u.NombreCompleto</td>
+          <td data-label="Correo">@u.Correo</td>
+         <td data-label="Fecha de ingreso">@(u.FechaIngreso.HasValue ? u.FechaIngreso.Value.ToString("dd/MM/yyyy") : "-")</td>
+             <td data-label="Puesto actual">@u.PuestoActual</td>
+   <td data-label="Puesto solicitado">@u.PuestoSolicitado</td>
+        <td data-label="Estado">@u.Estado</td>
+  <td class="acciones-cell" data-label="Acciones">
        <button class="btn-accion btn-ver" title="Ver" @onclick="() => ViewUser(u.IdUsuario)">
               <i class="bi bi-eye"></i>
            </button>

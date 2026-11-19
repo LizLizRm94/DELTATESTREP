@@ -42,7 +42,7 @@
         <!-- Mapa -->
         <div class="col-lg-6">
             <h2 class="fs-4 fw-bold text-uppercase mb-3 text-orange">En un mapa</h2>
-            <div class="map-placeholder border-0 rounded-4 overflow-hidden shadow-lg" style="height: 380px;">
+            <div class="map-placeholder border-0 rounded-4 overflow-hidden shadow-lg" style="height: clamp(240px, 50vw, 380px);">
                 <iframe src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d1912.605071556657!2d-68.12710365476991!3d-16.515485305086198!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x915f20899d18d543%3A0x66d47456cbbf3306!2sLaboratorios%20Delta%20S.A.!5e0!3m2!1ses-419!2sbo!4v1764778408433!5m2!1ses-419!2sbo"
                         width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
                 </iframe>
@@ -76,5 +76,20 @@
 
     .fw-medium {
         font-weight: 500;
+    }
+
+    /* ---------- Responsivo ---------- */
+    @@media (max-width: 767.98px) {
+        .container { padding-left: 1rem; padding-right: 1rem; }
+        h2.fs-4 { font-size: 1.25rem !important; }
+        .card { padding: 1.25rem !important; }
+        .address-details p { font-size: .9rem; overflow-wrap: anywhere; }
+        .map-placeholder { height: 280px !important; }
+    }
+
+    @@media (max-width: 575.98px) {
+        .d-flex.align-items-center { align-items: flex-start !important; }
+        .bi { flex-shrink: 0; }
+        .map-placeholder { height: 240px !important; }
     }
 </style>

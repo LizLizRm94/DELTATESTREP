@@ -5,7 +5,7 @@
 @inject AuthenticationStateProvider AuthStateProvider
 
 <div class="container-fluid d-flex justify-content-center align-items-center vh-100 bg-light">
-    <div class="p-5 w-75">
+    <div class="p-3 p-md-5 w-100">
    <h3 class="fw-bold text-center mb-2 text-dark">Panel de Control de Administrador</h3>
 
    <!-- Greeting -->
@@ -113,6 +113,17 @@
         width: 50%;
    height: 50%;
       object-fit: contain;
+    }
+    @@media (max-width: 767.98px) {
+        .dashboard-card .card-body { padding: 1rem !important; }
+        .icon-circle { width: 60px; height: 60px; }
+        .dashboard-card h5 { font-size: 1rem; }
+        .dashboard-card p { font-size: .8rem; }
+        .container-fluid.vh-100 { height: auto !important; min-height: 100vh; }
+    }
+
+    @@media (max-width: 575.98px) {
+        .dashboard-card .card-body { padding: .75rem !important; }
     }
 </style>
 

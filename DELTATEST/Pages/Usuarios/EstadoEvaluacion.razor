@@ -85,6 +85,18 @@ else
     </div>
 }
 
+<style>
+    .card .card-body.p-5 { padding: 1.25rem !important; }
+    .card p[style*="font-size: 72px"] { font-size: clamp(2.75rem, 14vw, 4.5rem) !important; }
+
+    @@media (max-width: 767.98px) {
+        h2 { font-size: 1.35rem !important; }
+        .card .card-body.p-5 { padding: 1rem !important; }
+        .btn-orange { width: 100%; max-width: 320px; }
+        .list-group-item { overflow-wrap: anywhere; }
+    }
+</style>
+
 @code {
     [Parameter]
     public int IdUsuario { get; set; }

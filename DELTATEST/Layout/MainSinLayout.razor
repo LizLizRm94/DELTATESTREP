@@ -13,13 +13,13 @@
         </a>
 
         <!-- Botón responsive -->
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler" type="button" @onclick="ToggleNavMenu"
+                aria-controls="navbarNav" aria-expanded="@(isNavOpen ? "true" : "false")" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
 
         <!-- Enlaces -->
-        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+        <div class="collapse navbar-collapse justify-content-end @(isNavOpen ? "show" : "")" id="navbarNav">
             <ul class="navbar-nav align-items-center">
 
                 <li class="nav-item">
@@ -94,9 +94,15 @@
     /* logo */
 
     .navbar-brand img.logo-img {
-        height: 45px;
+        height: clamp(34px, 6vw, 45px);
         width: auto;
         display: block;
+    }
+
+    @@media (max-width: 991.98px) {
+        .navbar-nav .nav-link { padding: .7rem 1rem !important; }
+        .navbar-nav .btn-orange,
+        .navbar-nav .btn-secondary { width: 100%; margin: .25rem 0 !important; }
     }
 
     .navbar {
@@ -116,6 +122,10 @@
 </style>
 
 @code {
+    private bool isNavOpen;
+
+    private void ToggleNavMenu() => isNavOpen = !isNavOpen;
+
     protected override void OnInitialized()
     {
         NavigationManager.LocationChanged += OnLocationChanged;
@@ -123,6 +133,7 @@
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
+        isNavOpen = false;
         StateHasChanged();
     }
 

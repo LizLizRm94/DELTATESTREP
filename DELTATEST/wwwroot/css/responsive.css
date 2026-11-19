@@ -1,0 +1,500 @@
+/* ==========================================================================
+   DELTATEST - Capa responsiva global
+   --------------------------------------------------------------------------
+   Adapta formularios, tablas y menús a tres rangos de pantalla:
+     - Escritorio : >= 992 px  (Bootstrap lg)
+     - Tableta    : 768 - 991 px
+     - Móvil      : < 768 px   (>= 576 px phablet, < 576 px móvil pequeño)
+
+   Esta hoja se carga DESPUÉS de app.css (ver wwwroot/index.html) y está
+   pensada para convivir con los estilos inline de cada componente Razor.
+   ========================================================================== */
+
+:root {
+    --dt-breakpoint-mobile: 576px;
+    --dt-breakpoint-tablet: 768px;
+    --dt-breakpoint-desktop: 992px;
+    --dt-touch-target: 44px;
+    --dt-scroll-shadow: 8px 0 8px -8px rgba(0, 0, 0, .25) inset;
+}
+
+/* --------------------------------------------------------------------------
+   1. Base fluida
+   -------------------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    overflow-x: hidden;
+}
+
+img,
+svg,
+video {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Evita que el contenido se salga del viewport en cualquier pantalla */
+.main-content,
+.main-body,
+.container-admin,
+.reportes-container,
+.content {
+    max-width: 100%;
+    overflow-x: clip;
+}
+
+/* --------------------------------------------------------------------------
+   2. Formularios responsivos
+   -------------------------------------------------------------------------- */
+
+/* Todo control ocupa como máximo el ancho de su contenedor */
+input,
+select,
+textarea,
+.form-control,
+.form-select,
+.input-group,
+.input-group-text {
+    max-width: 100%;
+}
+
+.form-control,
+.form-select,
+select.form-control {
+    width: 100%;
+}
+
+/* Contenedores de formulario con ancho fijo en el markup original:
+   se vuelven fluidos sin perder su ancho "de diseño" como máximo. */
+.login-container,
+.form-container,
+.form-box,
+.login-box,
+.card-form,
+.form-wrapper {
+    width: 100%;
+    max-width: 100%;
+}
+
+.login-box,
+.form-box,
+.card-form,
+.form-wrapper {
+    box-sizing: border-box;
+}
+
+/* Rejilla automática de campos: 1 columna en móvil, 2 en tableta,
+   3 en escritorio. Se usa añadiendo la clase "responsive-form-grid". */
+.responsive-form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: .75rem 1rem;
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    .responsive-form-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 992px) {
+    .responsive-form-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+/* Botones de acción de formularios */
+.btn-login,
+.btn-primary,
+.btn-secondary,
+.btn-orange,
+.btn-orange-outline,
+button.btn {
+    max-width: 100%;
+    white-space: normal;
+}
+
+/* --------------------------------------------------------------------------
+   3. Tablas responsivas
+   -------------------------------------------------------------------------- */
+
+/* Contenedores con scroll horizontal. Cubre .table-responsive de Bootstrap
+   y las clases propias .table-container / .tabla-evaluaciones del proyecto. */
+.table-responsive,
+.table-container,
+.tabla-evaluaciones,
+.table-wrapper,
+.table-scroll,
+.responsive-table {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+/* Solo forzamos ancho mínimo cuando la tabla tiene 5+ columnas;
+   así las tablas pequeñas (3 columnas) caben sin scroll en móvil. */
+.table-responsive > table:not(.responsive-cards):has(thead th:nth-child(5)),
+.table-container > table:not(.responsive-cards):has(thead th:nth-child(5)),
+.tabla-evaluaciones > table:not(.responsive-cards):has(thead th:nth-child(5)) {
+    min-width: 620px;
+}
+
+/* En escritorio no queremos scroll innecesario */
+@media (min-width: 992px) {
+    .table-responsive > table,
+    .table-container > table,
+    .tabla-evaluaciones > table {
+        min-width: 0;
+    }
+}
+
+/* Tablas tipo "tabla" del módulo de reportes */
+table.tabla {
+    width: 100%;
+}
+
+/* --- Patrón de tarjetas apiladas en móvil --------------------------------
+   Activar añadiendo la clase "responsive-cards" a la tabla y el atributo
+   data-label="Nombre de columna" a cada <td>. En pantallas grandes la tabla
+   se ve normal; en móvil cada fila pasa a ser una tarjeta legible.
+   -------------------------------------------------------------------------- */
+@media (max-width: 575.98px) {
+    table.responsive-cards,
+    table.responsive-cards tbody,
+    table.responsive-cards tr,
+    table.responsive-cards td {
+        display: block;
+        width: 100% !important;
+    }
+
+    table.responsive-cards thead {
+        display: none;
+    }
+
+    table.responsive-cards tr {
+        margin-bottom: .9rem;
+        padding: .6rem;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, .06);
+    }
+
+    table.responsive-cards td {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: .55rem .6rem;
+        border-bottom: 1px solid #f1f2f4;
+        text-align: left !important;
+        font-size: 13px;
+    }
+
+    table.responsive-cards td:last-child {
+        border-bottom: none;
+    }
+
+    table.responsive-cards td::before {
+        content: attr(data-label);
+        flex: 0 0 38%;
+        font-size: .7rem;
+        font-weight: 700;
+        letter-spacing: .3px;
+        text-transform: uppercase;
+        color: #6b7280;
+    }
+
+    table.responsive-cards td > * {
+        max-width: 60%;
+        text-align: right;
+    }
+
+    /* La celda de acciones puede tener varios botones: los mostramos en fila */
+    table.responsive-cards td.acciones-cell {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: .4rem;
+    }
+
+    table.responsive-cards td.acciones-cell > * {
+        max-width: none;
+        text-align: center;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   4. Menús / navegación
+   -------------------------------------------------------------------------- */
+
+.navbar {
+    padding: .4rem 1rem;
+}
+
+.navbar-brand {
+    margin-right: 0;
+}
+
+.navbar-brand img.logo-img {
+    height: 42px;
+    width: auto;
+}
+
+.navbar-toggler {
+    border-color: rgba(0, 0, 0, .18);
+    padding: .35rem .55rem;
+}
+
+.navbar-toggler:focus {
+    box-shadow: 0 0 0 .15rem rgba(245, 130, 32, .45);
+}
+
+/* Tableta y móvil: el menú desplegado ocupa todo el ancho y sus enlaces
+   y botones se apilan con área táctil cómoda. */
+@media (max-width: 991.98px) {
+    .navbar-collapse {
+        width: 100%;
+        margin-top: .35rem;
+        padding: .5rem .25rem .9rem;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 8px 22px rgba(0, 0, 0, .08);
+    }
+
+    .navbar-collapse .navbar-nav {
+        width: 100%;
+        align-items: stretch !important;
+    }
+
+    .navbar-collapse .nav-item,
+    .navbar-collapse .nav-link,
+    .navbar-collapse .btn-orange,
+    .navbar-collapse .btn-secondary {
+        display: block;
+        width: 100%;
+        margin: .2rem 0 !important;
+        text-align: left;
+    }
+
+    .navbar-collapse .nav-link {
+        padding: .7rem 1rem !important;
+        border-radius: 6px;
+    }
+
+    .navbar-collapse .nav-link:hover {
+        background: #fff4e8;
+    }
+
+    .navbar-collapse .btn-orange,
+    .navbar-collapse .btn-secondary {
+        padding: .7rem 1rem;
+        text-align: center;
+    }
+
+    .navbar-collapse .dropdown-menu {
+        position: static;
+        width: 100%;
+        border: none;
+        box-shadow: none;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .navbar-brand img.logo-img {
+        height: 34px;
+    }
+
+    .navbar > .container-fluid,
+    .navbar .container-fluid.px-4 {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+
+    /* Compensa el navbar fixed-top de MainSinLayout */
+    .main-body {
+        padding-top: 70px !important;
+    }
+
+    /* El pie de página ya usa col-md-4: en móvil queda una columna */
+    .footer {
+        padding: 1.5rem 1rem;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   5. Ajustes de legibilidad por rango
+   -------------------------------------------------------------------------- */
+
+/* Tableta */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    h1 {
+        font-size: 2rem;
+    }
+
+    h2 {
+        font-size: 1.65rem;
+    }
+
+    .table-evaluacion th,
+    .table-evaluacion td,
+    .tabla th,
+    .tabla td {
+        padding: 10px 8px;
+        font-size: 13px;
+    }
+}
+
+/* Móvil */
+@media (max-width: 767.98px) {
+    h1 {
+        font-size: 1.6rem;
+    }
+
+    h2 {
+        font-size: 1.4rem;
+    }
+
+    h3,
+    .titulo-form,
+    .titulo-reportes {
+        font-size: 1.25rem !important;
+    }
+
+    /* Campos táctiles y fuente de 16px evita el auto-zoom de iOS Safari */
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    select,
+    textarea,
+    .form-control,
+    .form-select {
+        font-size: 16px;
+        min-height: var(--dt-touch-target);
+    }
+
+    .form-label,
+    .form-group label,
+    label {
+        margin-top: .25rem;
+    }
+
+    button,
+    .btn,
+    .btn-login,
+    .btn-accion,
+    .btn-orange,
+    .btn-orange-outline {
+        min-height: var(--dt-touch-target);
+    }
+
+    /* Tablas: compactar en lugar de forzar columnas estrechas */
+    .table,
+    .table-evaluacion,
+    .tabla {
+        font-size: 12px;
+    }
+
+    .table th,
+    .table td,
+    .table-evaluacion th,
+    .table-evaluacion td,
+    .tabla th,
+    .tabla td {
+        padding: 8px 6px;
+    }
+
+    /* Las tarjetas del panel se apilan ya con col-12; suavizamos márgenes */
+    .dashboard-card {
+        margin-bottom: .5rem;
+    }
+
+    /* Mensajes y alertas ocupan todo el ancho */
+    .alerta,
+    .alert,
+    .validation-summary-errors {
+        width: 100%;
+    }
+}
+
+/* Móvil pequeño */
+@media (max-width: 575.98px) {
+    .container-fluid,
+    .container {
+        padding-left: .75rem;
+        padding-right: .75rem;
+    }
+
+    .card,
+    .card-body {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    /* Los formularios centrados (.mx-auto) necesitan separación del borde */
+    .card.mx-auto,
+    .form-box.mx-auto {
+        margin-left: .75rem !important;
+        margin-right: .75rem !important;
+    }
+
+    .btn-sm {
+        min-height: 38px;
+    }
+
+    /* Evita desbordamiento de textos largos (correos, nombres) */
+    td,
+    th,
+    .card-text,
+    p {
+        overflow-wrap: anywhere;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   6. Preferencias de movimiento reducido
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   7. Impresión (los reportes deben seguir viéndose completos)
+   -------------------------------------------------------------------------- */
+@media print {
+    .navbar,
+    .navbar-toggler,
+    .footer,
+    .btn,
+    button {
+        display: none !important;
+    }
+
+    .table-responsive,
+    .table-container,
+    .tabla-evaluaciones {
+        overflow: visible !important;
+    }
+
+    table {
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+}

@@ -66,6 +66,19 @@ else
             padding: 0;
         }
     }
+
+    @@media (max-width: 767.98px) {
+        .no-print h3 { font-size: 1.25rem !important; }
+        .no-print .btn { min-height: 44px; }
+        .reporte-contenido { padding: 1rem !important; margin: .5rem !important; }
+    }
+
+    @@media (max-width: 575.98px) {
+        .no-print.d-flex { flex-direction: column; align-items: flex-start !important; gap: .75rem; }
+        .no-print .d-flex.gap-2 { width: 100%; }
+        .no-print .d-flex.gap-2 .btn { flex: 1 1 0; }
+        .reporte-contenido { overflow-x: auto; }
+    }
 </style>
 
 @code {

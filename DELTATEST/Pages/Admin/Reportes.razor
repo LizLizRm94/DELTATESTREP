@@ -38,7 +38,7 @@
                 else
                 {
                     <div class="tabla-evaluaciones">
-                        <table class="tabla">
+                        <table class="tabla responsive-cards">
                             <thead>
                                 <tr>
                                     <th>ID</th>
@@ -53,10 +53,10 @@
                                 @foreach (var eval in evaluacionesPendientes)
                                 {
                                     <tr class="fila-evaluacion">
-                                        <td><strong>@eval.IdEvaluacion</strong></td>
-                                        <td>@eval.NombreEvaluado</td>
-                                        <td>@eval.FechaEvaluacion?.ToString("dd/MM/yyyy")</td>
-                                        <td>
+                                        <td data-label="ID"><strong>@eval.IdEvaluacion</strong></td>
+                                        <td data-label="Evaluado">@eval.NombreEvaluado</td>
+                                        <td data-label="Fecha">@eval.FechaEvaluacion?.ToString("dd/MM/yyyy")</td>
+                                        <td data-label="Tipo">
                                             @if (eval.TipoEvaluacion == true)
                                             {
                                                 <span class="badge badge-teorica">Teórica</span>
@@ -66,10 +66,10 @@
                                                 <span class="badge badge-practica">Práctica</span>
                                             }
                                         </td>
-                                        <td>
+                                        <td data-label="Estado">
                                             <span class="estado-pendiente">@eval.EstadoEvaluacion</span>
                                         </td>
-                                        <td>
+                                        <td data-label="Acciones">
                                             <button class="btn-accion btn-calificar" 
                                                     @onclick="() => IrACalificar(eval.IdEvaluacion)"
                                                     title="Calificar esta evaluación">
@@ -102,7 +102,7 @@
                 else
                 {
                     <div class="tabla-evaluaciones">
-                        <table class="tabla">
+                        <table class="tabla responsive-cards">
                             <thead>
                                 <tr>
                                     <th>ID</th>
@@ -119,10 +119,10 @@
                                 {
                                     var claseNota = eval.Nota >= 80 ? "nota-aprobado" : eval.Nota >= 51 ? "nota-regular" : "nota-reprobado";
                                     <tr class="fila-evaluacion">
-                                        <td><strong>@eval.IdEvaluacion</strong></td>
-                                        <td>@eval.NombreEvaluado</td>
-                                        <td>@eval.FechaEvaluacion?.ToString("dd/MM/yyyy")</td>
-                                        <td>
+                                        <td data-label="ID"><strong>@eval.IdEvaluacion</strong></td>
+                                        <td data-label="Evaluado">@eval.NombreEvaluado</td>
+                                        <td data-label="Fecha">@eval.FechaEvaluacion?.ToString("dd/MM/yyyy")</td>
+                                        <td data-label="Tipo">
                                             @if (eval.TipoEvaluacion == true)
                                             {
                                                 <span class="badge badge-teorica">Teórica</span>
@@ -132,15 +132,15 @@
                                                 <span class="badge badge-practica">Práctica</span>
                                             }
                                         </td>
-                                        <td>
+                                        <td data-label="Calificación">
                                             <span class="@claseNota">@eval.Nota?.ToString("F2") ?? "N/A")/100</span>
                                         </td>
-                                        <td>
+                                        <td data-label="Estado">
                                             <span class="@(eval.Nota >= 80 ? "estado-aprobado" : "estado-desaprobado")">
                                                 @(eval.Nota >= 80 ? "Aprobado" : "Desaprobado")
                                             </span>
                                         </td>
-                                        <td>
+                                        <td data-label="Acciones">
                                             <button class="btn-accion btn-reporte" 
                                                     @onclick="() => GenerarReporte(eval.IdEvaluacion)"
                                                     title="Generar reporte de esta evaluación">

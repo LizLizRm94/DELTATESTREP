@@ -21,35 +21,41 @@
     html, body {
         margin: 0;
         padding: 0;
-        height: 100%;
-        overflow: hidden;
+        min-height: 100%;
+        overflow-x: hidden;
     }
 
     .pantalla-evaluacion {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 1.5rem;
         text-align: center;
     }
 
     .titulo-evaluacion {
-        font-size: 36px;
-        margin-bottom: 50px;
+        font-size: clamp(1.35rem, 5vw, 2.25rem);
+        margin-bottom: 2rem;
         font-weight: bold;
         color: #333;
     }
 
     .contenedor-botones {
         display: flex;
+        flex-wrap: wrap;
         justify-content: center;
-        gap: 80px;
+        gap: 1.25rem;
+        width: 100%;
     }
 
     .btn-cuadrado {
-        width: 240px;
-        height: 100px;
-        font-size: 22px;
+        width: 100%;
+        max-width: 240px;
+        min-height: 100px;
+        height: auto;
+        font-size: clamp(1rem, 4vw, 1.375rem);
         font-weight: 600;
         color: white;
         background-color: #F98220;
@@ -71,5 +77,11 @@
 
     .footer {
         display: none !important;
+    }
+
+    @@media (max-width: 767.98px) {
+        .pantalla-evaluacion { padding: 1rem; }
+        .contenedor-botones { flex-direction: column; align-items: center; gap: .9rem; }
+        .btn-cuadrado { max-width: 100%; min-height: 72px; }
     }
 </style>

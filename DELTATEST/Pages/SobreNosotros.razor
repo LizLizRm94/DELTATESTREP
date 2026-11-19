@@ -199,6 +199,25 @@
             line-height: 1.7;
         }
 
+    /* ---------- Responsivo ---------- */
+    @@media (max-width: 767.98px) {
+        .intro, .mision { padding: 2rem 1rem; }
+        .section { padding: 2rem 1rem; }
+        .intro-card { width: 100%; padding: 1.25rem; }
+        .btn-principal { min-height: 44px; }
+        .que-hacemos .contenido,
+        .valores .contenido { flex-direction: column; gap: 1.25rem; }
+        .que-hacemos .texto,
+        .valores .texto { min-width: 100%; flex: 1 1 100%; }
+        .intro-image,
+        .valores .intro-image {
+            flex: 1 1 100%;
+            max-width: 100%;
+        }
+        .intro-image img,
+        .valores .intro-image img { max-width: 220px; }
+    }
+
 </style>
 
 @code {

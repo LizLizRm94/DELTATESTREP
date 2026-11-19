@@ -8,9 +8,16 @@
 @inject NavigationManager Navigation
 
 <style>
-    .form-container { display:flex; justify-content:center; align-items:center; height:100vh; }
-    .form-box { width:420px; padding:30px; border:1px solid #e6e6e6; border-radius:8px; }
-    .btn-primary { background-color:#e5a650; color:white; padding:10px; width:100%; border:none; border-radius:6px }
+    .form-container { display:flex; justify-content:center; align-items:center; min-height:100vh; padding:1rem; overflow-y:auto; }
+    .form-box { width:100%; max-width:420px; padding:clamp(1.25rem, 5vw, 1.875rem); border:1px solid #e6e6e6; border-radius:8px; }
+    .btn-primary { background-color:#e5a650; color:white; padding:10px; width:100%; min-height:44px; border:none; border-radius:6px }
+    .form-control { min-height:44px; }
+
+    @@media (max-width: 575.98px) {
+        .form-container { padding:0.75rem; align-items:flex-start; }
+        .form-box h2 { font-size:1.4rem; }
+        .form-control { font-size:16px; }
+    }
 </style>
 
     <div class="form-container">
