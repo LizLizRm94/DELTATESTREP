@@ -44,6 +44,7 @@ public partial class DeltaTestContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Evaluacion>().Property(e => e.DetallePracticoJson).HasColumnName("detalle_practico_json").HasColumnType("text");
         modelBuilder.Entity<Area>(entity =>
         {
             entity.HasKey(e => e.IdArea).HasName("PK__AREA__8A8C837B5453672E");
@@ -68,6 +69,24 @@ public partial class DeltaTestContext : DbContext
             entity.Property(e => e.EstadoConvocatoria)
                 .HasMaxLength(50)
                 .HasColumnName("estado_convocatoria");
+            entity.Property(e => e.Codigo).HasColumnName("codigo").HasMaxLength(60).HasDefaultValue("");
+            entity.Property(e => e.EntidadEmisora).HasColumnName("entidad_emisora").HasMaxLength(200).HasDefaultValue("");
+            entity.Property(e => e.Resumen).HasColumnName("resumen").HasMaxLength(500).HasDefaultValue("");
+            entity.Property(e => e.Descripcion).HasColumnName("descripcion").HasMaxLength(10000).HasDefaultValue("");
+            entity.Property(e => e.Objetivo).HasColumnName("objetivo").HasMaxLength(10000).HasDefaultValue("");
+            entity.Property(e => e.Participantes).HasColumnName("participantes").HasMaxLength(10000).HasDefaultValue("");
+            entity.Property(e => e.Requisitos).HasColumnName("requisitos").HasMaxLength(10000).HasDefaultValue("");
+            entity.Property(e => e.Modalidad).HasColumnName("modalidad").HasMaxLength(10000).HasDefaultValue("");
+            entity.Property(e => e.Cronograma).HasColumnName("cronograma").HasMaxLength(10000).HasDefaultValue("");
+            entity.Property(e => e.Instrucciones).HasColumnName("instrucciones").HasMaxLength(10000).HasDefaultValue("");
+            entity.Property(e => e.Lugar).HasColumnName("lugar").HasMaxLength(500).HasDefaultValue("");
+            entity.Property(e => e.Contacto).HasColumnName("contacto").HasMaxLength(500).HasDefaultValue("");
+            entity.Property(e => e.FechaCierre).HasColumnName("fecha_cierre");
+            entity.Property(e => e.CreadaUtc).HasColumnName("creada_utc").HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.CreadaPorUsuarioId).HasColumnName("creada_por_usuario_id");
+            entity.Property(e => e.Publicada).HasColumnName("publicada").HasDefaultValue(false);
+            entity.HasIndex(e => e.Codigo).IsUnique().HasFilter("codigo <> ''");
+            entity.HasIndex(e => new { e.Publicada, e.FechaConvocatoria, e.CreadaUtc });
             entity.Property(e => e.FechaConvocatoria).HasColumnName("fecha_convocatoria");
             entity.Property(e => e.NombreConvocatoria)
                 .HasMaxLength(255)
@@ -262,8 +281,9 @@ public partial class DeltaTestContext : DbContext
                 .HasColumnName("texto");
             entity.Property(e => e.TipoEvaluacion).HasColumnName("tipo_evaluacion");
             entity.Property(e => e.IdEvaluacion).HasColumnName("id_evaluacion");
+            entity.Property(e => e.PuntosObtenidos).HasColumnName("puntos_obtenidos");
             entity.Property(e => e.Opciones)
-                .HasColumnType("nvarchar(max)")
+                .HasColumnType("text")
                 .HasColumnName("opciones");
             entity.Property(e => e.RespuestaCorrectaIndex)
                 .HasColumnName("respuesta_correcta_index");

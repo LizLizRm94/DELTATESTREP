@@ -51,10 +51,20 @@
             <div class="resultado-seccion">
                 <h3>Resultado</h3>
                 <div class="nota-box @ObtenerClaseNota(evaluacion.Nota)">
-                    <div class="nota-numero">@((int)(evaluacion.Nota ?? 0)) / 100</div>
+                    <div class="nota-numero">@(evaluacion.Nota.HasValue ? $"{evaluacion.Nota:0.##} / 100" : "Pendiente")</div>
                     <div class="nota-estado">@ObtenerEstadoNota(evaluacion.Nota)</div>
                 </div>
             </div>
+
+            @if (evaluacion.TareasPracticas.Count > 0)
+            {
+                <h3>Detalle de la evaluación práctica</h3>
+                <div class="table-responsive"><table class="table table-bordered">
+                    <thead><tr><th>Tarea / instrumento</th><th>Resultado observado</th><th>Calificación / 10</th></tr></thead>
+                    <tbody>@foreach (var tarea in evaluacion.TareasPracticas)
+                    { <tr><td>@tarea.Descripcion<br />@tarea.Instrumento</td><td>@tarea.ResultadoObtenido</td><td>@tarea.Calificacion</td></tr> }</tbody>
+                </table></div>
+            }
 
             <!-- Recomendaciones -->
             <div class="recomendaciones-seccion">
@@ -78,9 +88,7 @@
             <div class="botones-container">
                 @if (evaluacion.Nota.HasValue && evaluacion.Nota < 80)
                 {
-                    <button class="btn btn-solicitar" @onclick="SolicitarRepetir">
-                        Solicitar Repetir Evaluación
-                    </button>
+                    <p>Para solicitar otra evaluación, contacte a su inspector o administrador.</p>
                 }
                 <button class="btn btn-volver" @onclick="VolverEvaluaciones">
                     Volver a Evaluaciones
@@ -436,23 +444,18 @@
     {
         if (!nota.HasValue) return "Sin calificación";
         if (nota >= 80) return "Excelente";
-        if (nota >= 51) return "Bueno";
+        if (nota >= 51) return "Reprobado (requiere 80 puntos)";
         return "Reprobado";
-    }
-
-    private void SolicitarRepetir()
-    {
-        // Navegar a la página para solicitar repetir evaluación
-        NavigationManager.NavigateTo("/admin/evaluaciones-teoricas");
     }
 
     private void VolverEvaluaciones()
     {
-        NavigationManager.NavigateTo($"/usuarios/evaluaciones/{evaluacion?.IdEvaluado ?? 1}");
+        if (evaluacion != null) NavigationManager.NavigateTo($"/usuarios/evaluaciones/{evaluacion.IdEvaluado}");
     }
 
     public class EvaluacionDetailDto
     {
+        public List<TareaDetalle> TareasPracticas { get; set; } = new();
         public int IdEvaluacion { get; set; }
         public int IdEvaluado { get; set; }
         public string? NombreEvaluado { get; set; }
@@ -463,6 +466,13 @@
         public string? EstadoEvaluacion { get; set; }
         public string? TipoEvaluacion { get; set; }
         public string? Recomendaciones { get; set; }
+    }
+    public class TareaDetalle
+    {
+        public string Descripcion { get; set; } = "";
+        public string? Instrumento { get; set; }
+        public string? ResultadoObtenido { get; set; }
+        public int? Calificacion { get; set; }
     }
 }
 

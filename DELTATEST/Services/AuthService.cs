@@ -106,19 +106,19 @@ namespace DELTATEST.Services
             }
         }
 
-        public async Task LogoutAsync()
+        public async Task<bool> LogoutAsync()
         {
             try
             {
-                await _http.PostAsync("api/auth/logout", null);
-            }
-            catch (Exception)
-            {
-                // Aunque falle la red, el estado local debe quedar anónimo.
-            }
-            finally
-            {
+                using var response = await _http.PostAsync("api/auth/logout", null);
+                if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.Unauthorized)
+                    return false;
                 await _authStateProvider.RefreshAsync();
+                return true;
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+            {
+                return false;
             }
         }
 

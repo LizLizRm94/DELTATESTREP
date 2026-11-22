@@ -24,16 +24,24 @@ namespace DELTAAPI.Controllers
             if (!User.CanAccessUser(idUsuario))
                 return Forbid();
 
-            var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.IdUsuario == idUsuario);
+            var usuario = await _context.Usuarios.AsNoTracking().FirstOrDefaultAsync(u => u.IdUsuario == idUsuario);
             if (usuario == null) return NotFound();
 
             var evaluaciones = await _context.Evaluacions
                 .Where(e => e.IdEvaluado == idUsuario)
-                .Include(e => e.IdAreaNavigation)
+                .AsNoTracking()
+                .Select(e => new Evaluacion
+                {
+                    IdEvaluacion = e.IdEvaluacion, IdEvaluado = e.IdEvaluado,
+                    IdAdministrador = e.IdAdministrador, IdArea = e.IdArea,
+                    FechaEvaluacion = e.FechaEvaluacion, Nota = e.Nota,
+                    EstadoEvaluacion = e.EstadoEvaluacion, TipoEvaluacion = e.TipoEvaluacion,
+                    Recomendaciones = e.Recomendaciones
+                })
                 .OrderByDescending(e => e.FechaEvaluacion)
                 .ToListAsync();
 
-            var notificaciones = await _context.Notificacions
+            var notificaciones = await _context.Notificacions.AsNoTracking()
                 .Where(n => n.IdUsuarioDestino == idUsuario)
                 .OrderByDescending(n => n.FechaEnvio)
                 .ToListAsync();

@@ -102,7 +102,7 @@
         try
         {
             evaluaciones = await Http.GetFromJsonAsync<List<EvaluacionDto>>(
-                $"https://localhost:7287/api/evaluaciones/usuario/{IdUsuario}"
+                $"api/evaluaciones/usuario/{IdUsuario}"
             ) ?? new();
         }
         catch (Exception ex)

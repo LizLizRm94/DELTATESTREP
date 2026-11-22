@@ -57,7 +57,7 @@ namespace DELTATEST.Services
             var fechaFormato = evaluacion.FechaEvaluacion?.ToString("dd/MM/yyyy") ?? "N/A";
             var tipoEvaluacion = EscapeHtml(evaluacion.TipoEvaluacion);
             var notaFormato = evaluacion.Nota.HasValue ? $"{evaluacion.Nota.Value:F2}" : "0.00";
-            var estado = ObtenerEstadoEvaluacion(evaluacion.Nota ?? 0);
+            var estado = evaluacion.Nota.HasValue ? ObtenerEstadoEvaluacion(evaluacion.Nota.Value) : "SIN CALIFICACIÓN";
             
             // Safe values with proper escaping
             var nombreEvaluado = EscapeHtml(evaluacion.NombreEvaluado);

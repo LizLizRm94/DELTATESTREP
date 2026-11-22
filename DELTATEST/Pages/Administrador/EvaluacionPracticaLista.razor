@@ -440,7 +440,7 @@ protected override async Task OnInitializedAsync()
         try
         {
     cargando = true;
-    usuarios = await Http.GetFromJsonAsync<List<UserViewModel>>("https://localhost:7287/api/usuarios");
+    usuarios = await Http.GetFromJsonAsync<List<UserViewModel>>("api/usuarios");
             // Filtrar solo usuarios con rol "Usuario" (excluir Administrador e Inspector)
             usuarios = usuarios?.Where(u => u.Rol == "Usuario").ToList() ?? new List<UserViewModel>();
   usuariosFiltrados = usuarios;

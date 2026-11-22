@@ -58,6 +58,7 @@
 
 <!-- CONTENIDO -->
 <div class="main-body">
+    @if (errorCierreSesion != null) { <div class="alert alert-danger" role="alert">@errorCierreSesion</div> }
     @Body
 </div>
 
@@ -122,6 +123,7 @@
 </style>
 
 @code {
+    private string? errorCierreSesion;
     private bool isNavOpen;
 
     private void ToggleNavMenu() => isNavOpen = !isNavOpen;
@@ -139,7 +141,12 @@
 
     private async Task HandleSignOut()
     {
-        await AuthService.LogoutAsync();
+        errorCierreSesion = null;
+        if (!await AuthService.LogoutAsync())
+        {
+            errorCierreSesion = "No se pudo cerrar la sesión. Compruebe la conexión e intente nuevamente.";
+            return;
+        }
         NavigationManager.NavigateTo("/", forceLoad: true);
     }
 

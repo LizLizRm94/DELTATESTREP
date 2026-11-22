@@ -42,7 +42,7 @@
   <!-- Menú desplegable de instrumentos -->
     <div class="instrumentos-section">
         <label class="label-instrumento">Seleccione el instrumento utilizado:</label>
-        <select class="select-instrumento" @bind="instrumentoSeleccionado">
+        <select class="select-instrumento" @bind="instrumentoSeleccionado" @bind:after="GuardarInstrumento">
           <option value="">-- Seleccionar instrumento --</option>
  <option value="Balanza Analítica Mettler Toledo MS204S/01">Balanza Analítica Mettler Toledo MS204S/01</option>
   <option value="Balanza Analítica Mettler Toledo MS204TS/00">Balanza Analítica Mettler Toledo MS204TS/00</option>
@@ -780,6 +780,11 @@ padding: 20px;
         }
     }
 
+    private void GuardarInstrumento()
+    {
+        if (modelo != null && indiceActual < modelo.Tareas.Count)
+            modelo.Tareas[indiceActual].Instrumento = instrumentoSeleccionado;
+    }
     private void CalificarTarea(int calificacion)
     {
 if (indiceActual < modelo?.Tareas?.Count)
@@ -819,9 +824,8 @@ var tareasSinCalificacion = modelo.Tareas
           }
 
    // Calcular puntuación total
-   var puntuacionTotal = modelo.Tareas
-            .Where(t => t.Calificacion.HasValue)
-       .Sum(t => t.Calificacion.Value);
+   var puntuacionTotal = modelo.Tareas.Count == 0 ? 0m
+       : modelo.Tareas.Average(t => (decimal)(t.Calificacion ?? 0)) * 10;
 
     puntuacionFinal = (int)puntuacionTotal;
 
@@ -833,6 +837,7 @@ var tareasSinCalificacion = modelo.Tareas
  {
     idTarea = t.IdTarea,
   descripcion = t.Descripcion,
+  instrumento = t.Instrumento,
   resultadoObtenido = t.ResultadoObtenido,
   completada = t.Completada,
       calificacion = t.Calificacion
@@ -843,7 +848,7 @@ var tareasSinCalificacion = modelo.Tareas
      .Select((t, i) => $"Tarea {i + 1}: {t.ResultadoObtenido}"))
  };
       var response = await Http.PostAsJsonAsync(
-      "https://localhost:7287/api/evaluaciones/crear-evaluacion-practica",
+      "api/evaluaciones/crear-evaluacion-practica",
       request
      );
 

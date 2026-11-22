@@ -1,0 +1,23 @@
+.convocatorias-carril {
+    display: flex;
+    gap: 1.25rem;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    padding: 1rem .25rem;
+    max-width: 1150px;
+    margin: auto;
+    text-align: left;
+}
+.convocatoria-tarjeta {
+    flex: 0 0 min(340px, 85vw);
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 1.25rem;
+    scroll-snap-align: start;
+    background: white;
+    overflow-wrap: anywhere;
+}
+.convocatoria-enlace { display: block; color: #444; text-decoration: none; }
+.convocatoria-enlace h4 { color: #b75100; }
+.convocatoria-enlace:hover strong { text-decoration: underline; }
+.convocatoria-enlace:focus-visible, .convocatorias-carril:focus-visible { outline: 3px solid #b75100; outline-offset: 4px; }

@@ -39,6 +39,10 @@ namespace DELTAAPI.Controllers
             return BadRequest(new { mensaje = "El ID del usuario es requerido" });
         }
 
+        if (request.Tareas == null || request.Tareas.Count == 0
+            || request.Tareas.Any(t => t == null || string.IsNullOrWhiteSpace(t.Descripcion) || t.Calificacion is null or < 0 or > 10))
+            return BadRequest(new { mensaje = "Ingrese tareas con descripción y calificación de 0 a 10." });
+
         try
         {
             var usuario = await _context.Usuarios.FindAsync(request.IdUsuario);
@@ -55,6 +59,7 @@ namespace DELTAAPI.Controllers
                 TipoEvaluacion = false,
                 EstadoEvaluacion = "Completada",
                 Nota = CalcularCalificacion(request.Tareas),
+                DetallePracticoJson = JsonSerializer.Serialize(request.Tareas),
                 Recomendaciones = request.Recomendaciones
             };
 
@@ -143,6 +148,7 @@ await _context.SaveChangesAsync();
                     NombreAdministrador = evaluacion.IdAdministradorNavigation?.NombreCompleto ?? "N/A",
                     evaluacion.FechaEvaluacion,
                     evaluacion.Nota,
+                    TareasPracticas = string.IsNullOrEmpty(evaluacion.DetallePracticoJson) ? new List<TareaRequest>() : JsonSerializer.Deserialize<List<TareaRequest>>(evaluacion.DetallePracticoJson),
                     evaluacion.EstadoEvaluacion,
                     TipoEvaluacion = evaluacion.TipoEvaluacion == true ? "Teórica" : "Práctica",
                     Recomendaciones = evaluacion.Recomendaciones ?? string.Empty
@@ -309,7 +315,7 @@ return BadRequest(new { mensaje = "El ID del usuario es requerido" });
         }
 
       // Validar que hay preguntas
-    if (request.Preguntas == null || request.Preguntas.Count == 0)
+    if (request.Preguntas == null || request.Preguntas.Count == 0 || request.Preguntas.Any(p => p == null || string.IsNullOrWhiteSpace(p.Texto) || p.Puntos < 0))
       {
       return BadRequest(new { mensaje = "Debe proporcionar al menos una pregunta" });
   }
@@ -326,7 +332,6 @@ TipoEvaluacion = true, // true = teórica
      };
 
   _context.Evaluacions.Add(evaluacion);
-     await _context.SaveChangesAsync();
 
   if (request.Preguntas != null && request.Preguntas.Count > 0)
     {
@@ -350,7 +355,7 @@ TipoEvaluacion = true, // true = teórica
    {
      Texto = preguntaDto.Texto,
    TipoEvaluacion = preguntaDto.TipoEvaluacion, // true=abierta, false=múltiple
-IdEvaluacion = evaluacion.IdEvaluacion,
+IdEvaluacionNavigation = evaluacion,
       Opciones = preguntaDto.Opciones, // Guardar opciones como JSON (ya serializado desde el cliente)
 RespuestaCorrectaIndex = respuestaCorrectaIndex,
 Puntos = preguntaDto.Puntos // Guardar puntos
@@ -710,6 +715,7 @@ public async Task<IActionResult> CalificarEvaluacion(int idEvaluacion, [FromBody
 
     public class TareaRequest
     {
+        public string? Instrumento { get; set; }
         public int IdTarea { get; set; }
    public string Descripcion { get; set; } = string.Empty;
     public string? ResultadoObtenido { get; set; }

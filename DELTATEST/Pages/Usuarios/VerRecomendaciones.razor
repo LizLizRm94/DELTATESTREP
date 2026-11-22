@@ -318,7 +318,7 @@ background: #e67e1a;
         try
         {
             evaluacion = await Http.GetFromJsonAsync<EvaluacionDetailDto>(
-           $"https://localhost:7287/api/evaluaciones/{IdEvaluacion}"
+           $"api/evaluaciones/{IdEvaluacion}"
           );
 
             if (evaluacion == null)
@@ -355,7 +355,7 @@ background: #e67e1a;
     {
         if (!nota.HasValue) return "Sin calificación";
         if (nota >= 80) return "Excelente";
-        if (nota >= 51) return "Bueno";
+        if (nota >= 51) return "Reprobado (requiere 80 puntos)";
         return "Reprobado";
     }
 

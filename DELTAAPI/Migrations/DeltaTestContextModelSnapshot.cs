@@ -55,14 +55,92 @@ namespace DELTAAPI.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("IdConvocatoria"));
 
+                    b.Property<string>("Codigo")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasDefaultValue("")
+                        .HasColumnName("codigo");
+
+                    b.Property<string>("Contacto")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasDefaultValue("")
+                        .HasColumnName("contacto");
+
+                    b.Property<int?>("CreadaPorUsuarioId")
+                        .HasColumnType("integer")
+                        .HasColumnName("creada_por_usuario_id");
+
+                    b.Property<DateTime>("CreadaUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("creada_utc")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("Cronograma")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)")
+                        .HasDefaultValue("")
+                        .HasColumnName("cronograma");
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)")
+                        .HasDefaultValue("")
+                        .HasColumnName("descripcion");
+
+                    b.Property<string>("EntidadEmisora")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasDefaultValue("")
+                        .HasColumnName("entidad_emisora");
+
                     b.Property<string>("EstadoConvocatoria")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
                         .HasColumnName("estado_convocatoria");
 
+                    b.Property<DateOnly?>("FechaCierre")
+                        .HasColumnType("date")
+                        .HasColumnName("fecha_cierre");
+
                     b.Property<DateOnly?>("FechaConvocatoria")
                         .HasColumnType("date")
                         .HasColumnName("fecha_convocatoria");
+
+                    b.Property<string>("Instrucciones")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)")
+                        .HasDefaultValue("")
+                        .HasColumnName("instrucciones");
+
+                    b.Property<string>("Lugar")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasDefaultValue("")
+                        .HasColumnName("lugar");
+
+                    b.Property<string>("Modalidad")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)")
+                        .HasDefaultValue("")
+                        .HasColumnName("modalidad");
 
                     b.Property<string>("NombreConvocatoria")
                         .IsRequired()
@@ -70,8 +148,52 @@ namespace DELTAAPI.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("nombre_convocatoria");
 
+                    b.Property<string>("Objetivo")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)")
+                        .HasDefaultValue("")
+                        .HasColumnName("objetivo");
+
+                    b.Property<string>("Participantes")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)")
+                        .HasDefaultValue("")
+                        .HasColumnName("participantes");
+
+                    b.Property<bool>("Publicada")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("publicada");
+
+                    b.Property<string>("Requisitos")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)")
+                        .HasDefaultValue("")
+                        .HasColumnName("requisitos");
+
+                    b.Property<string>("Resumen")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasDefaultValue("")
+                        .HasColumnName("resumen");
+
                     b.HasKey("IdConvocatoria")
                         .HasName("PK__CONVOCAT__2EAE64DB1B80B372");
+
+                    b.HasIndex("Codigo")
+                        .IsUnique()
+                        .HasFilter("codigo <> ''");
+
+                    b.HasIndex("Publicada", "FechaConvocatoria", "CreadaUtc");
 
                     b.ToTable("CONVOCATORIA", (string)null);
                 });
@@ -120,6 +242,10 @@ namespace DELTAAPI.Migrations
                         .HasColumnName("id_evaluacion");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("IdEvaluacion"));
+
+                    b.Property<string>("DetallePracticoJson")
+                        .HasColumnType("text")
+                        .HasColumnName("detalle_practico_json");
 
                     b.Property<string>("EstadoEvaluacion")
                         .HasMaxLength(50)
@@ -234,6 +360,10 @@ namespace DELTAAPI.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0)
                         .HasColumnName("puntos");
+
+                    b.Property<int?>("PuntosObtenidos")
+                        .HasColumnType("integer")
+                        .HasColumnName("puntos_obtenidos");
 
                     b.Property<int?>("RespuestaCorrectaIndex")
                         .HasColumnType("integer")

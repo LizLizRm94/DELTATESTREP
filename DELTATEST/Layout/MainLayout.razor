@@ -64,6 +64,7 @@
 
 <!-- CONTENIDO DE CADA PÁGINA -->
 <div class="main-content">
+    @if (errorCierreSesion != null) { <div class="alert alert-danger" role="alert">@errorCierreSesion</div> }
     @Body
 </div>
 
@@ -76,7 +77,7 @@
                 <ul class="list-unstyled">
                     <li><a href="/sobre-nosotros" class="footer-link"><i class="bi bi-building me-2"></i>Sobre Nosotros</a></li>
                     <li><a href="/contacto" class="footer-link"><i class="bi bi-envelope me-2"></i>Contacto</a></li>
-                    <li><a href="/convocatoria" class="footer-link"><i class="bi bi-file-earmark-text me-2"></i>Convocatoria</a></li>
+                    <li><a href="/#convocatoria" class="footer-link"><i class="bi bi-file-earmark-text me-2"></i>Convocatoria</a></li>
                 </ul>
             </div>
             <div class="col-md-4">
@@ -192,6 +193,7 @@
 </style>
 
 @code {
+    private string? errorCierreSesion;
     private bool isOnAuthPage;
     private bool isNavOpen;
 
@@ -219,7 +221,12 @@
 
     private async Task HandleSignOut()
     {
-        await AuthService.LogoutAsync();
+        errorCierreSesion = null;
+        if (!await AuthService.LogoutAsync())
+        {
+            errorCierreSesion = "No se pudo cerrar la sesión. Compruebe la conexión e intente nuevamente.";
+            return;
+        }
         NavigationManager.NavigateTo("/", forceLoad: true);
     }
 

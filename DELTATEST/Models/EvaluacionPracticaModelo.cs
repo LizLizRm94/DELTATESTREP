@@ -1,4 +1,4 @@
-namespace DELTATEST.Models;
+﻿namespace DELTATEST.Models;
 
 public class EvaluacionPracticaModelo
 {
@@ -11,6 +11,7 @@ public class EvaluacionPracticaModelo
 
 public class TareaPractica
 {
+    public string? Instrumento { get; set; }
     public int IdTarea { get; set; }
     public string Descripcion { get; set; } = string.Empty;
     public string? Instrucciones { get; set; }

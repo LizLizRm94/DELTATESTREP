@@ -144,7 +144,7 @@
         try
         {
             evaluaciones = await Http.GetFromJsonAsync<List<EvaluacionListDto>>(
-                "https://localhost:7287/api/evaluaciones"
+                "api/evaluaciones"
             ) ?? new();
 
             evaluacionesFiltradas = evaluaciones;

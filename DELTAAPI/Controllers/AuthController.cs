@@ -309,6 +309,7 @@ namespace DELTAAPI.Controllers
             return Ok(new { mensaje = "Logout exitoso" });
         }
 
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         [HttpGet("current-user")]
         [Authorize]
         public async Task<IActionResult> GetCurrentUser()

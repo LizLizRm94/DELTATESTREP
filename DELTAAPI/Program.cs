@@ -172,8 +172,12 @@ builder.Services.AddAuthentication(options =>
 
             // HU12: si la cuenta fue desactivada o eliminada, invalidar la cookie.
             var userIdValue = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (!int.TryParse(userIdValue, out var userId))
+            if (!int.TryParse(userIdValue, out var userId) || userId <= 0)
+            {
+                context.RejectPrincipal();
+                await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
                 return;
+            }
 
             var db = context.HttpContext.RequestServices.GetRequiredService<DeltaTestContext>();
             var usuario = await db.Usuarios

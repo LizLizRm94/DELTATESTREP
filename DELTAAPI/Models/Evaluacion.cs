@@ -15,6 +15,8 @@ public partial class Evaluacion
 
     public DateOnly? FechaEvaluacion { get; set; }
 
+    public string? DetallePracticoJson { get; set; }
+
     public decimal? Nota { get; set; }
 
     public string? EstadoEvaluacion { get; set; }

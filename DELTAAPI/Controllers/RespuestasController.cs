@@ -24,7 +24,7 @@ namespace DELTAAPI.Controllers
      [HttpPost("guardar")]
    public async Task<IActionResult> GuardarRespuestas([FromBody] GuardarRespuestasRequest request)
         {
-            if (request == null || request.IdEvaluacion <= 0 || request.Respuestas == null)
+            if (request == null || request.IdEvaluacion <= 0 || request.Respuestas == null || request.Respuestas.Count == 0)
        {
          return BadRequest(new { mensaje = "El ID de la evaluación es requerido" });
      }
@@ -48,6 +48,10 @@ namespace DELTAAPI.Controllers
             if (evaluacion.EstadoEvaluacion is "Aprobada" or "Reprobada" or "Calificado")
                 return Conflict(new { mensaje = "La evaluación ya fue calificada y no admite cambios." });
 
+            if (request.Respuestas.Select(r => r.IdPregunta).Distinct().Count() != request.Respuestas.Count
+                || request.Respuestas.Any(r => string.IsNullOrWhiteSpace(r.TextoRespuesta)))
+                return BadRequest(new { mensaje = "Responda cada pregunta una sola vez y sin respuestas vacías." });
+
             var preguntasValidas = await _context.Preguntas
                 .Where(p => p.IdEvaluacion == request.IdEvaluacion)
                 .Select(p => p.IdPregunta)
@@ -64,7 +68,7 @@ namespace DELTAAPI.Controllers
       if (respuestasAnteriores.Count > 0)
      {
           _context.Respuestas.RemoveRange(respuestasAnteriores);
-       await _context.SaveChangesAsync();
+       // Guardar el reemplazo junto con las nuevas respuestas.
        }
 
             // Guardar las nuevas respuestas
@@ -83,7 +87,7 @@ namespace DELTAAPI.Controllers
 _context.Respuestas.Add(respuesta);
       }
 
-        await _context.SaveChangesAsync();
+        // Guardar el reemplazo junto con las nuevas respuestas.
      }
 
  // Actualizar estado de la evaluación a "Respondida"

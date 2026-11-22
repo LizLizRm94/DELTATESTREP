@@ -59,6 +59,10 @@ namespace DELTAAPI.Controllers
                 if (evaluacion.EstadoEvaluacion is "Aprobada" or "Reprobada" or "Calificado")
                     return Conflict(new { mensaje = "La evaluación ya fue calificada y no admite cambios." });
 
+                if (request.Respuestas.Select(r => r.IdPregunta).Distinct().Count() != request.Respuestas.Count
+                    || request.Respuestas.Any(r => string.IsNullOrWhiteSpace(r.TextoRespuesta)))
+                    return BadRequest(new { mensaje = "Responda cada pregunta una sola vez y sin respuestas vacías." });
+
                 // Solo se aceptan preguntas que pertenezcan a esta evaluación.
                 var preguntasValidas = await _context.Preguntas
                     .Where(p => p.IdEvaluacion == request.IdEvaluacion)
@@ -446,7 +450,7 @@ namespace DELTAAPI.Controllers
                     var respuesta = evaluacion.Respuestas.FirstOrDefault(r => r.IdPregunta == pregunta.IdPregunta);
                     var respuestaTexto = respuesta?.TextoRespuesta ?? "Sin respuesta";
 
-                    _logger.LogInformation($"Pregunta ID {pregunta.IdPregunta}: {pregunta.Texto}, Respuesta: {respuestaTexto}, Puntos: {pregunta.Puntos}");
+
 
                     var preguntaObj = new
                     {
@@ -456,7 +460,8 @@ namespace DELTAAPI.Controllers
                         opciones = pregunta.Opciones,
                         respuestaCorrectaIndex = pregunta.RespuestaCorrectaIndex,
                         respuesta = respuestaTexto,
-                        puntos = pregunta.Puntos
+                        puntos = pregunta.Puntos,
+                        puntosObtenidos = pregunta.PuntosObtenidos
                     };
 
                     preguntasConRespuestas.Add(preguntaObj);
@@ -522,12 +527,26 @@ namespace DELTAAPI.Controllers
                 if (request.PreguntasConPuntos.Any(p => !idsValidos.Contains(p.IdPregunta)))
                     return BadRequest(new { mensaje = "Una o más preguntas no pertenecen a la evaluación." });
 
+                if (request.PreguntasConPuntos.Select(p => p.IdPregunta).Distinct().Count() != request.PreguntasConPuntos.Count)
+                    return BadRequest(new { mensaje = "No repita preguntas al calificar." });
+
+                if (request.PreguntasConPuntos.Count != idsValidos.Count)
+                    return BadRequest(new { mensaje = "Al calificar por pregunta, incluya todas las preguntas." });
+                var maximo = await _context.Preguntas.Where(p => p.IdEvaluacion == idEvaluacion).SumAsync(p => p.Puntos);
+                if (maximo <= 0)
+                    return BadRequest(new { mensaje = "Configure puntajes máximos positivos antes de calificar por pregunta." });
+                var calculada = Math.Round((decimal)request.PreguntasConPuntos.Sum(p => (long)p.Puntos) * 100 / maximo, 2);
+                if (request.Nota != calculada)
+                    return BadRequest(new { mensaje = "La nota total no coincide con los puntos obtenidos." });
+
                 foreach (var preguntaRequest in request.PreguntasConPuntos)
                 {
                     var pregunta = await _context.Preguntas.FindAsync(preguntaRequest.IdPregunta);
                     if (pregunta != null)
                     {
-                        pregunta.Puntos = preguntaRequest.Puntos;
+                        if (preguntaRequest.Puntos > pregunta.Puntos)
+                            return BadRequest(new { mensaje = "El puntaje obtenido no puede superar el máximo de la pregunta." });
+                        pregunta.PuntosObtenidos = preguntaRequest.Puntos;
                         _context.Preguntas.Update(pregunta);
                     }
                 }

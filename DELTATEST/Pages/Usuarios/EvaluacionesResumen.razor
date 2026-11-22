@@ -8,6 +8,14 @@
 
 <h2 class="text-center text-orange text-uppercase mb-4">Resumen de Evaluaciones</h2>
 
+@if (cargando) { <p role="status">Cargando evaluaciones...</p> }
+else if (errorCarga != null)
+{
+    <div class="alert alert-danger" role="alert">@errorCarga</div>
+    <button class="btn btn-warning" @onclick="CargarEvaluaciones">Reintentar</button>
+}
+else
+{
 <div class="row">
     <div class="col-md-6">
         <h4 class="text-orange text-center mb-3">Evaluaciones Prácticas</h4>
@@ -102,6 +110,7 @@
     </div>
 </div>
 
+}
 <style>
     @@media (max-width: 767.98px) {
         h2 { font-size: 1.35rem !important; }
@@ -123,6 +132,7 @@
     private List<EvaluacionPractica>? evaluacionesPracticas;
     private List<EvaluacionTeoricaResumen>? evaluacionesTeorica;
     private bool cargando = true;
+    private string? errorCarga;
 
     protected override async Task OnInitializedAsync()
     {
@@ -135,62 +145,24 @@
         {
             cargando = true;
 
-            // Obtener evaluaciones prácticas
+            errorCarga = null;
             try
             {
-                var responsePractica = await Http.GetAsync($"api/evaluaciones/usuario/{IdUsuario}");
-                if (responsePractica.IsSuccessStatusCode)
+                using var response = await Http.GetAsync($"api/evaluaciones/usuario/{IdUsuario}");
+                if (!response.IsSuccessStatusCode)
                 {
-                    var todasLasEvaluaciones = await responsePractica.Content.ReadFromJsonAsync<List<EvaluacionPracticaDto>>();
-                    // Filtrar solo las evaluaciones prácticas
-                    evaluacionesPracticas = todasLasEvaluaciones?
-                        .Where(e => e.TipoEvaluacion == "Práctica")
-                        .Select(e => new EvaluacionPractica
-                        {
-                            IdEvaluacion = e.IdEvaluacion,
-                            FechaEvaluacion = e.FechaEvaluacion,
-                            NotaPractica = e.Nota
-                        })
-                        .ToList() ?? new List<EvaluacionPractica>();
+                    errorCarga = response.StatusCode == System.Net.HttpStatusCode.Unauthorized
+                        ? "La sesión ha expirado. Inicie sesión nuevamente."
+                        : "No se pudieron cargar las evaluaciones. Compruebe sus permisos y conexión.";
+                    return;
                 }
-                else
-                {
-                    evaluacionesPracticas = new List<EvaluacionPractica>();
-                }
+                var todas = await response.Content.ReadFromJsonAsync<List<EvaluacionPracticaDto>>() ?? new();
+                evaluacionesPracticas = todas.Where(e => e.TipoEvaluacion == "Práctica").Select(e => new EvaluacionPractica { IdEvaluacion=e.IdEvaluacion, FechaEvaluacion=e.FechaEvaluacion, NotaPractica=e.Nota }).ToList();
+                evaluacionesTeorica = todas.Where(e => e.TipoEvaluacion == "Teórica").Select(e => new EvaluacionTeoricaResumen { IdEvaluacion=e.IdEvaluacion, FechaEvaluacion=e.FechaEvaluacion, Nota=e.Nota, EstadoEvaluacion=e.EstadoEvaluacion }).ToList();
             }
-            catch (Exception ex)
-            {
-                evaluacionesPracticas = new List<EvaluacionPractica>();
-            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+            { errorCarga = "No se pudieron cargar las evaluaciones. Intente nuevamente."; }
 
-            // Obtener evaluaciones teóricas
-            try
-            {
-                var responseTeoria = await Http.GetAsync($"api/evaluaciones/usuario/{IdUsuario}");
-                if (responseTeoria.IsSuccessStatusCode)
-                {
-                    var todasLasEvaluaciones = await responseTeoria.Content.ReadFromJsonAsync<List<EvaluacionPracticaDto>>();
-                    // Filtrar solo las evaluaciones teóricas
-                    evaluacionesTeorica = todasLasEvaluaciones?
-                        .Where(e => e.TipoEvaluacion == "Teórica")
-                        .Select(e => new EvaluacionTeoricaResumen
-                        {
-                            IdEvaluacion = e.IdEvaluacion,
-                            FechaEvaluacion = e.FechaEvaluacion,
-                            Nota = e.Nota,
-                            EstadoEvaluacion = e.EstadoEvaluacion
-                        })
-                        .ToList() ?? new List<EvaluacionTeoricaResumen>();
-                }
-                else
-                {
-                    evaluacionesTeorica = new List<EvaluacionTeoricaResumen>();
-                }
-            }
-            catch (Exception ex)
-            {
-                evaluacionesTeorica = new List<EvaluacionTeoricaResumen>();
-            }
         }
         finally
         {

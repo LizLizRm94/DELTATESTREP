@@ -1,0 +1,54 @@
+@using Delta.Contracts
+@inject HttpClient Http
+
+@if (cargando)
+{
+    <p role="status">Cargando convocatorias...</p>
+}
+else if (error != null)
+{
+    <p role="alert">@error</p>
+    <button type="button" class="btn btn-outline-secondary" @onclick="Cargar">Reintentar</button>
+}
+else if (filas.Count == 0)
+{
+    <p>No hay convocatorias publicadas por el momento.</p>
+}
+else
+{
+    <p>Desplázate horizontalmente para consultar las últimas publicaciones.</p>
+    <div class="convocatorias-carril" tabindex="0" role="region" aria-label="Últimas tres convocatorias">
+        @foreach (var fila in filas)
+        {
+            <article class="convocatoria-tarjeta">
+                <a class="convocatoria-enlace" href="@Pdf(fila.IdConvocatoria)" target="_blank" rel="noopener noreferrer">
+                    <span class="badge bg-secondary">@fila.EstadoConvocatoria</span>
+                    <p class="mt-2">@fila.Codigo</p>
+                    <h4>@fila.NombreConvocatoria</h4>
+                    <p>@fila.Resumen</p>
+                    <p>Publicación: @fila.FechaConvocatoria?.ToString("dd/MM/yyyy")<br />
+                        Fecha límite: @fila.FechaCierre?.ToString("dd/MM/yyyy")</p>
+                    <strong>Ver PDF completo (nueva pestaña)</strong>
+                </a>
+                <a class="btn btn-outline-secondary mt-3" href="@(Pdf(fila.IdConvocatoria) + "?descargar=true")">Descargar PDF</a>
+            </article>
+        }
+    </div>
+}
+
+@code {
+    private bool cargando = true;
+    private string? error;
+    private List<ConvocatoriaResumen> filas = new();
+    private string Pdf(int id) => new Uri(Http.BaseAddress!, $"api/convocatorias/{id}/pdf").AbsoluteUri;
+    protected override Task OnInitializedAsync() => Cargar();
+    private async Task Cargar()
+    {
+        cargando = true;
+        error = null;
+        try { filas = await Http.GetFromJsonAsync<List<ConvocatoriaResumen>>("api/convocatorias") ?? new(); }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+        { error = "No se pudieron cargar las convocatorias. Intente nuevamente."; }
+        finally { cargando = false; }
+    }
+}

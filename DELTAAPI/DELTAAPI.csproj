@@ -25,4 +25,7 @@
 
   <ProjectExtensions><VisualStudio><UserProperties appsettings_1development_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>
 
+  <ItemGroup>
+    <Compile Include="..\Contracts\ConvocatoriaForm.cs" Link="Contracts\ConvocatoriaForm.cs" />
+  </ItemGroup>
 </Project>

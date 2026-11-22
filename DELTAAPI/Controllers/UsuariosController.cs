@@ -86,7 +86,11 @@ IdUsuario = u.IdUsuario,
             var user = await _context.Usuarios.FindAsync(id);
             if (user == null) return NotFound();
             _context.Usuarios.Remove(user);
-            await _context.SaveChangesAsync();
+            try { await _context.SaveChangesAsync(); }
+            catch (DbUpdateException)
+            {
+                return Conflict("La cuenta tiene registros relacionados. Desactívela para conservar su historial.");
+            }
             return NoContent();
         }
 
@@ -109,6 +113,12 @@ IdUsuario = u.IdUsuario,
         public async Task<IActionResult> Update(int id, [FromBody] UpdateUsuarioDto dto)
         {
             if (dto == null) return BadRequest("Datos inválidos.");
+            dto.Correo = dto.Correo?.Trim();
+            dto.Ci = dto.Ci?.Trim();
+            if (!string.IsNullOrWhiteSpace(dto.Correo) && !System.Net.Mail.MailAddress.TryCreate(dto.Correo, out _))
+                return BadRequest("Correo no válido.");
+            if (!string.IsNullOrWhiteSpace(dto.FechaIngreso) && !DateOnly.TryParse(dto.FechaIngreso, out _))
+                return BadRequest("Fecha de ingreso no válida.");
 
             var user = await _context.Usuarios.FindAsync(id);
             if (user == null) return NotFound("Usuario no encontrado.");
@@ -170,7 +180,7 @@ IdUsuario = u.IdUsuario,
             // Optional: validate uniqueness of correo/ci if they changed
             if (!string.IsNullOrWhiteSpace(dto.Correo) && dto.Correo != user.Correo)
             {
-                var exists = await _context.Usuarios.AnyAsync(u => u.Correo == dto.Correo && u.IdUsuario != id);
+                var exists = await _context.Usuarios.AnyAsync(u => u.Correo != null && u.Correo.ToLower() == dto.Correo.ToLower() && u.IdUsuario != id);
                 if (exists) return BadRequest("Correo ya registrado por otro usuario.");
                 user.Correo = dto.Correo;
             }
