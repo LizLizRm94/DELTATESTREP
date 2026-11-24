@@ -1,202 +1,87 @@
 ﻿@page "/editarUsuario/{IdUsuario:int}"
 @attribute [Authorize(Roles = "Administrador,Inspector")]
+@layout MainSinLayout
 @inject HttpClient Http
 @inject NavigationManager Navigation
-@layout MainSinLayout
-@inject IJSRuntime Js
 
-<h3 class="mb-4 text-center fw-bold">Editar Usuario</h3>
-
-@if (isLoading)
+<div class="delta-screen delta-screen-editarusuario" data-page="editarusuario">
+<h1 class="h3 mb-4 text-center">Editar usuario</h1>
+@if (isLoading) { <p role="status" class="text-center">Cargando usuario...</p> }
+else if (errorCarga != null)
 {
-    <div class="text-center py-5">
-        <div class="spinner-border text-warning" role="status">
-            <span class="visually-hidden">Cargando...</span>
-        </div>
-    </div>
-}
-else if (notFound)
-{
-    <div class="alert alert-warning text-center">
-        Usuario no encontrado.
-    </div>
+    <div class="alert alert-danger" role="alert">@errorCarga</div>
+    <button type="button" class="btn btn-secondary" @onclick="Cargar">Reintentar</button>
 }
 else
 {
-    <div class="card shadow-sm p-4 mx-auto" style="width: 100%; max-width: 550px; border-radius: 15px;">
+    <div class="card p-4 mx-auto" style="max-width:600px">
+        @if (mensaje != null) { <div class="alert @(guardado ? "alert-success" : "alert-danger")" role="status">@mensaje</div> }
         <EditForm Model="usuario" OnValidSubmit="Guardar">
             <DataAnnotationsValidator />
             <ValidationSummary />
-
-            <div class="row">
-                <div class="col-12 mb-3">
-                    <label class="fw-semibold">Nombre Completo</label>
-                    <InputText class="form-control" @bind-Value="usuario.NombreCompleto" />
+            <fieldset disabled="@(guardando || guardado)">
+                <div class="row">
+                    <div class="col-12 mb-3"><label for="nombre">Nombre completo</label><InputText id="nombre" class="form-control" @bind-Value="usuario.NombreCompleto" maxlength="255" /><ValidationMessage For="@(() => usuario.NombreCompleto)" /></div>
+                    <div class="col-12 mb-3"><label for="correo">Correo</label><InputText id="correo" type="email" class="form-control" @bind-Value="usuario.Correo" maxlength="255" autocomplete="email" /><ValidationMessage For="@(() => usuario.Correo)" /></div>
+                    <div class="col-md-6 mb-3"><label for="ci">CI</label><InputText id="ci" class="form-control" @bind-Value="usuario.Ci" maxlength="50" /><ValidationMessage For="@(() => usuario.Ci)" /></div>
+                    <div class="col-md-6 mb-3"><label for="telefono">Teléfono</label><InputText id="telefono" type="tel" class="form-control" @bind-Value="usuario.Telefono" maxlength="50" autocomplete="tel" /><ValidationMessage For="@(() => usuario.Telefono)" /></div>
+                    <div class="col-12 mb-3"><label for="fechaIngreso">Fecha de ingreso</label><InputDate id="fechaIngreso" class="form-control" @bind-Value="usuario.FechaIngreso" /></div>
+                    <div class="col-12"><VinculacionLaboralFields @bind-Tipo="usuario.TipoEvaluado" @bind-PuestoActual="usuario.PuestoActual" @bind-PuestoARotar="usuario.PuestoARotar" @bind-PuestoSolicitado="usuario.PuestoSolicitado" Disabled="@(guardando || guardado)" /></div>
+                    <div class="col-md-6 mb-3">
+                        <span class="fw-semibold">Estado de la cuenta</span>
+                        <div class="form-check form-switch mt-2"><InputCheckbox id="cuentaActiva" class="form-check-input" role="switch" @bind-Value="usuario.Activo" disabled="@administradorPropio" /><label class="form-check-label" for="cuentaActiva">Cuenta activa</label></div>
+                        <p class="small text-muted">@(usuario.Activo ? "Puede iniciar sesión." : "El acceso estará deshabilitado.")</p>
+                    </div>
+                    <div class="col-md-6 mb-3"><label for="rol">Rol</label><InputSelect id="rol" class="form-select" @bind-Value="usuario.Rol" disabled="@administradorPropio"><option value="">Seleccione un rol</option><option value="Usuario">Usuario</option><option value="Inspector">Inspector</option>@if (esAdministrador) { <option value="Administrador">Administrador</option> }</InputSelect><ValidationMessage For="@(() => usuario.Rol)" /></div>
                 </div>
-
-                <div class="col-12 mb-3">
-                    <label class="fw-semibold">Correo</label>
-                    <InputText class="form-control" @bind-Value="usuario.Correo" />
-                </div>
-
-                <div class="col-md-6 mb-3">
-                    <label class="fw-semibold">CI</label>
-                    <InputText class="form-control" @bind-Value="usuario.Ci" />
-                </div>
-
-                <div class="col-md-6 mb-3">
-                    <label class="fw-semibold">Teléfono</label>
-                    <InputText class="form-control" @bind-Value="usuario.Telefono" />
-                </div>
-
-                <div class="col-12 mb-3">
-                    <label class="fw-semibold">Fecha de ingreso</label>
-                    <InputDate class="form-control" @bind-Value="usuario.FechaIngreso" />
-                </div>
-
-                <div class="col-12 mb-3">
-                    <label class="fw-semibold">Puesto Actual</label>
-                    <InputText class="form-control" @bind-Value="usuario.PuestoActual" />
-                </div>
-
-                <div class="col-12 mb-3">
-                    <label class="fw-semibold">Puesto Solicitado</label>
-                    <InputText class="form-control" @bind-Value="usuario.PuestoSolicitado" />
-                </div>
-
-                <div class="col-12 mb-3">
-                    <label class="fw-semibold">Puesto a Rotar</label>
-                    <InputText class="form-control" @bind-Value="usuario.PuestoARotar" />
-                </div>
-
-                <div class="col-md-6 mb-3">
-                    <label class="fw-semibold">Estado</label>
-                    <InputText class="form-control" @bind-Value="usuario.Estado" />
-                </div>
-
-                <div class="col-md-6 mb-3">
-                    <label class="fw-semibold">Rol</label>
-                    <InputSelect @bind-Value="usuario.Rol" class="form-control">
-                        <option value="">Seleccionar</option>
-                        <option value="Inspector">Inspector</option>
-                        <option value="Usuario">Usuario</option>
-                    </InputSelect>
-                </div>
-
-                <div class="col-12 mt-3 text-center">
-                    <button class="btn btn-primary px-4" type="submit">Guardar cambios</button>
-                    <button type="button" class="btn btn-secondary ms-2 px-4" @onclick="Cancelar">Cancelar</button>
-                </div>
-            </div>
+                @if (administradorPropio) { <p class="small text-muted">No puede desactivar su propia cuenta ni quitarse el rol de administrador.</p> }
+                <div class="d-flex gap-2 flex-wrap"><button class="btn btn-primary" type="submit">@(guardando ? "Guardando..." : "Guardar cambios")</button><button class="btn btn-secondary" type="button" @onclick="Volver">Cancelar</button></div>
+            </fieldset>
         </EditForm>
+        @if (guardado) { <a class="btn btn-secondary mt-3" href="/verUsuarios">Volver a usuarios</a> }
     </div>
 }
-
-<style>
-    @@media (max-width: 767.98px) {
-        h3 { font-size: 1.35rem !important; }
-        .card.p-4 { padding: 1rem !important; }
-        .btn { min-height: 44px; }
-    }
-
-    @@media (max-width: 575.98px) {
-        .col-12.mt-3.text-center .btn { width: 100%; }
-        .col-12.mt-3.text-center .ms-2 { margin-left: 0 !important; margin-top: .5rem; }
-    }
-</style>
-
+</div>
 @code {
     [Parameter] public int IdUsuario { get; set; }
-
-    private bool isLoading = true;
-    private bool notFound = false;
-
+    [CascadingParameter] private Task<AuthenticationState> EstadoAutenticacion { get; set; } = default!;
     private EditUsuarioModel usuario = new();
-
-    protected override async Task OnInitializedAsync()
+    private bool isLoading=true, guardando, guardado, esAdministrador, administradorPropio;
+    private string? errorCarga, mensaje;
+    protected override Task OnParametersSetAsync() => Cargar();
+    private async Task Cargar()
     {
+        isLoading=true; errorCarga=null; mensaje=null; guardado=false;
         try
         {
-            var resp = await Http.GetAsync($"api/usuarios/{IdUsuario}");
-            if (!resp.IsSuccessStatusCode)
-            {
-                notFound = resp.StatusCode == System.Net.HttpStatusCode.NotFound;
-                return;
-            }
-
-            var data = await resp.Content.ReadFromJsonAsync<EditUsuarioModel>();
-            if (data != null)
-            {
-                usuario = data;
-            }
+            var state=await EstadoAutenticacion;
+            esAdministrador=state.User.IsInRole("Administrador");
+            using var response=await Http.GetAsync($"api/usuarios/{IdUsuario}");
+            if (!response.IsSuccessStatusCode) { errorCarga=response.StatusCode==System.Net.HttpStatusCode.NotFound ? "Usuario no encontrado." : "No se pudo cargar el usuario. Compruebe la sesión y sus permisos."; return; }
+            var data=await response.Content.ReadFromJsonAsync<EditUsuarioModel>();
+            if(data==null) { errorCarga="No se recibieron datos del usuario."; return; }
+            if(!esAdministrador && data.Rol=="Administrador") { errorCarga="Solo un administrador puede editar esta cuenta."; return; }
+            usuario=data;
+            administradorPropio=esAdministrador && state.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value==IdUsuario.ToString();
         }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine(ex.Message);
-            await Js.InvokeVoidAsync("alert", "Error al cargar usuario: " + ex.Message);
-        }
-        finally
-        {
-            isLoading = false;
-        }
+        catch(Exception ex) when(ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException) { errorCarga="No se pudo cargar el usuario. Compruebe la conexión."; }
+        finally { isLoading=false; }
     }
-
     private async Task Guardar()
     {
+        if(guardando || guardado) return;
+        guardando=true;mensaje=null;
         try
         {
-            string? fechaStr = null;
-            if (usuario.FechaIngreso.HasValue)
-            {
-                fechaStr = usuario.FechaIngreso.Value.ToString("yyyy-MM-dd");
-            }
-
-            var payload = new
-            {
-                NombreCompleto = usuario.NombreCompleto,
-                Ci = usuario.Ci,
-                Correo = usuario.Correo,
-                Telefono = usuario.Telefono,
-                FechaIngreso = fechaStr,
-                PuestoActual = usuario.PuestoActual,
-                PuestoSolicitado = usuario.PuestoSolicitado,
-                PuestoARotar = usuario.PuestoARotar,
-                Estado = usuario.Estado,
-                Rol = usuario.Rol
-            };
-
-            var resp = await Http.PutAsJsonAsync($"api/usuarios/{IdUsuario}", payload);
-            if (resp.IsSuccessStatusCode || resp.StatusCode == System.Net.HttpStatusCode.NoContent)
-            {
-                await Js.InvokeVoidAsync("alert", "Usuario actualizado correctamente.");
-                Navigation.NavigateTo("/verUsuarios", forceLoad: true);
-            }
-            else
-            {
-                var text = await resp.Content.ReadAsStringAsync();
-                await Js.InvokeVoidAsync("alert", $"Error al guardar: {resp.StatusCode}. {text}");
-            }
+            var payload=new { usuario.NombreCompleto,usuario.Ci,usuario.Correo,usuario.Telefono,FechaIngreso=usuario.FechaIngreso?.ToString("yyyy-MM-dd"),usuario.TipoEvaluado,usuario.PuestoActual,usuario.PuestoSolicitado,usuario.PuestoARotar,usuario.Activo,usuario.Estado,usuario.Rol };
+            using var response=await Http.PutAsJsonAsync($"api/usuarios/{IdUsuario}",payload);
+            if(response.IsSuccessStatusCode) { guardado=true;mensaje="Usuario actualizado correctamente."; }
+            else if(response.StatusCode==System.Net.HttpStatusCode.Unauthorized) mensaje="La sesión expiró. Inicie sesión nuevamente antes de guardar.";
+            else if(response.StatusCode==System.Net.HttpStatusCode.Forbidden) mensaje="No tiene permisos para realizar estos cambios.";
+            else { var text=await response.Content.ReadAsStringAsync();mensaje=string.IsNullOrWhiteSpace(text)?"No se pudo guardar. Revise los campos.":text; }
         }
-        catch (Exception ex)
-        {
-            await Js.InvokeVoidAsync("alert", $"Error en la petición: {ex.Message}");
-        }
+        catch(Exception ex) when(ex is HttpRequestException or TaskCanceledException) { mensaje="No se pudo confirmar el guardado. Compruebe la conexión antes de reintentar."; }
+        finally { guardando=false; }
     }
-
-    private void Cancelar() => Navigation.NavigateTo("/verUsuarios");
-
-    public class EditUsuarioModel
-    {
-        public int IdUsuario { get; set; }
-        public string? NombreCompleto { get; set; }
-        public string? Correo { get; set; }
-        public string? Ci { get; set; }
-        public string? Telefono { get; set; }
-        public DateTime? FechaIngreso { get; set; }
-        public string? PuestoActual { get; set; }
-        public string? PuestoSolicitado { get; set; }
-        public string? PuestoARotar { get; set; }
-        public string? Estado { get; set; }
-        public string? Rol { get; set; }
-    }
+    private void Volver()=>Navigation.NavigateTo("/verUsuarios");
 }

@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Delta.Contracts;
 using DELTAAPI.Models;
 using DELTAAPI.Services;
@@ -52,7 +52,7 @@ public class ConvocatoriasController(DeltaTestContext db) : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administrador,Inspector")]
     public async Task<IActionResult> Crear(ConvocatoriaForm form, CancellationToken ct)
     {
         if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var usuarioId))

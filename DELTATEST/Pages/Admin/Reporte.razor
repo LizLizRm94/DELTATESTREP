@@ -6,6 +6,7 @@
 @inject ReporteEvaluacionService ReporteService
 @layout ReportePrintLayout
 
+<div class="delta-screen delta-screen-reporte" data-page="reporte">
 @if (cargando)
 {
     <div class="reporte-loading">
@@ -17,9 +18,9 @@ else if (mostrarError)
 {
     <div class="reporte-error">
         <div class="error-box">
-            <h3>?? Error al generar el reporte</h3>
+            <h3>Error al generar el reporte</h3>
             <p>@mensajeError</p>
-            <button class="btn btn-volver" @onclick="Volver">? Volver a Reportes</button>
+            <button class="btn btn-volver" @onclick="Volver">Volver a Reportes</button>
         </div>
     </div>
 }
@@ -31,8 +32,8 @@ else if (evaluacion != null)
             <p class="subtitulo">Evaluado: @evaluacion.NombreEvaluado</p>
         </div>
         <div class="reporte-acciones">
-            <button class="btn btn-imprimir" @onclick="ImprimirReporte">??? Imprimir/Descargar PDF</button>
-            <button class="btn btn-volver" @onclick="Volver">? Volver</button>
+            <button class="btn btn-imprimir" @onclick="ImprimirReporte">Imprimir / Descargar PDF</button>
+            <button class="btn btn-volver" @onclick="Volver">Volver</button>
         </div>
     </div>
 
@@ -77,7 +78,7 @@ else if (evaluacion != null)
     .error-box {
         background: white;
         padding: 40px;
-        border-radius: 10px;
+        border-radius: var(--delta-radius, 16px);
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         text-align: center;
         max-width: 500px;
@@ -129,7 +130,7 @@ else if (evaluacion != null)
     .btn {
         padding: 10px 18px;
         border: none;
-        border-radius: 6px;
+        border-radius: var(--delta-radius, 16px);
         cursor: pointer;
         font-weight: 600;
         font-size: 14px;
@@ -163,7 +164,7 @@ else if (evaluacion != null)
         background: white;
         padding: 30px;
         margin: 20px;
-        border-radius: 8px;
+        border-radius: var(--delta-radius, 16px);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
 
@@ -212,6 +213,8 @@ else if (evaluacion != null)
     }
 </style>
 
+
+</div>
 @code {
     [Parameter]
     public int IdEvaluacion { get; set; }

@@ -90,9 +90,18 @@ if (string.IsNullOrWhiteSpace(connectionString))
         "Nota: appsettings.json esta en .gitignore, asi que debe crearse manualmente en cada equipo.");
 }
 
+// Supavisor en modo transacción ya administra el pool del servidor. En esta
+// conexión la reutilización del pool cliente produjo esperas de 30 s al validar
+// la sesión. Abrir conexiones limpias evita ese problema sin omitir validaciones.
+var databaseConnection = new Npgsql.NpgsqlConnectionStringBuilder(connectionString);
+var supabaseTransactionPooler = databaseConnection.Port == 6543
+    && databaseConnection.Host?.EndsWith(".pooler.supabase.com", StringComparison.OrdinalIgnoreCase) == true;
+databaseConnection.Pooling = builder.Configuration.GetValue<bool?>("Database:ClientPooling")
+    ?? (supabaseTransactionPooler ? false : databaseConnection.Pooling);
+
 builder.Services.AddDbContext<DeltaTestContext>(options =>
     options.UseNpgsql(
-        connectionString,
+        databaseConnection.ConnectionString,
         npgsqlOptions => npgsqlOptions.EnableRetryOnFailure(5))
 );
 
@@ -183,7 +192,7 @@ builder.Services.AddAuthentication(options =>
             var usuario = await db.Usuarios
                 .AsNoTracking()
                 .Where(u => u.IdUsuario == userId)
-                .Select(u => new { u.Estado, u.Rol })
+                .Select(u => new SessionUserSnapshot { IdUsuario = u.IdUsuario, NombreCompleto = u.NombreCompleto, Correo = u.Correo, Estado = u.Estado, Rol = u.Rol })
                 .FirstOrDefaultAsync();
 
             var activo = usuario?.Estado != null &&
@@ -197,7 +206,9 @@ builder.Services.AddAuthentication(options =>
             {
                 context.RejectPrincipal();
                 await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                return;
             }
+            context.HttpContext.Items[typeof(SessionUserSnapshot)] = usuario;
         }
     };
 });

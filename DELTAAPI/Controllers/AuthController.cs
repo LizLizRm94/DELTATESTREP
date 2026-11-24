@@ -50,6 +50,10 @@ namespace DELTAAPI.Controllers
             public string? FechaIngreso { get; set; } // formato ISO yyyy-MM-dd esperado desde <input type="date">
             public string? Password { get; set; }
             public string? Role { get; set; }
+            public string? TipoEvaluado { get; set; }
+            public string? PuestoActual { get; set; }
+            public string? PuestoARotar { get; set; }
+            public string? PuestoSolicitado { get; set; }
         }
 
         [HttpPost("register")]
@@ -61,6 +65,9 @@ namespace DELTAAPI.Controllers
 
             if (string.IsNullOrWhiteSpace(dto.Correo) || !System.Net.Mail.MailAddress.TryCreate(dto.Correo.Trim(), out _))
                 return BadRequest("Correo no válido.");
+
+            var errorLaboral = Delta.Contracts.VinculacionLaboral.Validar(dto.TipoEvaluado,dto.PuestoActual,dto.PuestoARotar,dto.PuestoSolicitado);
+            if (errorLaboral != null) return BadRequest(errorLaboral);
 
             var passwordError = PasswordPolicy.Validate(dto.Password);
             if (passwordError != null)
@@ -126,6 +133,10 @@ namespace DELTAAPI.Controllers
                 Contraseña = hashedPassword, 
                 Rol = roleNormalized,
                 Estado = "Activo",
+                TipoEvaluado = dto.TipoEvaluado,
+                PuestoActual = dto.TipoEvaluado == "Empleado" ? dto.PuestoActual?.Trim() : null,
+                PuestoARotar = dto.TipoEvaluado == "Empleado" ? dto.PuestoARotar?.Trim() : null,
+                PuestoSolicitado = dto.TipoEvaluado == "Pasante" ? dto.PuestoSolicitado?.Trim() : null,
                 IdCreadoPor = idCreadoPor
             };
 
@@ -328,6 +339,9 @@ namespace DELTAAPI.Controllers
                     _logger.LogWarning("Invalid user ID in claims");
                     return Unauthorized("Token inválido");
                 }
+
+                if (HttpContext.Items[typeof(SessionUserSnapshot)] is SessionUserSnapshot validado)
+                    return Ok(new { idUsuario = validado.IdUsuario, nombreCompleto = validado.NombreCompleto, correo = validado.Correo, rol = validado.Rol });
 
                 var user = await _context.Usuarios.FindAsync(idUsuario);
                 if (user == null)

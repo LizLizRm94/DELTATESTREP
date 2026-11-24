@@ -6,6 +6,7 @@
 @inject NavigationManager NavigationManager
 @layout MainSinLayout
 
+<div class="delta-screen delta-screen-evaluacionesresumen" data-page="evaluacionesresumen">
 <h2 class="text-center text-orange text-uppercase mb-4">Resumen de Evaluaciones</h2>
 
 @if (cargando) { <p role="status">Cargando evaluaciones...</p> }
@@ -126,6 +127,8 @@ else
     }
 </style>
 
+
+</div>
 @code {
     [Parameter] public int IdUsuario { get; set; }
 

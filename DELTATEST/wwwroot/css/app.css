@@ -1,4 +1,4 @@
-html, body {
+﻿html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
@@ -154,3 +154,15 @@ code {
     border: 1px solid #ff7a00;
     border-radius: 8px;
 }
+
+/* Controles de contraseña compartidos: icono dentro del borde del campo. */
+.password-field { position: relative; width: 100%; }
+.password-field input.form-control { padding-right: 3.25rem; }
+.password-field .password-toggle { position: absolute; right: 1px; top: 1px; bottom: 1px; width: 2.75rem; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 0 5px 5px 0; background: transparent; color: #666; padding: 0; margin: 0; cursor: pointer; }
+.password-field .password-toggle:hover { color: #b75100; background: #fff4e9; }
+.password-field .password-toggle:focus-visible { outline: 2px solid #b75100; outline-offset: -3px; }
+/* Neutraliza el margen global de botones de Home dentro de la cabecera. */
+nav.delta-navbar .navbar-nav { align-items: center; gap: .5rem; }
+nav.delta-navbar .nav-item { display: flex; align-items: center; }
+nav.delta-navbar .nav-link, nav.delta-navbar .btn { display: inline-flex; align-items: center; justify-content: center; gap: .25rem; min-height: 40px; margin-top: 0 !important; margin-bottom: 0 !important; line-height: 1.5; }
+@media (max-width: 991.98px) { nav.delta-navbar .nav-item { width: 100%; } }

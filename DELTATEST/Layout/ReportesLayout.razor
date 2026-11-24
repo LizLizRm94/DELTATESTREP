@@ -1,33 +1,12 @@
-@inherits LayoutComponentBase
+﻿@inherits LayoutComponentBase
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Reportes - DELTATEST</title>
-    <base href="/" />
-    <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
-    <link rel="stylesheet" href="css/app.css" />
-    <link rel="stylesheet" href="css/responsive.css" />
-</head>
-<body>
-    <div class="page">
-        <main role="main">
-            @Body
-        </main>
-    </div>
-</body>
-</html>
+<main class="delta-report-shell" id="contenido" tabindex="-1">
+    @Body
+</main>
 
 <style>
-    .page {
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
-    }
-
-    main {
-        flex: 1;
+    .delta-report-shell { min-width: 0; }
+    @@media print {
+        .delta-report-shell { padding: 0; margin: 0; background: white; }
     }
 </style>

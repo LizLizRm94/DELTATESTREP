@@ -84,6 +84,7 @@ namespace DELTATEST.Services
                     Role = model.Rol,
                     FechaIngreso = fechaStr,
                     Estado = model.Estado,
+                    TipoEvaluado = model.TipoEvaluado,
                     PuestoActual = model.PuestoActual,
                     PuestoSolicitado = model.PuestoSolicitado,
                     PuestoARotar = model.PuestoARotar,

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DELTAAPI.Models;
 using DELTAAPI.Security;
@@ -42,6 +42,18 @@ IdUsuario = u.IdUsuario,
     return Ok(list);
         }
 
+        [HttpGet("cargos")]
+        [Authorize(Roles = "Administrador,Inspector")]
+        public async Task<IActionResult> Cargos([FromServices] IConfiguration configuration)
+        {
+            var configurados=configuration.GetSection("Cargos").Get<string[]>()
+                ?? Delta.Contracts.AreasFarmaceuticas.Provisionales.ToArray();
+            var actuales=await _context.Usuarios.AsNoTracking().Select(u=>new {u.PuestoActual,u.PuestoARotar,u.PuestoSolicitado}).ToListAsync();
+            var cargos=configurados.Concat(actuales.SelectMany(u=>new[]{u.PuestoActual,u.PuestoARotar,u.PuestoSolicitado}))
+                .Where(c=>!string.IsNullOrWhiteSpace(c)).Select(c=>c!.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(c=>c).ToList();
+            return Ok(cargos);
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -66,6 +78,7 @@ IdUsuario = u.IdUsuario,
                 user.Ci,
                 user.Telefono,
                 FechaIngreso = fecha,
+                user.TipoEvaluado,
                 user.PuestoActual,
                 PuestoSolicitado = user.PuestoSolicitado,
                 user.PuestoARotar,
@@ -102,9 +115,11 @@ IdUsuario = u.IdUsuario,
             public string? Correo { get; set; }
             public string? Telefono { get; set; }
             public string? FechaIngreso { get; set; } // expected yyyy-MM-dd or null
+            public string? TipoEvaluado { get; set; }
             public string? PuestoActual { get; set; }
             public string? PuestoSolicitado { get; set; }
             public string? PuestoARotar { get; set; }
+            public bool? Activo { get; set; }
             public string? Estado { get; set; }
             public string? Rol { get; set; }
         }
@@ -113,6 +128,13 @@ IdUsuario = u.IdUsuario,
         public async Task<IActionResult> Update(int id, [FromBody] UpdateUsuarioDto dto)
         {
             if (dto == null) return BadRequest("Datos inválidos.");
+            if (dto.Activo.HasValue)
+            {
+                var estado = dto.Activo.Value ? "Activo" : "Inactivo";
+                if (!string.IsNullOrWhiteSpace(dto.Estado) && !string.Equals(dto.Estado.Trim(), estado, StringComparison.OrdinalIgnoreCase))
+                    return BadRequest("El estado y el indicador de cuenta activa se contradicen.");
+                dto.Estado = estado;
+            }
             dto.Correo = dto.Correo?.Trim();
             dto.Ci = dto.Ci?.Trim();
             if (!string.IsNullOrWhiteSpace(dto.Correo) && !System.Net.Mail.MailAddress.TryCreate(dto.Correo, out _))
@@ -175,6 +197,13 @@ IdUsuario = u.IdUsuario,
                 if (!string.IsNullOrWhiteSpace(dto.Estado)
                     && dto.Estado.Trim().Equals("Inactivo", StringComparison.OrdinalIgnoreCase))
                     return BadRequest("No puede desactivar su propia cuenta.");
+            }
+
+            if (dto.TipoEvaluado != null || dto.PuestoActual != null || dto.PuestoARotar != null || dto.PuestoSolicitado != null)
+            {
+                var errorLaboral = Delta.Contracts.VinculacionLaboral.Validar(dto.TipoEvaluado ?? user.TipoEvaluado,dto.PuestoActual,dto.PuestoARotar,dto.PuestoSolicitado);
+                if (errorLaboral != null) return BadRequest(errorLaboral);
+                user.TipoEvaluado = dto.TipoEvaluado ?? user.TipoEvaluado;
             }
 
             // Optional: validate uniqueness of correo/ci if they changed

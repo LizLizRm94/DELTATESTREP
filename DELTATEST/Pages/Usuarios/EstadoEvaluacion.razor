@@ -6,11 +6,18 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @layout MainSinLayout
 
+<div class="delta-screen delta-screen-estadoevaluacion" data-page="estadoevaluacion">
+<div class="user-dashboard">
 @if (cargando)
 {
     <div class="text-center mt-5">
         <p>Cargando estado del usuario...</p>
     </div>
+}
+else if (errorCarga != null)
+{
+    <div class="alert alert-danger" role="alert">@errorCarga</div>
+    <button class="btn btn-warning" @onclick="CargarEstado">Reintentar</button>
 }
 else
 {
@@ -23,8 +30,8 @@ else
     <!-- BIENVENIDA CENTRADA -->
     <p class="text-center text-dark mb-5 h5">Bienvenido <span class="text-warning fw-bold">@(!string.IsNullOrWhiteSpace(nombreUsuario) ? nombreUsuario : "Usuario")</span></p>
 
-    <div class="row">
-    <div class="col-md-6 d-flex flex-column align-items-center">
+    <div class="user-dashboard-grid">
+    <div class="d-flex flex-column align-items-center">
             <div class="d-flex flex-column align-items-center w-100" style="max-width: 420px;">
       
       <!-- CUADRO DE ÚLTIMA NOTA ENTREGADA CON ESTILO NARANJA INTENSO -->
@@ -53,7 +60,10 @@ else
               </div>
           </div>
       }
-      
+      else
+      {
+          <div class="alert alert-light border w-100 text-center">Aún no tienes evaluaciones calificadas.</div>
+      }
     <button class="btn btn-orange mt-1" @onclick="VerEvaluaciones">
   Ver Evaluaciones
    </button>
@@ -61,7 +71,7 @@ else
         </div>
 
         <!-- DERECHA: NOTIFICACIONES -->
-        <div class="col-md-6">
+        <div>
             <h4 class="mb-3 text-orange text-center">Notificaciones</h4>
  @if (notificaciones != null && notificaciones.Count > 0)
             {
@@ -85,7 +95,13 @@ else
     </div>
 }
 
+</div>
 <style>
+    .user-dashboard { width: 100%; max-width: 1100px; margin: 0 auto; padding: 1.5rem; box-sizing: border-box; }
+    .user-dashboard .user-dashboard-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 2rem; align-items: start; }
+    .user-dashboard .user-dashboard-grid > div { width: 100%; min-width: 0; }
+    .user-dashboard .list-group-item, .user-dashboard .alert { overflow-wrap: anywhere; }
+    @@media(max-width:767.98px) { .user-dashboard .user-dashboard-grid { grid-template-columns: minmax(0,1fr); } }
     .card .card-body.p-5 { padding: 1.25rem !important; }
     .card p[style*="font-size: 72px"] { font-size: clamp(2.75rem, 14vw, 4.5rem) !important; }
 
@@ -97,6 +113,8 @@ else
     }
 </style>
 
+
+</div>
 @code {
     [Parameter]
     public int IdUsuario { get; set; }
@@ -141,112 +159,36 @@ else
         await CargarEstado();
     }
 
+    private string? errorCarga;
+    private sealed class PanelUsuario
+    {
+        public string NombreUsuario { get; set; } = "Usuario";
+        public UltimaEvaluacion? UltimaEvaluacion { get; set; }
+        public List<NotificacionSimple> Notificaciones { get; set; } = new();
+    }
     private async Task CargarEstado()
     {
+        cargando = true;
+        errorCarga = null;
         try
         {
-            cargando = true;
-
-            // 1. Obtener nombre y validar que el usuario solo vea su propio estado
-            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-            var currentUser = authState.User;
-            nombreUsuario = currentUser.Identity?.Name ?? "Usuario";
-
-            var isStaff = currentUser.IsInRole("Administrador") || currentUser.IsInRole("Inspector");
-            var idClaim = currentUser.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (!isStaff && int.TryParse(idClaim, out var ownId) && ownId != IdUsuario)
+            using var response = await Http.GetAsync($"api/evaluados/panel/{IdUsuario}");
+            if (!response.IsSuccessStatusCode)
             {
-                NavigationManager.NavigateTo($"/estado/{ownId}", replace: true);
+                errorCarga = response.StatusCode == System.Net.HttpStatusCode.Unauthorized
+                    ? "La sesión ha expirado. Inicie sesión nuevamente."
+                    : "No se pudo cargar el estado. Compruebe sus permisos y conexión.";
                 return;
             }
-
-            // 2. Obtener última evaluación PRÁCTICA
-            try
-            {
-                var evalsResponse = await Http.GetAsync($"api/evaluaciones/usuario/{IdUsuario}");
-                if (evalsResponse.IsSuccessStatusCode)
-                {
-                    var evals = await evalsResponse.Content.ReadFromJsonAsync<List<EvaluacionPractica>>();
-                    if (evals != null && evals.Count > 0)
-                    {
-                        // Obtener la más reciente (última)
-                        var ultima = evals.OrderByDescending(e => e.FechaEvaluacion).FirstOrDefault();
-                        if (ultima != null && ultima.NotaPractica.HasValue)
-                        {
-                            ultimaEvaluacion = new UltimaEvaluacion
-                            {
-                                IdEvaluacion = ultima.IdEvaluacion,
-                                FechaEvaluacion = ultima.FechaEvaluacion,
-                                Nota = ultima.NotaPractica,
-                                TipoEvaluacion = "Práctica"
-                            };
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-            }
-
-            // 3. Si no hay evaluación práctica con nota, obtener evaluación TEÓRICA
-            if (ultimaEvaluacion == null)
-            {
-                try
-                {
-                    var teoricaResponse = await Http.GetAsync($"api/evaluacionesteoricass/usuario/{IdUsuario}");
-                    if (teoricaResponse.IsSuccessStatusCode)
-                    {
-                        var evals = await teoricaResponse.Content.ReadFromJsonAsync<List<EvaluacionTeorica>>();
-                        if (evals != null && evals.Count > 0)
-                        {
-                            // Obtener la más reciente con nota
-                            var ultima = evals.Where(e => e.Nota.HasValue)
-                                .OrderByDescending(e => e.FechaEvaluacion)
-                                .FirstOrDefault();
-                            
-                            if (ultima != null)
-                            {
-                                ultimaEvaluacion = new UltimaEvaluacion
-                                {
-                                    IdEvaluacion = ultima.IdEvaluacion,
-                                    FechaEvaluacion = ultima.FechaEvaluacion,
-                                    Nota = ultima.Nota,
-                                    TipoEvaluacion = "Teórica"
-                                };
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                }
-            }
-
-            // 4. Obtener notificaciones
-            try
-            {
-                var notifResponse = await Http.GetAsync($"api/notificaciones/usuario/{IdUsuario}");
-                if (notifResponse.IsSuccessStatusCode)
-                {
-                    notificaciones = await notifResponse.Content.ReadFromJsonAsync<List<NotificacionSimple>>();
-                }
-                else
-                {
-                    notificaciones = new List<NotificacionSimple>();
-                }
-            }
-            catch (Exception ex)
-            {
-                notificaciones = new List<NotificacionSimple>();
-            }
+            var panel = await response.Content.ReadFromJsonAsync<PanelUsuario>();
+            if (panel == null) { errorCarga = "No se recibió el estado del usuario."; return; }
+            nombreUsuario = panel.NombreUsuario;
+            ultimaEvaluacion = panel.UltimaEvaluacion;
+            notificaciones = panel.Notificaciones;
         }
-        catch (Exception ex)
-        {
-        }
-        finally
-        {
-            cargando = false;
-        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+        { errorCarga = "No se pudo cargar el estado. Intente nuevamente."; }
+        finally { cargando = false; }
     }
 
     private void VerEvaluaciones()

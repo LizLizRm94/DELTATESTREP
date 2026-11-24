@@ -320,6 +320,11 @@ return BadRequest(new { mensaje = "El ID del usuario es requerido" });
       return BadRequest(new { mensaje = "Debe proporcionar al menos una pregunta" });
   }
 
+   if (request.Preguntas.Any(p => !p.TipoEvaluacion && (p.OpcionesConCorrecta == null || p.OpcionesConCorrecta.Count < 2
+       || p.OpcionesConCorrecta.Any(o => o == null || string.IsNullOrWhiteSpace(o.Texto))
+       || p.OpcionesConCorrecta.Count(o => o.EsCorrecta) != 1)))
+       return BadRequest(new { mensaje = "Cada pregunta múltiple necesita al menos dos opciones y exactamente una respuesta correcta." });
+
    // Crear una nueva evaluación teórica
    var evaluacion = new Evaluacion
         {
@@ -356,7 +361,7 @@ TipoEvaluacion = true, // true = teórica
      Texto = preguntaDto.Texto,
    TipoEvaluacion = preguntaDto.TipoEvaluacion, // true=abierta, false=múltiple
 IdEvaluacionNavigation = evaluacion,
-      Opciones = preguntaDto.Opciones, // Guardar opciones como JSON (ya serializado desde el cliente)
+      Opciones = preguntaDto.TipoEvaluacion ? null : JsonSerializer.Serialize(preguntaDto.OpcionesConCorrecta!.Select(o => new { texto = o.Texto })), // Las soluciones se guardan únicamente en el índice privado.
 RespuestaCorrectaIndex = respuestaCorrectaIndex,
 Puntos = preguntaDto.Puntos // Guardar puntos
    };

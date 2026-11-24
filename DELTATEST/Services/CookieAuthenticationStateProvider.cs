@@ -1,4 +1,4 @@
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -20,11 +20,16 @@ namespace DELTATEST.Services
             _http = http;
         }
 
-        public override async Task<AuthenticationState> GetAuthenticationStateAsync()
+        private Task<AuthenticationState>? consultaPendiente;
+        public override Task<AuthenticationState> GetAuthenticationStateAsync()
+            => consultaPendiente ??= ConsultarAsync();
+
+        private async Task<AuthenticationState> ConsultarAsync()
         {
+            await Task.Yield();
             try
             {
-                var response = await _http.GetAsync("api/auth/current-user");
+                using var response = await _http.GetAsync("api/auth/current-user");
                 if (!response.IsSuccessStatusCode)
                     return Anonymous;
 
@@ -53,6 +58,7 @@ namespace DELTATEST.Services
             {
                 return Anonymous;
             }
+            finally { consultaPendiente = null; }
         }
 
         public async Task RefreshAsync()

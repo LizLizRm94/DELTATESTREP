@@ -5,6 +5,7 @@
 @inject NavigationManager NavigationManager
 @layout MainSinLayout
 
+<div class="delta-screen delta-screen-verrecomendaciones" data-page="verrecomendaciones">
 <div class="container-recomendaciones">
     <h2 class="titulo-recomendaciones">Recomendaciones de Evaluación</h2>
 
@@ -96,7 +97,7 @@
   .recomendaciones-card {
         background: white;
         border: 1px solid #e5e7eb;
-        border-radius: 12px;
+        border-radius: var(--delta-radius, 16px);
         padding: 40px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
@@ -138,7 +139,7 @@
         align-items: center;
         gap: 20px;
     padding: 24px;
-        border-radius: 12px;
+        border-radius: var(--delta-radius, 16px);
         background: #f9fafb;
     }
 
@@ -171,9 +172,9 @@
 
     .recomendaciones-texto {
         background: #f9fafb;
-     border-left: 4px solid #f58220;
+     border: 1px solid var(--delta-border, #dce3ec);
         padding: 20px;
-        border-radius: 8px;
+        border-radius: var(--delta-radius, 16px);
     }
 
     .recomendaciones-texto p {
@@ -207,7 +208,7 @@
     .btn {
      padding: 12px 32px;
         border: none;
-        border-radius: 24px;
+        border-radius: var(--delta-radius, 16px);
         font-size: 16px;
         font-weight: 600;
         cursor: pointer;
@@ -228,7 +229,7 @@ background: #e67e1a;
 
     .alerta {
         padding: 16px 20px;
-     border-radius: 8px;
+     border-radius: var(--delta-radius, 16px);
         margin-bottom: 20px;
     }
 
@@ -299,6 +300,8 @@ background: #e67e1a;
     }
 </style>
 
+
+</div>
 @code {
     [Parameter]
     public int IdEvaluacion { get; set; }

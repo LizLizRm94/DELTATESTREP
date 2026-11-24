@@ -6,6 +6,7 @@
 @inject NavigationManager NavigationManager
 @layout ReportesLayout
 
+<div class="delta-screen delta-screen-reportes" data-page="reportes">
 <div class="reportes-container">
     <div class="reportes-header">
         <h1 class="titulo-reportes">MÓDULO DE REPORTES</h1>
@@ -25,7 +26,7 @@
             <!-- SECCIÓN 1: EVALUACIONES PENDIENTES -->
             <div class="seccion-reportes">
                 <div class="seccion-header">
-                    <h2 class="seccion-titulo">?? Evaluaciones Pendientes</h2>
+                    <h2 class="seccion-titulo">Evaluaciones pendientes</h2>
                     <span class="badge-contador">@(evaluacionesPendientes?.Count ?? 0)</span>
                 </div>
 
@@ -89,7 +90,7 @@
             <!-- SECCIÓN 2: EVALUACIONES REVISADAS/COMPLETADAS -->
             <div class="seccion-reportes">
                 <div class="seccion-header">
-                    <h2 class="seccion-titulo">? Evaluaciones Revisadas/Completadas</h2>
+                    <h2 class="seccion-titulo">Evaluaciones revisadas y completadas</h2>
                     <span class="badge-contador">@(evaluacionesRevisadas?.Count ?? 0)</span>
                 </div>
 
@@ -133,7 +134,7 @@
                                             }
                                         </td>
                                         <td data-label="Calificación">
-                                            <span class="@claseNota">@eval.Nota?.ToString("F2") ?? "N/A")/100</span>
+                                            <span class="@claseNota">@(eval.Nota.HasValue ? $"{eval.Nota:F2} / 100" : "Sin calificación")</span>
                                         </td>
                                         <td data-label="Estado">
                                             <span class="@(eval.Nota >= 80 ? "estado-aprobado" : "estado-desaprobado")">
@@ -144,7 +145,7 @@
                                             <button class="btn-accion btn-reporte" 
                                                     @onclick="() => GenerarReporte(eval.IdEvaluacion)"
                                                     title="Generar reporte de esta evaluación">
-                                                ?? Reporte
+                                                Reporte
                                             </button>
                                         </td>
                                     </tr>
@@ -179,7 +180,7 @@
         margin-bottom: 40px;
         padding: 30px 20px;
         background: linear-gradient(135deg, #f58220 0%, #ff9c42 100%);
-        border-radius: 10px;
+        border-radius: var(--delta-radius, 16px);
         color: white;
         box-shadow: 0 4px 12px rgba(245, 130, 32, 0.3);
     }
@@ -201,7 +202,7 @@
         text-align: center;
         padding: 60px 20px;
         background: white;
-        border-radius: 8px;
+        border-radius: var(--delta-radius, 16px);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
@@ -221,7 +222,7 @@
 
     .reportes-content {
         background: white;
-        border-radius: 10px;
+        border-radius: var(--delta-radius, 16px);
         padding: 30px;
         box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     }
@@ -238,7 +239,7 @@
         background: #0084c9;
         color: white;
         border: none;
-        border-radius: 5px;
+        border-radius: var(--delta-radius, 16px);
         font-size: 14px;
         font-weight: 600;
         cursor: pointer;
@@ -278,7 +279,7 @@
         background: #f58220;
         color: white;
         padding: 6px 14px;
-        border-radius: 20px;
+        border-radius: var(--delta-radius, 16px);
         font-weight: bold;
         font-size: 14px;
     }
@@ -329,7 +330,7 @@
     .badge {
         display: inline-block;
         padding: 4px 10px;
-        border-radius: 12px;
+        border-radius: var(--delta-radius, 16px);
         font-size: 12px;
         font-weight: 600;
         white-space: nowrap;
@@ -350,7 +351,7 @@
         background: #fff3cd;
         color: #664d03;
         padding: 4px 10px;
-        border-radius: 4px;
+        border-radius: var(--delta-radius, 16px);
         font-weight: 600;
         font-size: 12px;
     }
@@ -360,7 +361,7 @@
         background: #d1e7dd;
         color: #0f5132;
         padding: 4px 10px;
-        border-radius: 4px;
+        border-radius: var(--delta-radius, 16px);
         font-weight: 600;
         font-size: 12px;
     }
@@ -370,7 +371,7 @@
         background: #f8d7da;
         color: #842029;
         padding: 4px 10px;
-        border-radius: 4px;
+        border-radius: var(--delta-radius, 16px);
         font-weight: 600;
         font-size: 12px;
     }
@@ -380,7 +381,7 @@
         font-weight: 600;
         background: #d1e7dd;
         padding: 4px 8px;
-        border-radius: 4px;
+        border-radius: var(--delta-radius, 16px);
     }
 
     .nota-regular {
@@ -388,7 +389,7 @@
         font-weight: 600;
         background: #fff3cd;
         padding: 4px 8px;
-        border-radius: 4px;
+        border-radius: var(--delta-radius, 16px);
     }
 
     .nota-reprobado {
@@ -396,14 +397,14 @@
         font-weight: 600;
         background: #f8d7da;
         padding: 4px 8px;
-        border-radius: 4px;
+        border-radius: var(--delta-radius, 16px);
     }
 
     .btn-accion {
         display: inline-block;
         padding: 6px 12px;
         border: none;
-        border-radius: 5px;
+        border-radius: var(--delta-radius, 16px);
         font-size: 12px;
         font-weight: 600;
         cursor: pointer;
@@ -436,7 +437,7 @@
 
     .alerta {
         padding: 16px 20px;
-        border-radius: 6px;
+        border-radius: var(--delta-radius, 16px);
         margin: 20px 0;
         font-size: 14px;
     }
@@ -496,6 +497,8 @@
     }
 </style>
 
+
+</div>
 @code {
     private List<EvaluacionDto>? evaluacionesPendientes;
     private List<EvaluacionDto>? evaluacionesRevisadas;

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -14,6 +14,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\Contracts\AreasFarmaceuticas.cs" Link="Contracts\AreasFarmaceuticas.cs" />
+    <Compile Include="..\Contracts\VinculacionLaboral.cs" Link="Contracts\VinculacionLaboral.cs" />
     <Compile Include="..\Contracts\ConvocatoriaForm.cs" Link="Contracts\ConvocatoriaForm.cs" />
   </ItemGroup>
 </Project>

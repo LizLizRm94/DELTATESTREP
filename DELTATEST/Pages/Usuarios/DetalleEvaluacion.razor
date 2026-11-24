@@ -5,6 +5,7 @@
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 
+<div class="delta-screen delta-screen-detalleevaluacion" data-page="detalleevaluacion">
 <div class="detalle-container">
     <h1 class="titulo-principal">DETALLE DE EVALUACIÓN</h1>
 
@@ -124,7 +125,7 @@
 
     .detalle-card {
         background: #f8f9fa;
-        border-radius: 8px;
+        border-radius: var(--delta-radius, 16px);
         padding: 40px;
     }
 
@@ -177,7 +178,7 @@
         justify-content: center;
         width: 180px;
         height: 180px;
-        border-radius: 16px;
+        border-radius: var(--delta-radius, 16px);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
@@ -241,9 +242,9 @@
 
     .recomendaciones-lista {
         background: #ffffff;
-        border-left: 4px solid #f59e0b;
+        border: 1px solid var(--delta-border, #dce3ec);
         padding: 20px 20px 20px 30px;
-        border-radius: 4px;
+        border-radius: var(--delta-radius, 16px);
     }
 
     .recomendaciones-lista p {
@@ -278,7 +279,7 @@
 
     .btn {
         padding: 12px 28px;
-        border-radius: 25px;
+        border-radius: var(--delta-radius, 16px);
         font-size: 15px;
         font-weight: 600;
         cursor: pointer;
@@ -337,7 +338,7 @@
         border: 1px solid #fca5a5;
         color: #dc2626;
         padding: 20px;
-        border-radius: 8px;
+        border-radius: var(--delta-radius, 16px);
         text-align: center;
     }
 
@@ -379,6 +380,8 @@
     }
 </style>
 
+
+</div>
 @code {
     [Parameter]
     public int IdEvaluacion { get; set; }

@@ -1,0 +1,63 @@
+@inject HttpClient Http
+<fieldset disabled="@Disabled" class="mb-3">
+    <legend class="h6">Vinculación laboral</legend>
+    <p class="text-muted small">Por ahora, seleccione el área de trabajo correspondiente a cada puesto.</p>
+    <div class="mb-3"><label for="vinculacion-tipo">Tipo de personal</label>
+        <select id="vinculacion-tipo" class="form-select" value="@Tipo" @onchange="CambiarTipo"><option value="">Seleccione una opción</option><option value="Empleado">Empleado</option><option value="Pasante">Pasante</option></select>
+    </div>
+    @if(Tipo=="Empleado")
+    {
+        <div class="mb-3"><label for="vinculacion-actual">Puesto actual</label><select id="vinculacion-actual" class="form-select" value="@PuestoActual" @onchange="e=>PuestoActualChanged.InvokeAsync(e.Value?.ToString())" disabled="@(cargos.Count==0)"><option value="">Seleccione un área de trabajo</option>@foreach(var cargo in Opciones(PuestoActual)){<option value="@cargo">@cargo</option>}</select></div>
+        <div class="mb-3"><label for="vinculacion-rotar">Puesto a rotar</label><select id="vinculacion-rotar" class="form-select" value="@PuestoARotar" @onchange="e=>PuestoARotarChanged.InvokeAsync(e.Value?.ToString())" disabled="@(cargos.Count==0)"><option value="">Seleccione un área de trabajo</option>@foreach(var cargo in Opciones(PuestoARotar)){<option value="@cargo">@cargo</option>}</select></div>
+    }
+    else if(Tipo=="Pasante")
+    {
+        <div class="mb-3"><label for="vinculacion-solicitado">Puesto solicitado</label><select id="vinculacion-solicitado" class="form-select" value="@PuestoSolicitado" @onchange="e=>PuestoSolicitadoChanged.InvokeAsync(e.Value?.ToString())" disabled="@(cargos.Count==0)"><option value="">Seleccione un área de trabajo</option>@foreach(var cargo in Opciones(PuestoSolicitado)){<option value="@cargo">@cargo</option>}</select></div>
+    }
+    @if(error!=null)
+    {
+        <p class="text-muted small" role="status">@error <button type="button" class="btn btn-sm btn-outline-secondary" disabled="@cargando" @onclick="Cargar">Actualizar opciones</button></p>
+    }
+</fieldset>
+@code {
+    [Parameter] public string? Tipo {get;set;}
+    [Parameter] public EventCallback<string?> TipoChanged {get;set;}
+    [Parameter] public string? PuestoActual {get;set;}
+    [Parameter] public EventCallback<string?> PuestoActualChanged {get;set;}
+    [Parameter] public string? PuestoARotar {get;set;}
+    [Parameter] public EventCallback<string?> PuestoARotarChanged {get;set;}
+    [Parameter] public string? PuestoSolicitado {get;set;}
+    [Parameter] public EventCallback<string?> PuestoSolicitadoChanged {get;set;}
+    [Parameter] public bool Disabled {get;set;}
+    // Opciones compartidas con la API: disponibles incluso si el servidor aún no se ha reiniciado.
+    private List<string> cargos=Delta.Contracts.AreasFarmaceuticas.Provisionales.ToList();
+    private bool cargando;
+    private string? error;
+    protected override Task OnInitializedAsync()=>Cargar();
+    private async Task Cargar()
+    {
+        if(cargando) return;
+        cargando=true;
+        error=null;
+        try
+        {
+            using var timeout=new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            var remotos=await Http.GetFromJsonAsync<List<string>>("api/usuarios/cargos",timeout.Token);
+            var opciones=remotos?.Where(c=>!string.IsNullOrWhiteSpace(c)).Select(c=>c.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            if(opciones is {Count: > 0}) cargos=opciones;
+        }
+        catch(Exception ex)when(ex is HttpRequestException or OperationCanceledException or System.Text.Json.JsonException)
+        {
+            error="Se mantienen las opciones disponibles; no se pudo actualizar el catálogo del servidor.";
+        }
+        finally {cargando=false;}
+    }
+    private IEnumerable<string> Opciones(string? actual)=>cargos.Concat(string.IsNullOrWhiteSpace(actual)?Array.Empty<string>():new[]{actual}).Distinct(StringComparer.OrdinalIgnoreCase);
+    private async Task CambiarTipo(ChangeEventArgs e)
+    {
+        await TipoChanged.InvokeAsync(e.Value?.ToString());
+        await PuestoActualChanged.InvokeAsync(null);
+        await PuestoARotarChanged.InvokeAsync(null);
+        await PuestoSolicitadoChanged.InvokeAsync(null);
+    }
+}

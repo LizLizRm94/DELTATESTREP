@@ -1,6 +1,7 @@
 ﻿@page "/counter"
 @attribute [Authorize]
 
+<div class="delta-screen delta-screen-counter" data-page="counter">
 <PageTitle>Counter</PageTitle>
 
 <h1>Counter</h1>
@@ -16,6 +17,8 @@
     }
 </style>
 
+
+</div>
 @code {
     private int currentCount = 0;
 

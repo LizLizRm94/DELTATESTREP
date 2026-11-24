@@ -6,6 +6,7 @@
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 
+<div class="delta-screen delta-screen-reporteevaluacion" data-page="reporteevaluacion">
 @if (isLoading)
 {
     <div class="text-center p-5">
@@ -81,6 +82,8 @@ else
     }
 </style>
 
+
+</div>
 @code {
     [Parameter]
     public int IdEvaluacion { get; set; }

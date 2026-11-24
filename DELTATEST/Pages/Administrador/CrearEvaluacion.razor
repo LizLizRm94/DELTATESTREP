@@ -3,6 +3,7 @@
 @layout MainSinLayout
 @inject NavigationManager Nav
 
+<div class="delta-screen delta-screen-crearevaluacion" data-page="crearevaluacion">
 <div class="pantalla-evaluacion">
     <h3 class="titulo-evaluacion">CREE SUS EVALUACIONES</h3>
 
@@ -60,7 +61,7 @@
         color: white;
         background-color: #F98220;
         border: none;
-        border-radius: 0px;
+        border-radius: var(--delta-radius, 16px);
         cursor: pointer;
         box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
         transition: transform 0.2s ease, background-color 0.3s ease;
@@ -85,3 +86,5 @@
         .btn-cuadrado { max-width: 100%; min-height: 72px; }
     }
 </style>
+
+</div>

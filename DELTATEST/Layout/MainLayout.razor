@@ -3,8 +3,9 @@
 @inject NavigationManager NavigationManager
 @inject DELTATEST.Services.AuthService AuthService
 
+<a class="delta-skip" href="#contenido">Saltar al contenido</a>
 <!-- ENCABEZADO GLOBAL -->
-<nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom shadow-sm top-row w-100">
+<nav class="delta-navbar navbar navbar-expand-lg navbar-light bg-light border-bottom shadow-sm top-row w-100">
     <div class="container-fluid px-4">
         <a class="navbar-brand d-flex align-items-center" href="/">
             <img src="images/logo.jpg" alt="Logo" class="logo-img me-2" />
@@ -17,56 +18,36 @@
 
         <div class="collapse navbar-collapse justify-content-end @(isNavOpen ? "show" : "")" id="navbarNav">
             <ul class="navbar-nav align-items-center">
-                <li class="nav-item">
-                    <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
-                        <span class="bi bi-house-door-fill me-1"></span> Inicio
-                    </NavLink>
-                </li>
-                <li class="nav-item">
-                    <NavLink class="nav-link" href="/sobre-nosotros">
-                        <span class="bi bi-people-fill me-1"></span> Sobre Nosotros
-                    </NavLink>
-                </li>
-                <li class="nav-item">
-                    <NavLink class="nav-link" href="/contacto">
-                        <span class="bi bi-envelope-fill me-1"></span> Contacto
-                    </NavLink>
-                </li>
-               
-                <li class="nav-item">
-                    @if (isOnAuthPage)
-                    {
-                        <!-- Si está en login o registro, mostrar "Volver" -->
-                        <button class="btn btn-secondary ms-3" @onclick="GoBack">
-                            <span class="bi bi-arrow-left me-1"></span> Volver
-                        </button>
-                    }
-                    else
-                    {
-                        <AuthorizeView>
+                <AuthorizeView Roles="Usuario" Context="usuarioComun">
+                    <Authorized>
+                        <li class="nav-item"><NavLink class="nav-link" href="@($"/estado/{usuarioComun.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value}")"><i class="bi bi-house-door-fill"></i> Mi panel</NavLink></li>
+                        <li class="nav-item"><button class="btn btn-orange" @onclick="HandleSignOut"><i class="bi bi-box-arrow-right"></i> Cerrar sesión</button></li>
+                    </Authorized>
+                    <NotAuthorized>
+                        <li class="nav-item"><NavLink class="nav-link" href="/" Match="NavLinkMatch.All"><i class="bi bi-house-door-fill"></i> Inicio</NavLink></li>
+                        <li class="nav-item"><NavLink class="nav-link" href="/sobre-nosotros"><i class="bi bi-people-fill"></i> Sobre Nosotros</NavLink></li>
+                        <li class="nav-item"><NavLink class="nav-link" href="/contacto"><i class="bi bi-envelope-fill"></i> Contacto</NavLink></li>
+                        <AuthorizeView Context="sesionGeneral">
                             <Authorized>
-                                <button class="btn btn-orange ms-3" @onclick="HandleSignOut">
-                                    <span class="bi bi-box-arrow-right me-1"></span> Sign Out
-                                </button>
+                                <li class="nav-item"><NavLink class="nav-link" href="/panelControlAdmin">Mi panel</NavLink></li>
+                                <li class="nav-item"><button class="btn btn-orange" @onclick="HandleSignOut"><i class="bi bi-box-arrow-right"></i> Cerrar sesión</button></li>
                             </Authorized>
                             <NotAuthorized>
-                                <NavLink class="btn btn-orange ms-3" href="/IniciarSesion">
-                                    <span class="bi bi-box-arrow-in-right me-1"></span> Sign In
-                                </NavLink>
+                                <li class="nav-item"><NavLink class="btn btn-orange" href="/IniciarSesion"><i class="bi bi-box-arrow-in-right"></i> Iniciar sesión</NavLink></li>
                             </NotAuthorized>
                         </AuthorizeView>
-                    }
-                </li>
+                    </NotAuthorized>
+                </AuthorizeView>
             </ul>
         </div>
     </div>
 </nav>
 
 <!-- CONTENIDO DE CADA PÁGINA -->
-<div class="main-content">
+<main id="contenido" class="main-content delta-page" tabindex="-1">
     @if (errorCierreSesion != null) { <div class="alert alert-danger" role="alert">@errorCierreSesion</div> }
     @Body
-</div>
+</main>
 
 <!-- FOOTER CENTRADO -->
 <footer class="footer mt-5 text-center">

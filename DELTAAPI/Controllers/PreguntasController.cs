@@ -18,6 +18,27 @@ namespace DELTAAPI.Controllers
             _context = context;
         }
 
+        private static string? OpcionesPublicas(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json)) return null;
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(json);
+                if (doc.RootElement.ValueKind != System.Text.Json.JsonValueKind.Array) return "[]";
+                var textos = doc.RootElement.EnumerateArray().Select(item =>
+                {
+                    if (item.ValueKind == System.Text.Json.JsonValueKind.String) return item.GetString() ?? "";
+                    if (item.ValueKind != System.Text.Json.JsonValueKind.Object) return "";
+                    foreach (var prop in item.EnumerateObject())
+                        if (prop.Name.Equals("texto", StringComparison.OrdinalIgnoreCase) && prop.Value.ValueKind == System.Text.Json.JsonValueKind.String)
+                            return prop.Value.GetString() ?? "";
+                    return "";
+                }).Select(texto => new { texto }).ToList();
+                return System.Text.Json.JsonSerializer.Serialize(textos);
+            }
+            catch (System.Text.Json.JsonException) { return "[]"; }
+        }
+
         /// <summary>
         /// Guarda un lote de preguntas de evaluación teórica en la base de datos
         /// </summary>
@@ -149,7 +170,7 @@ namespace DELTAAPI.Controllers
                     p.IdPregunta,
                     p.Texto,
                     p.TipoEvaluacion,
-                    p.Opciones,
+                    Opciones = OpcionesPublicas(p.Opciones),
                     p.Puntos
                 }));
             }

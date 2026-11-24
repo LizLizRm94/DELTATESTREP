@@ -5,6 +5,7 @@
 @layout MainSinLayout
 @inject IJSRuntime Js
 
+<div class="delta-screen delta-screen-verusuarios" data-page="verusuarios">
 <h3 class="titulo-form">VER USUARIOS</h3>
 
 @if (isLoading)
@@ -93,7 +94,7 @@ else
    width: 100%;
         border-collapse: collapse;
    background: white;
-        border-radius: 10px;
+        border-radius: var(--delta-radius, 16px);
         overflow: hidden;
       box-shadow: 0 6px 24px rgba(0,0,0,0.06);
     }
@@ -138,7 +139,7 @@ border-bottom: none;
     .btn-accion {
         padding: 8px 12px;
         border: none;
-      border-radius: 6px;
+      border-radius: var(--delta-radius, 16px);
  cursor: pointer;
         font-size: 14px;
         transition: all 0.3s ease;
@@ -204,7 +205,7 @@ border-bottom: none;
         max-width: 1200px;
         margin: 0 auto 20px;
      padding: 16px 20px;
-        border-radius: 8px;
+        border-radius: var(--delta-radius, 16px);
         display: flex;
         justify-content: space-between;
       align-items: center;
@@ -286,6 +287,8 @@ border-bottom: none;
  }
 </style>
 
+
+</div>
 @code {
     private List<DELTATEST.Models.UserViewModel>? users;
     private bool isLoading = true;

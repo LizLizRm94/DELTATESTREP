@@ -18,6 +18,33 @@ namespace DELTAAPI.Controllers
             _context = context;
         }
 
+        [HttpGet("panel/{idUsuario:int}")]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public async Task<IActionResult> Panel(int idUsuario, CancellationToken ct)
+        {
+            if (!User.CanAccessUser(idUsuario)) return Forbid();
+            var relational = _context.Database.IsRelational();
+            if (relational) await _context.Database.OpenConnectionAsync(ct);
+            try
+            {
+                var validado = HttpContext.Items[typeof(SessionUserSnapshot)] as SessionUserSnapshot;
+                var nombre = validado?.IdUsuario == idUsuario ? validado.NombreCompleto
+                    : await _context.Usuarios.AsNoTracking().Where(u => u.IdUsuario == idUsuario)
+                        .Select(u => u.NombreCompleto).FirstOrDefaultAsync(ct);
+                if (nombre == null) return NotFound();
+                var ultima = await _context.Evaluacions.AsNoTracking()
+                    .Where(e => e.IdEvaluado == idUsuario && e.Nota != null)
+                    .OrderByDescending(e => e.FechaEvaluacion).ThenByDescending(e => e.IdEvaluacion)
+                    .Select(e => new { e.IdEvaluacion, e.FechaEvaluacion, e.Nota, TipoEvaluacion = e.TipoEvaluacion == true ? "Teórica" : "Práctica" })
+                    .FirstOrDefaultAsync(ct);
+                var notificaciones = await _context.Notificacions.AsNoTracking().Where(n => n.IdUsuarioDestino == idUsuario)
+                    .OrderByDescending(n => n.FechaEnvio).ThenByDescending(n => n.IdNotificacion).Take(50)
+                    .Select(n => new { n.TipoNotificacion, n.Mensaje, n.FechaEnvio }).ToListAsync(ct);
+                return Ok(new { NombreUsuario = nombre, UltimaEvaluacion = ultima, Notificaciones = notificaciones });
+            }
+            finally { if (relational) await _context.Database.CloseConnectionAsync(); }
+        }
+
         [HttpGet("estado/{idUsuario}")]
         public async Task<ActionResult<EvaluadoEstado>> ObtenerEstado(int idUsuario)
         {

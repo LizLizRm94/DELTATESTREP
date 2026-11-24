@@ -5,6 +5,7 @@
 @layout MainSinLayout
 @inject IJSRuntime Js
 
+<div class="delta-screen delta-screen-verregistrousuario" data-page="verregistrousuario">
 <h3 class="mb-4 text-center fw-bold">Ver Usuario</h3>
 
 @if (isLoading)
@@ -23,7 +24,7 @@ else if (notFound)
 }
 else
 {
-    <div class="card shadow-sm p-4 mx-auto" style="width: 100%; max-width: 550px; border-radius: 15px;">
+    <div class="card shadow-sm p-4 mx-auto" style="width: 100%; max-width: 550px; border-radius: var(--delta-radius, 16px);">
         <EditForm Model="usuario">
             <DataAnnotationsValidator />
             <ValidationSummary />
@@ -104,6 +105,8 @@ else
     }
 </style>
 
+
+</div>
 @code {
     [Parameter] public int IdUsuario { get; set; }
 

@@ -2,7 +2,7 @@
 
 namespace DELTATEST.Models
 {
-    public class RegisterModel
+    public class RegisterModel : IValidatableObject
     {
         [Required(ErrorMessage = "Nombre completo es obligatorio")]
         public string NombreCompleto { get; set; } = string.Empty;
@@ -17,8 +17,10 @@ namespace DELTATEST.Models
         [EmailAddress(ErrorMessage = "Correo no válido")]
         public string Correo { get; set; } = string.Empty;
 
+        [StringLength(50)]
         public string? Telefono { get; set; }
 
+        [Required(ErrorMessage="Seleccione un rol."), RegularExpression("^(Usuario|Inspector|Administrador)$", ErrorMessage="Rol no válido.")]
         public string? Rol { get; set; }
 
         [DataType(DataType.Date)]
@@ -38,5 +40,11 @@ namespace DELTATEST.Models
         [Compare("Password", ErrorMessage = "Las contraseñas no coinciden")]
         [DataType(DataType.Password)]
         public string? ConfirmPassword { get; set; }
+        public string? TipoEvaluado { get; set; }
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            var error=Delta.Contracts.VinculacionLaboral.Validar(TipoEvaluado,PuestoActual,PuestoARotar,PuestoSolicitado);
+            if(error!=null) yield return new ValidationResult(error);
+        }
     }
 }

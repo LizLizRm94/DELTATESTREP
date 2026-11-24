@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using Delta.Contracts;
@@ -109,17 +109,19 @@ public class FlujoConvocatorias
 
     [Theory]
     [InlineData(null, false, HttpStatusCode.Unauthorized)]
-    [InlineData("Inspector", false, HttpStatusCode.Forbidden)]
+    [InlineData("Inspector", false, HttpStatusCode.Created)]
     [InlineData("Usuario", false, HttpStatusCode.Forbidden)]
     [InlineData("Administrador", true, HttpStatusCode.Unauthorized)]
-    public async Task Crear_ExigeCookieVigente_Y_RolAdministrador(string? role, bool expired, HttpStatusCode expected)
+    public async Task Crear_PermiteAdministradorEInspector_Y_ExigeCookieVigente(string? role, bool expired, HttpStatusCode expected)
     {
         using var factory = new ApiFactory();
         using var client = factory.Client();
         client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
         if (role != null) client.DefaultRequestHeaders.Add("Cookie", await factory.Cookie(role, expired));
         var response = await client.PostAsJsonAsync("api/convocatorias", Form());
-        Assert.Equal(expected, response.StatusCode); Assert.Null(response.Headers.Location);
+        Assert.Equal(expected, response.StatusCode);
+        if (expected == HttpStatusCode.Created) Assert.NotNull(response.Headers.Location);
+        else Assert.Null(response.Headers.Location);
     }
 
     [Fact]

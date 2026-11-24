@@ -1,14 +1,14 @@
-@page "/administrador/convocatorias/crear"
-@attribute [Authorize(Roles = "Administrador")]
+﻿@page "/administrador/convocatorias/crear"
+@attribute [Authorize(Roles = "Administrador,Inspector")]
 @layout MainSinLayout
 @using Delta.Contracts
 @using System.Net
 @using System.Text.Json
 @inject HttpClient Http
 
+<div class="delta-screen delta-screen-crearconvocatoria" data-page="crearconvocatoria">
 <PageTitle>Generar convocatoria</PageTitle>
-<div class="container py-4" style="max-width: 900px">
-    <a href="/panelControlAdmin">Volver al panel</a>
+<div class="container py-4 convocatoria-editor" style="max-width: 900px">
     <h1 class="h3 mt-3">Generar convocatoria</h1>
     <p>Todos los campos son obligatorios. La publicación será visible desde la fecha indicada. La fecha límite incluye todo ese día en Bolivia.</p>
     @if (error != null) { <div class="alert alert-danger" role="alert">@error <a href="/IniciarSesion" target="_blank" rel="noopener">Abrir inicio de sesión en otra pestaña</a></div> }
@@ -23,7 +23,7 @@
         <EditForm Model="form" OnValidSubmit="Guardar">
             <DataAnnotationsValidator />
             <ValidationSummary />
-            <fieldset disabled="@guardando">
+            <fieldset disabled="@guardando" class="convocatoria-fields">
                 <div class="mb-3">
                     <label for="Codigo" class="form-label">Código de convocatoria</label>
                     <InputText id="Codigo" class="form-control" @bind-Value="form.Codigo" maxlength="60" />
@@ -102,11 +102,8 @@
                     </div>
                 </div>
                 <div class="mb-3">
-                    <label for="estado" class="form-label">Estado</label>
-                    <InputSelect id="estado" class="form-select" @bind-Value="form.EstadoConvocatoria">
-                        <option value="Activa">Activa</option>
-                        <option value="Cerrada">Cerrada</option>
-                    </InputSelect>
+                    <div class="form-check form-switch"><InputCheckbox id="estado" class="form-check-input" role="switch" @bind-Value="ConvocatoriaActiva" /><label class="form-check-label" for="estado">Convocatoria activa</label></div>
+                    <p class="small text-muted">Al desmarcar se guarda como cerrada. La fecha límite también determina su vigencia pública.</p>
                     <ValidationMessage For="@(() => form.EstadoConvocatoria)" />
                 </div>
                 <button type="submit" class="btn btn-warning">@(guardando ? "Guardando..." : "Guardar convocatoria")</button>
@@ -115,8 +112,11 @@
     }
 </div>
 
+
+</div>
 @code {
     private ConvocatoriaForm form = new();
+    private bool ConvocatoriaActiva { get => form.EstadoConvocatoria == "Activa"; set => form.EstadoConvocatoria = value ? "Activa" : "Cerrada"; }
     private bool guardando, guardada;
     private string? error, aviso;
     private void Nueva() { form = new(); guardada = false; error = null; }
@@ -134,7 +134,7 @@
                 return;
             }
             if (response.StatusCode == HttpStatusCode.Forbidden)
-            { error = "Su cuenta no tiene permiso de administrador para crear convocatorias."; return; }
+            { error = "Su cuenta no tiene permisos para crear convocatorias."; return; }
             if (!response.IsSuccessStatusCode)
             {
                 var body = await response.Content.ReadFromJsonAsync<JsonElement>();

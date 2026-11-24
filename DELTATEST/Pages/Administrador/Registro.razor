@@ -7,10 +7,11 @@
 @layout MainSinLayout
 @inject NavigationManager Navigation
 
+<div class="delta-screen delta-screen-registro" data-page="registro">
 <style>
     .form-container { display:flex; justify-content:center; align-items:center; min-height:100vh; padding:1rem; overflow-y:auto; }
-    .form-box { width:100%; max-width:420px; padding:clamp(1.25rem, 5vw, 1.875rem); border:1px solid #e6e6e6; border-radius:8px; }
-    .btn-primary { background-color:#e5a650; color:white; padding:10px; width:100%; min-height:44px; border:none; border-radius:6px }
+    .form-box { width:100%; max-width:420px; padding:clamp(1.25rem, 5vw, 1.875rem); border:1px solid #e6e6e6; border-radius: var(--delta-radius, 16px); }
+    .btn-primary { background-color:#e5a650; color:white; padding:10px; width:100%; min-height:44px; border:none; border-radius: var(--delta-radius, 16px) }
     .form-control { min-height:44px; }
 
     @@media (max-width: 575.98px) {
@@ -73,7 +74,7 @@
 
                 <div class="mb-2">
                     <label>Teléfono (opcional)</label>
-                    <InputText @bind-Value="model.Telefono" class="form-control" />
+                    <InputText type="tel" autocomplete="tel" maxlength="50" @bind-Value="model.Telefono" class="form-control" />
                 </div>
 
                 <div class="mb-2">
@@ -90,15 +91,17 @@
                     </InputSelect>
                 </div>
 
+                <VinculacionLaboralFields @bind-Tipo="model.TipoEvaluado" @bind-PuestoActual="model.PuestoActual" @bind-PuestoARotar="model.PuestoARotar" @bind-PuestoSolicitado="model.PuestoSolicitado" Disabled="@isSubmitting" />
+
                 <div class="mb-2">
-                    <label>Contraseña</label>
-                    <InputText @bind-Value="model.Password" type="password" class="form-control" />
+                    <label for="registro-password">Contraseña</label>
+                    <div class="password-field"><InputText id="registro-password" @bind-Value="model.Password" type="@(mostrarPassword ? "text" : "password")" class="form-control" autocomplete="new-password" /><button type="button" class="password-toggle" @onclick="() => mostrarPassword = !mostrarPassword" aria-controls="registro-password" aria-pressed="@(mostrarPassword ? "true" : "false")" title="@(mostrarPassword ? "Ocultar contraseña" : "Ver contraseña")" aria-label="@(mostrarPassword ? "Ocultar contraseña" : "Ver contraseña")"><i class="bi @(mostrarPassword ? "bi-eye-slash" : "bi-eye")" aria-hidden="true"></i></button></div>
                     <ValidationMessage For="() => model.Password" />
                 </div>
 
                 <div class="mb-2">
-                    <label>Confirmar contraseña</label>
-                    <InputText @bind-Value="model.ConfirmPassword" type="password" class="form-control" />
+                    <label for="registro-confirmacion">Confirmar contraseña</label>
+                    <div class="password-field"><InputText id="registro-confirmacion" @bind-Value="model.ConfirmPassword" type="@(mostrarConfirmacion ? "text" : "password")" class="form-control" autocomplete="new-password" /><button type="button" class="password-toggle" @onclick="() => mostrarConfirmacion = !mostrarConfirmacion" aria-controls="registro-confirmacion" aria-pressed="@(mostrarConfirmacion ? "true" : "false")" title="@(mostrarConfirmacion ? "Ocultar contraseña" : "Ver contraseña")" aria-label="@(mostrarConfirmacion ? "Ocultar contraseña" : "Ver contraseña")"><i class="bi @(mostrarConfirmacion ? "bi-eye-slash" : "bi-eye")" aria-hidden="true"></i></button></div>
                     <ValidationMessage For="() => model.ConfirmPassword" />
                 </div>
 
@@ -127,13 +130,17 @@
     </div>
 
 
+
+</div>
 @code {
+    private bool mostrarPassword, mostrarConfirmacion;
     private RegisterModel model = new() { Rol = "Usuario" };
     private string? message;
     private bool isSubmitting = false;
 
     private async Task HandleValidSubmit()
     {
+        if (isSubmitting) return;
         isSubmitting = true;
         message = null;
         StateHasChanged();

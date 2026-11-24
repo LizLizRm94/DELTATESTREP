@@ -4,96 +4,35 @@
 @inject NavigationManager Nav
 @inject AuthenticationStateProvider AuthStateProvider
 
-<div class="container-fluid d-flex justify-content-center align-items-center vh-100 bg-light">
-    <div class="p-3 p-md-5 w-100">
-   <h3 class="fw-bold text-center mb-2 text-dark">Panel de Control de Administrador</h3>
+<div class="delta-screen delta-screen-panelcontrol" data-page="panelcontrol">
+<section class="admin-dashboard">
+    <h1 class="h3 fw-bold text-center mb-2">Panel de Control de @(esAdministrador ? "Administrador" : "Inspector")</h1>
+    <p class="text-center mb-4 h5">@(isLoading ? "Cargando..." : $"Bienvenido {userName}")</p>
+    <div class="admin-actions">
+        <a href="/verUsuarios" class="card dashboard-card"><div class="card-body text-center p-4"><div class="icon-circle mx-auto mb-3"><img src="images/eye.png" class="icon-img" alt="" /></div><h2 class="h5">Ver Cuentas</h2><p>Administra las cuentas de usuario.</p></div></a>
+        <a href="/CrearEvaluacion" class="card dashboard-card"><div class="card-body text-center p-4"><div class="icon-circle mx-auto mb-3"><img src="images/user.png" class="icon-img" alt="" /></div><h2 class="h5">Crear Evaluación</h2><p>Define nuevos formularios de evaluación.</p></div></a>
+        <a href="/admin/evaluaciones-teoricas" class="card dashboard-card"><div class="card-body text-center p-4"><div class="icon-circle mx-auto mb-3"><img src="images/view.png" class="icon-img" alt="" /></div><h2 class="h5">Ver Evaluación</h2><p>Visualiza y califica evaluaciones.</p></div></a>
+        <AuthorizeView Roles="Administrador,Inspector">
+            <Authorized>
+                <a href="/administrador/convocatorias/crear" class="card dashboard-card"><div class="card-body text-center p-4"><div class="icon-circle mx-auto mb-3"><i class="bi bi-file-earmark-text fs-1" aria-hidden="true"></i></div><h2 class="h5">Crear convocatoria</h2><p>Publica requisitos y fechas de participación.</p></div></a>
+            </Authorized>
 
-   <!-- Greeting -->
-  @if (isLoading)
-        {
-    <p class="text-center text-muted mb-4">Cargando...</p>
-    }
-        else
-        {
-      <p class="text-center text-dark mb-4 h5">Bienvenido @(!string.IsNullOrWhiteSpace(userName) ? userName : "Administrador")</p>
-        }
-
-        <!-- FILA SUPERIOR -->
-        <div class="row g-4 justify-content-center">
-
-            <!-- Ver Cuentas -->
-   <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-    <div class="card h-100 shadow-sm border-0 dashboard-card" @onclick="IrAVerUsuario">
-              <div class="card-body text-center p-4">
-    <div class="icon-circle bg-primary-soft mx-auto mb-3">
-          <img src="images/eye.png" class="icon-img" alt="Ver cuentas" />
-   </div>
-       <h5 class="card-title fw-semibold mt-3">Ver Cuentas</h5>
-         <p class="card-text text-muted small">Administra las cuentas de usuario.</p>
-</div>
-                </div>
-       </div>
-
-            <!-- Crear Cuenta -->
-            <AuthorizeView Roles="Administrador">
-            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-         <div class="card h-100 shadow-sm border-0 dashboard-card" @onclick="IrARegistro">
-                    <div class="card-body text-center p-4">
-     <div class="icon-circle bg-success-soft mx-auto mb-3">
-      <img src="images/create.png" class="icon-img" alt="Crear cuenta" />
-     </div>
-   <h5 class="card-title fw-semibold mt-3">Crear Cuenta</h5>
-            <p class="card-text text-muted small">Registra nuevos usuarios y roles.</p>
-     </div>
-     </div>
- </div>
-
-            </AuthorizeView>
-
-            <AuthorizeView Roles="Administrador">
-                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                    <a href="/administrador/convocatorias/crear" class="card h-100 shadow-sm border-0 dashboard-card text-decoration-none text-dark">
-                        <div class="card-body text-center p-4">
-                            <div class="icon-circle bg-warning-soft mx-auto mb-3"><i class="bi bi-file-earmark-text fs-1 text-white"></i></div>
-                            <h5 class="card-title fw-semibold mt-3">Generar convocatoria</h5>
-                            <p class="card-text text-muted small">Publica requisitos y fechas de participación.</p>
-                        </div>
-                    </a>
-                </div>
-            </AuthorizeView>
-
-            <!-- Crear Evaluación -->
-            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                <div class="card h-100 shadow-sm border-0 dashboard-card" @onclick="IrACrearEvaluacion">
-        <div class="card-body text-center p-4">
-   <div class="icon-circle bg-warning-soft mx-auto mb-3">
-         <img src="images/user.png" class="icon-img" alt="Crear evaluación" />
-     </div>
-      <h5 class="card-title fw-semibold mt-3">Crear Evaluación</h5>
-               <p class="card-text text-muted small">Define nuevos formularios de evaluación.</p>
- </div>
-        </div>
-            </div>
-
-      <!-- Ver Evaluación -->
- <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-          <div class="card h-100 shadow-sm border-0 dashboard-card" @onclick="IrAVerEvaluaciones">
-    <div class="card-body text-center p-4">
-         <div class="icon-circle bg-info-soft mx-auto mb-3">
-      <img src="images/view.png" class="icon-img" alt="Ver evaluación" />
-           </div>
-<h5 class="card-title fw-semibold mt-3">Ver Evaluación</h5>
-             <p class="card-text text-muted small">Visualiza y califica evaluaciones.</p>
-        </div>
-        </div>
-   </div>
-
-        </div>
+        </AuthorizeView>
     </div>
-</div>
-
+    <AuthorizeView Roles="Administrador"><div class="text-center mt-4"><a href="/Registro" class="btn btn-orange">Crear cuenta</a></div></AuthorizeView>
+</section>
 
 <style>
+    .admin-dashboard { max-width: 1450px; margin: 0 auto; padding: clamp(2rem,6vh,5rem) 1.5rem; }
+    .admin-actions { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1.5rem; }
+    .admin-actions .dashboard-card { color:#333; text-decoration:none; border:0; box-shadow:0 2px 5px #0001; }
+    .admin-actions .icon-circle { background:#f58220; }
+    .admin-actions p { color:#666; margin-bottom:0; }
+    .admin-actions .restricted-card { cursor:default; background:#f5f5f5; }
+    .admin-actions .restricted-card .icon-circle { background:#ddd; }
+    @@media(max-width:1100px) { .admin-actions { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+    @@media(max-width:575.98px) { .admin-actions { grid-template-columns:minmax(0,1fr); } }
+
     .bg-primary-soft,
     .bg-success-soft,
     .bg-warning-soft,
@@ -104,7 +43,7 @@
     .dashboard-card {
         cursor: pointer;
      transition: transform 0.2s, box-shadow 0.2s;
-   border-radius: 15px;
+   border-radius: var(--delta-radius, 16px);
  }
 
         .dashboard-card:hover {
@@ -139,7 +78,10 @@
     }
 </style>
 
+
+</div>
 @code {
+    private bool esAdministrador;
     private string? userName;
     private bool isLoading = true;
 
@@ -149,6 +91,7 @@
         {
             var state = await AuthStateProvider.GetAuthenticationStateAsync();
             userName = state.User.Identity?.Name;
+            esAdministrador = state.User.IsInRole("Administrador");
         }
         catch
         {
