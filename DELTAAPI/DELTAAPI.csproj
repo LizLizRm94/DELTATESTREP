@@ -26,7 +26,7 @@
   <ProjectExtensions><VisualStudio><UserProperties /></VisualStudio></ProjectExtensions>
 
   <ItemGroup>
-    <Compile Include="..\Contracts\AreasFarmaceuticas.cs" Link="Contracts\AreasFarmaceuticas.cs" />
+    <Compile Include="..\Contracts\CatalogoCargos.cs" Link="Contracts\CatalogoCargos.cs" />
     <Compile Include="..\Contracts\VinculacionLaboral.cs" Link="Contracts\VinculacionLaboral.cs" />
     <Compile Include="..\Contracts\ConvocatoriaForm.cs" Link="Contracts\ConvocatoriaForm.cs" />
   </ItemGroup>

@@ -9,7 +9,7 @@ public class CatalogoAreas
     [Theory]
     [InlineData("Administrador")]
     [InlineData("Inspector")]
-    public async Task PersonalAutorizado_RecibeAreasProvisionales(string rol)
+    public async Task PersonalAutorizado_RecibeCargosProporcionados(string rol)
     {
         using var factory = new ApiFactory();
         using var client = factory.Client();
@@ -18,9 +18,11 @@ public class CatalogoAreas
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var areas = await response.Content.ReadFromJsonAsync<List<string>>();
         Assert.NotNull(areas);
-        Assert.Contains("Producción farmacéutica", areas);
-        Assert.Contains("Farmacovigilancia", areas);
-        Assert.True(areas.Count >= 10);
+        Assert.Contains("Jefe de control de calidad", areas);
+        Assert.Contains("Inspector", areas);
+        Assert.Contains("Encargado de validaciones de metodologías analíticas", areas);
+        Assert.DoesNotContain("Producción farmacéutica", areas);
+        Assert.Equal(8, areas.Count);
         Assert.Equal(areas.Count, areas.Distinct(StringComparer.OrdinalIgnoreCase).Count());
     }
 

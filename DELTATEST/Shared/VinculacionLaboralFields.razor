@@ -1,18 +1,18 @@
 @inject HttpClient Http
 <fieldset disabled="@Disabled" class="mb-3">
     <legend class="h6">Vinculación laboral</legend>
-    <p class="text-muted small">Por ahora, seleccione el área de trabajo correspondiente a cada puesto.</p>
+
     <div class="mb-3"><label for="vinculacion-tipo">Tipo de personal</label>
         <select id="vinculacion-tipo" class="form-select" value="@Tipo" @onchange="CambiarTipo"><option value="">Seleccione una opción</option><option value="Empleado">Empleado</option><option value="Pasante">Pasante</option></select>
     </div>
     @if(Tipo=="Empleado")
     {
-        <div class="mb-3"><label for="vinculacion-actual">Puesto actual</label><select id="vinculacion-actual" class="form-select" value="@PuestoActual" @onchange="e=>PuestoActualChanged.InvokeAsync(e.Value?.ToString())" disabled="@(cargos.Count==0)"><option value="">Seleccione un área de trabajo</option>@foreach(var cargo in Opciones(PuestoActual)){<option value="@cargo">@cargo</option>}</select></div>
-        <div class="mb-3"><label for="vinculacion-rotar">Puesto a rotar</label><select id="vinculacion-rotar" class="form-select" value="@PuestoARotar" @onchange="e=>PuestoARotarChanged.InvokeAsync(e.Value?.ToString())" disabled="@(cargos.Count==0)"><option value="">Seleccione un área de trabajo</option>@foreach(var cargo in Opciones(PuestoARotar)){<option value="@cargo">@cargo</option>}</select></div>
+        <div class="mb-3"><label for="vinculacion-actual">Puesto actual</label><select id="vinculacion-actual" class="form-select" value="@PuestoActual" @onchange="e=>PuestoActualChanged.InvokeAsync(e.Value?.ToString())" disabled="@(cargos.Count==0)"><option value="">Seleccione un cargo</option>@foreach(var cargo in Opciones(PuestoActual)){<option value="@cargo">@cargo</option>}</select></div>
+        <div class="mb-3"><label for="vinculacion-rotar">Puesto a rotar</label><select id="vinculacion-rotar" class="form-select" value="@PuestoARotar" @onchange="e=>PuestoARotarChanged.InvokeAsync(e.Value?.ToString())" disabled="@(cargos.Count==0)"><option value="">Seleccione un cargo</option>@foreach(var cargo in Opciones(PuestoARotar)){<option value="@cargo">@cargo</option>}</select></div>
     }
     else if(Tipo=="Pasante")
     {
-        <div class="mb-3"><label for="vinculacion-solicitado">Puesto solicitado</label><select id="vinculacion-solicitado" class="form-select" value="@PuestoSolicitado" @onchange="e=>PuestoSolicitadoChanged.InvokeAsync(e.Value?.ToString())" disabled="@(cargos.Count==0)"><option value="">Seleccione un área de trabajo</option>@foreach(var cargo in Opciones(PuestoSolicitado)){<option value="@cargo">@cargo</option>}</select></div>
+        <div class="mb-3"><label for="vinculacion-solicitado">Puesto solicitado</label><select id="vinculacion-solicitado" class="form-select" value="@PuestoSolicitado" @onchange="e=>PuestoSolicitadoChanged.InvokeAsync(e.Value?.ToString())" disabled="@(cargos.Count==0)"><option value="">Seleccione un cargo</option>@foreach(var cargo in Opciones(PuestoSolicitado)){<option value="@cargo">@cargo</option>}</select></div>
     }
     @if(error!=null)
     {
@@ -30,7 +30,7 @@
     [Parameter] public EventCallback<string?> PuestoSolicitadoChanged {get;set;}
     [Parameter] public bool Disabled {get;set;}
     // Opciones compartidas con la API: disponibles incluso si el servidor aún no se ha reiniciado.
-    private List<string> cargos=Delta.Contracts.AreasFarmaceuticas.Provisionales.ToList();
+    private List<string> cargos=Delta.Contracts.CatalogoCargos.Predeterminados.ToList();
     private bool cargando;
     private string? error;
     protected override Task OnInitializedAsync()=>Cargar();

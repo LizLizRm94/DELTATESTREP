@@ -47,7 +47,7 @@ IdUsuario = u.IdUsuario,
         public async Task<IActionResult> Cargos([FromServices] IConfiguration configuration)
         {
             var configurados=configuration.GetSection("Cargos").Get<string[]>()
-                ?? Delta.Contracts.AreasFarmaceuticas.Provisionales.ToArray();
+                ?? Delta.Contracts.CatalogoCargos.Predeterminados.ToArray();
             var actuales=await _context.Usuarios.AsNoTracking().Select(u=>new {u.PuestoActual,u.PuestoARotar,u.PuestoSolicitado}).ToListAsync();
             var cargos=configurados.Concat(actuales.SelectMany(u=>new[]{u.PuestoActual,u.PuestoARotar,u.PuestoSolicitado}))
                 .Where(c=>!string.IsNullOrWhiteSpace(c)).Select(c=>c!.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(c=>c).ToList();
