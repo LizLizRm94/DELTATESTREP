@@ -57,9 +57,17 @@ namespace DELTAAPI.Controllers
         }
 
         [HttpPost("register")]
-        [Authorize(Roles = "Administrador")]
+        [Authorize(Roles = "Administrador,Inspector")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
+            // Solo el administrador puede asignar roles con permisos de gestión.
+            var requestedRole = string.IsNullOrWhiteSpace(dto?.Role) ? "Usuario" : dto.Role.Trim();
+            var roleNormalized = NormalizeRole(requestedRole);
+            if (roleNormalized == null)
+                return BadRequest("Rol no válido.");
+            if (!User.IsInRole("Administrador") && roleNormalized != "Usuario")
+                return Forbid();
+
             if (string.IsNullOrWhiteSpace(dto?.NombreCompleto) || string.IsNullOrWhiteSpace(dto.Password))
                 return BadRequest("Nombre completo y contraseña son obligatorios.");
 
@@ -109,14 +117,6 @@ namespace DELTAAPI.Controllers
                 _logger.LogError(ex, "Register: error al consultar usuarios");
                 return StatusCode(500, "Error interno del servidor.");
             }
-
-            // Política de roles: solo un Administrador autenticado puede crear cuentas.
-            // Si no se indica rol, se crea un "Usuario".
-            var requestedRole = string.IsNullOrWhiteSpace(dto.Role) ? "Usuario" : dto.Role.Trim();
-            var roleNormalized = NormalizeRole(requestedRole);
-
-            if (roleNormalized == null)
-                return BadRequest("Rol no válido.");
 
             // El creador SIEMPRE se toma de la cookie autenticada. Nunca del cuerpo.
             var idCreadoPor = User.GetUserId();

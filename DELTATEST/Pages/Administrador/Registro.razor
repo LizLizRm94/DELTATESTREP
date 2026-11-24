@@ -1,5 +1,5 @@
 ﻿@page "/Registro"
-@attribute [Authorize(Roles = "Administrador")]
+@attribute [Authorize(Roles = "Administrador,Inspector")]
 
 @using Microsoft.AspNetCore.Components.Forms
 @using DELTATEST.Models
@@ -24,7 +24,7 @@
     <div class="form-container">
         <div class="form-box">
             <h2>Registro de usuarios</h2>
-            <p class="text-muted small">Solo un administrador puede crear cuentas.</p>
+            <p class="text-muted small">Registra una cuenta. El inspector puede crear cuentas con rol Usuario; el administrador también puede asignar otros roles.</p>
 
             @if (isSubmitting)
             {
@@ -86,8 +86,10 @@
                     <label>Rol</label>
                     <InputSelect @bind-Value="model.Rol" class="form-control">
                         <option value="Usuario">Usuario</option>
-                        <option value="Inspector">Inspector</option>
-                        <option value="Administrador">Administrador</option>
+                        <AuthorizeView Roles="Administrador" Context="roleAuthorization">
+                            <option value="Inspector">Inspector</option>
+                            <option value="Administrador">Administrador</option>
+                        </AuthorizeView>
                     </InputSelect>
                 </div>
 
@@ -149,7 +151,7 @@
 
         if (success)
         {
-            Navigation.NavigateTo("/panelControlAdmin", forceLoad: true);
+            Navigation.NavigateTo("/verUsuarios");
             return;
         }
 

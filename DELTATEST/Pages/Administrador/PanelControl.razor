@@ -9,12 +9,12 @@
     <h1 class="h3 fw-bold text-center mb-2">Panel de Control de @(esAdministrador ? "Administrador" : "Inspector")</h1>
     <p class="text-center mb-4 h5">@(isLoading ? "Cargando..." : $"Bienvenido {userName}")</p>
     <div class="admin-actions">
-        <a href="/verUsuarios" class="card dashboard-card"><div class="card-body text-center p-4"><div class="icon-circle mx-auto mb-3"><img src="images/eye.png" class="icon-img" alt="" /></div><h2 class="h5">Ver Cuentas</h2><p>Administra las cuentas de usuario.</p></div></a>
+        <a href="/verUsuarios" class="card dashboard-card"><div class="card-body text-center p-4"><div class="icon-circle mx-auto mb-3"><img src="images/eye.png" class="icon-img" alt="" /></div><h2 class="h5">Administrar cuentas</h2><p>Administra las cuentas de usuario.</p></div></a>
         <a href="/CrearEvaluacion" class="card dashboard-card"><div class="card-body text-center p-4"><div class="icon-circle mx-auto mb-3"><img src="images/user.png" class="icon-img" alt="" /></div><h2 class="h5">Crear Evaluación</h2><p>Define nuevos formularios de evaluación.</p></div></a>
         <a href="/admin/evaluaciones-teoricas" class="card dashboard-card"><div class="card-body text-center p-4"><div class="icon-circle mx-auto mb-3"><img src="images/view.png" class="icon-img" alt="" /></div><h2 class="h5">Ver Evaluación</h2><p>Visualiza y califica evaluaciones.</p></div></a>
         <AuthorizeView Roles="Administrador,Inspector">
             <Authorized>
-                <a href="/administrador/convocatorias/crear" class="card dashboard-card"><div class="card-body text-center p-4"><div class="icon-circle mx-auto mb-3"><i class="bi bi-file-earmark-text fs-1" aria-hidden="true"></i></div><h2 class="h5">Crear convocatoria</h2><p>Publica requisitos y fechas de participación.</p></div></a>
+                <a href="/administrador/convocatorias" class="card dashboard-card"><div class="card-body text-center p-4"><div class="icon-circle mx-auto mb-3"><i class="bi bi-file-earmark-text fs-1" aria-hidden="true"></i></div><h2 class="h5">Administrar convocatorias</h2><p>Consulta las convocatorias y crea nuevas publicaciones.</p></div></a>
             </Authorized>
 
         </AuthorizeView>

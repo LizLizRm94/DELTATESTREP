@@ -4,9 +4,13 @@
 @inject NavigationManager NavigationManager
 @layout MainSinLayout
 @inject IJSRuntime Js
+<PageTitle>Administrar cuentas</PageTitle>
 
 <div class="delta-screen delta-screen-verusuarios" data-page="verusuarios">
-<h3 class="titulo-form">VER USUARIOS</h3>
+<div class="cuentas-header">
+    <h1 class="titulo-form">Administrar cuentas</h1>
+    <a href="/Registro" class="btn btn-orange agregar-cuenta"><i class="bi bi-person-plus" aria-hidden="true"></i> Agregar cuenta</a>
+</div>
 
 @if (isLoading)
 {
@@ -74,6 +78,20 @@ else
 }
 
 <style>
+    .cuentas-header {
+        max-width: 1200px;
+        margin: 20px auto 30px;
+        padding: 0 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .cuentas-header .titulo-form { margin: 0; text-align: left; }
+    .agregar-cuenta { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; }
+
     .titulo-form {
       text-align: center;
         margin: 20px 0 30px;

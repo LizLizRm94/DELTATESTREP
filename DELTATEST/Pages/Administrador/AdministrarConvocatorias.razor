@@ -1,0 +1,129 @@
+@page "/administrador/convocatorias"
+@attribute [Authorize(Roles = "Administrador,Inspector")]
+@layout MainSinLayout
+@using Delta.Contracts
+@using System.Net
+@inject HttpClient Http
+@inject IJSRuntime Js
+
+<PageTitle>Administrar convocatorias</PageTitle>
+<div class="delta-screen" data-page="administrarconvocatorias">
+    <section class="container py-4">
+        <div class="convocatorias-header">
+            <h1 class="h3 m-0">Administrar convocatorias</h1>
+            <a class="btn btn-orange" href="/administrador/convocatorias/crear"><i class="bi bi-plus-lg" aria-hidden="true"></i> Crear convocatoria</a>
+        </div>
+        <p class="text-muted">Todas las convocatorias, ordenadas desde la creación más reciente.</p>
+        @if (cargando)
+        {
+            <p role="status">Cargando convocatorias...</p>
+        }
+        else if (error != null)
+        {
+            <div class="alert alert-danger" role="alert">@error</div>
+            <button class="btn btn-outline-secondary" @onclick="Cargar">Reintentar</button>
+        }
+        else if (convocatorias.Count == 0)
+        {
+            <div class="alert alert-info" role="status">Todavía no hay convocatorias. Usa «Crear convocatoria» para agregar la primera.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover responsive-cards">
+                    <caption class="visually-hidden">Listado completo de convocatorias</caption>
+                    <thead><tr><th scope="col">Código</th><th scope="col">Título</th><th scope="col">Publicación</th><th scope="col">Cierre</th><th scope="col">Estado</th><th scope="col">Visibilidad</th><th scope="col">Acciones</th></tr></thead>
+                    <tbody>
+                        @foreach (var c in convocatorias)
+                        {
+                            <tr>
+                                <td data-label="Código">@c.Codigo</td>
+                                <td data-label="Título">@c.NombreConvocatoria</td>
+                                <td data-label="Publicación">@(c.FechaConvocatoria?.ToString("dd/MM/yyyy") ?? "Sin fecha")</td>
+                                <td data-label="Cierre">@(c.FechaCierre?.ToString("dd/MM/yyyy") ?? "Sin fecha")</td>
+                                <td data-label="Estado">@c.EstadoConvocatoria</td>
+                                <td data-label="Visibilidad">@c.Publicacion</td>
+                                <td data-label="Acciones">
+                                    <div class="convocatoria-acciones">
+                                    <a class="btn btn-outline-secondary" href="@($"/administrador/convocatorias/{c.IdConvocatoria}")" aria-label="@($"Ver {c.NombreConvocatoria}")">Ver</a>
+                                    <a class="btn btn-outline-primary" href="@($"/administrador/convocatorias/{c.IdConvocatoria}/editar")" aria-label="@($"Editar {c.NombreConvocatoria}")">Editar</a>
+                                    <button class="btn btn-outline-danger" disabled="@(eliminando != null)" @onclick="() => Eliminar(c)" aria-label="@($"Eliminar {c.NombreConvocatoria}")">@(eliminando == c.IdConvocatoria ? "Eliminando..." : "Eliminar")</button>
+                                    @if (c.PdfPublicoDisponible)
+                                    {
+                                        <a href="@(new Uri(Http.BaseAddress!, $"api/convocatorias/{c.IdConvocatoria}/pdf"))" target="_blank" rel="noopener" aria-label="@($"Ver PDF de {c.NombreConvocatoria} (nueva pestaña)")">Ver PDF <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></a>
+                                    }
+                                    else { <span class="text-muted">No disponible públicamente</span> }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</div>
+
+<style>
+    .convocatorias-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; }
+    .convocatorias-header .btn { min-height: 44px; display: inline-flex; align-items: center; gap: .5rem; }
+    .convocatoria-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+    .convocatoria-acciones .btn { min-height: 44px; }
+</style>
+
+@code {
+    private List<ConvocatoriaGestion> convocatorias = new();
+    private bool cargando = true;
+    private string? error;
+    private int? eliminando;
+    protected override Task OnInitializedAsync() => Cargar();
+    private async Task Eliminar(ConvocatoriaGestion convocatoria)
+    {
+        if (eliminando != null) return;
+        if (!await Js.InvokeAsync<bool>("confirm", $"¿Eliminar la convocatoria «{convocatoria.NombreConvocatoria}»? Se eliminará definitivamente y dejará de estar disponible en inicio y en PDF.")) return;
+        eliminando = convocatoria.IdConvocatoria;
+        error = null;
+        try
+        {
+            using var response = await Http.DeleteAsync($"api/convocatorias/{convocatoria.IdConvocatoria}");
+            if (response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.NotFound)
+                convocatorias.RemoveAll(c => c.IdConvocatoria == convocatoria.IdConvocatoria);
+            else if (response.StatusCode == HttpStatusCode.Unauthorized)
+                error = "La sesión expiró. Inicia sesión nuevamente antes de eliminar.";
+            else if (response.StatusCode == HttpStatusCode.Forbidden)
+                error = "Tu cuenta no tiene permiso para eliminar convocatorias.";
+            else if (response.StatusCode == HttpStatusCode.Conflict)
+            {
+                var body = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+                error = body.GetProperty("mensaje").GetString();
+            }
+            else error = "No se pudo eliminar la convocatoria. Vuelve a intentarlo.";
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+        { error = "No se pudo confirmar la eliminación. Actualiza el listado antes de reintentar."; }
+        finally { eliminando = null; }
+    }
+    private async Task Cargar()
+    {
+        cargando = true;
+        error = null;
+        try
+        {
+            using var response = await Http.GetAsync("api/convocatorias/administracion");
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+                error = "La sesión expiró. Inicia sesión nuevamente para consultar las convocatorias.";
+            else if (response.StatusCode == HttpStatusCode.Forbidden)
+                error = "Tu cuenta no tiene permiso para administrar convocatorias.";
+            else
+            {
+                response.EnsureSuccessStatusCode();
+                convocatorias = await response.Content.ReadFromJsonAsync<List<ConvocatoriaGestion>>() ?? new();
+            }
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+        {
+            error = "No se pudieron cargar las convocatorias. Comprueba la conexión y vuelve a intentarlo.";
+        }
+        finally { cargando = false; }
+    }
+}

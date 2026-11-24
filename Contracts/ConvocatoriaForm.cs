@@ -4,6 +4,7 @@ namespace Delta.Contracts;
 
 public class ConvocatoriaForm : IValidatableObject
 {
+    public bool Publicada { get; set; } = true;
     [Required(ErrorMessage = "Ingrese el código."), StringLength(60, ErrorMessage = "Máximo 60 caracteres.")]
     public string Codigo { get; set; } = "";
     [Required(ErrorMessage = "Ingrese el título."), StringLength(255, ErrorMessage = "Máximo 255 caracteres.")]
@@ -55,4 +56,16 @@ public sealed class ConvocatoriaResumen
     public string EstadoConvocatoria { get; set; } = "";
     public DateOnly? FechaConvocatoria { get; set; }
     public DateOnly? FechaCierre { get; set; }
+}
+
+public sealed class ConvocatoriaGestion
+{
+    public int IdConvocatoria { get; set; }
+    public string Codigo { get; set; } = "";
+    public string NombreConvocatoria { get; set; } = "";
+    public string EstadoConvocatoria { get; set; } = "";
+    public DateOnly? FechaConvocatoria { get; set; }
+    public DateOnly? FechaCierre { get; set; }
+    public bool PdfPublicoDisponible { get; set; }
+    public string Publicacion { get; set; } = "";
 }

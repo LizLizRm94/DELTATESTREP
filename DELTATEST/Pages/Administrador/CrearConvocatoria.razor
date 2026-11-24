@@ -1,29 +1,34 @@
 ﻿@page "/administrador/convocatorias/crear"
 @attribute [Authorize(Roles = "Administrador,Inspector")]
+@page "/administrador/convocatorias/{Id:int}"
+@page "/administrador/convocatorias/{Id:int}/editar"
 @layout MainSinLayout
 @using Delta.Contracts
 @using System.Net
 @using System.Text.Json
 @inject HttpClient Http
+@inject NavigationManager Navigation
 
 <div class="delta-screen delta-screen-crearconvocatoria" data-page="crearconvocatoria">
-<PageTitle>Generar convocatoria</PageTitle>
+<PageTitle>@Titulo</PageTitle>
 <div class="container py-4 convocatoria-editor" style="max-width: 900px">
-    <h1 class="h3 mt-3">Generar convocatoria</h1>
+    <h1 class="h3 mt-3">@Titulo</h1>
+    @if (Id.HasValue) { <a href="/administrador/convocatorias">Volver a convocatorias</a> }
     <p>Todos los campos son obligatorios. La publicación será visible desde la fecha indicada. La fecha límite incluye todo ese día en Bolivia.</p>
-    @if (error != null) { <div class="alert alert-danger" role="alert">@error <a href="/IniciarSesion" target="_blank" rel="noopener">Abrir inicio de sesión en otra pestaña</a></div> }
+    @if (error != null) { <div class="alert alert-danger" role="alert">@error</div> }
+    @if (cargando) { <p role="status">Cargando convocatoria...</p> }
     @if (guardada)
     {
         <div class="alert alert-success" role="status">Convocatoria guardada correctamente. @aviso</div>
-        <a href="/#convocatoria" class="btn btn-warning">Ver convocatorias</a>
+        <a href="/administrador/convocatorias" class="btn btn-warning">Ver convocatorias</a>
         <button type="button" class="btn btn-outline-secondary" @onclick="Nueva">Crear otra</button>
     }
-    else
+    else if (!cargando && !falloCarga)
     {
         <EditForm Model="form" OnValidSubmit="Guardar">
             <DataAnnotationsValidator />
             <ValidationSummary />
-            <fieldset disabled="@guardando" class="convocatoria-fields">
+            <fieldset disabled="@(guardando || SoloLectura)" class="convocatoria-fields">
                 <div class="mb-3">
                     <label for="Codigo" class="form-label">Código de convocatoria</label>
                     <InputText id="Codigo" class="form-control" @bind-Value="form.Codigo" maxlength="60" />
@@ -106,7 +111,15 @@
                     <p class="small text-muted">Al desmarcar se guarda como cerrada. La fecha límite también determina su vigencia pública.</p>
                     <ValidationMessage For="@(() => form.EstadoConvocatoria)" />
                 </div>
-                <button type="submit" class="btn btn-warning">@(guardando ? "Guardando..." : "Guardar convocatoria")</button>
+                <div class="mb-3 form-check form-switch">
+                    <InputCheckbox id="publicada" class="form-check-input" role="switch" @bind-Value="form.Publicada" />
+                    <label class="form-check-label" for="publicada">Publicar convocatoria</label>
+                    <p class="small text-muted">Si está desmarcado, la convocatoria solo aparece en administración. Si está marcado, será pública desde la fecha indicada.</p>
+                </div>
+                @if (!SoloLectura)
+                {
+                    <button type="submit" class="btn btn-warning">@(guardando ? "Guardando..." : "Guardar convocatoria")</button>
+                }
             </fieldset>
         </EditForm>
     }
@@ -115,26 +128,58 @@
 
 </div>
 @code {
+    [Parameter] public int? Id { get; set; }
+    private bool SoloLectura => Id.HasValue && !new Uri(Navigation.Uri).AbsolutePath.EndsWith("/editar", StringComparison.OrdinalIgnoreCase);
+    private string Titulo => !Id.HasValue ? "Crear convocatoria" : SoloLectura ? "Detalle de convocatoria" : "Editar convocatoria";
+    private bool cargando, falloCarga;
     private ConvocatoriaForm form = new();
     private bool ConvocatoriaActiva { get => form.EstadoConvocatoria == "Activa"; set => form.EstadoConvocatoria = value ? "Activa" : "Cerrada"; }
     private bool guardando, guardada;
     private string? error, aviso;
-    private void Nueva() { form = new(); guardada = false; error = null; }
+    private void Nueva()
+    {
+        if (Id.HasValue) Navigation.NavigateTo("/administrador/convocatorias/crear");
+        else { form = new(); guardada = false; error = null; }
+    }
+    protected override async Task OnParametersSetAsync()
+    {
+        form = new(); error = null; guardada = false; falloCarga = false;
+        if (!Id.HasValue) return;
+        cargando = true;
+        try
+        {
+            using var response = await Http.GetAsync($"api/convocatorias/{Id.Value}");
+            if (!response.IsSuccessStatusCode)
+            {
+                falloCarga = true;
+                error = response.StatusCode == HttpStatusCode.NotFound ? "La convocatoria ya no existe." : "No se pudo cargar la convocatoria. Comprueba tu sesión y vuelve a intentarlo.";
+                return;
+            }
+            form = await response.Content.ReadFromJsonAsync<ConvocatoriaForm>() ?? throw new JsonException();
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
+        { falloCarga = true; error = "No se pudo cargar la convocatoria. Comprueba la conexión y vuelve a intentarlo."; }
+        finally { cargando = false; }
+    }
     private async Task Guardar()
     {
-        if (guardando) return;
+        if (guardando || SoloLectura || cargando || falloCarga) return;
         guardando = true;
         error = null;
         try
         {
-            using var response = await Http.PostAsJsonAsync("api/convocatorias", form);
+            using var response = Id.HasValue
+                ? await Http.PutAsJsonAsync($"api/convocatorias/{Id.Value}", form)
+                : await Http.PostAsJsonAsync("api/convocatorias", form);
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
                 error = "La sesión ha expirado. Inicie sesión nuevamente; conserve los datos del formulario antes de salir.";
                 return;
             }
             if (response.StatusCode == HttpStatusCode.Forbidden)
-            { error = "Su cuenta no tiene permisos para crear convocatorias."; return; }
+            { error = "Su cuenta no tiene permisos para guardar convocatorias."; return; }
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            { error = "La convocatoria ya no existe. Vuelve al listado para comprobarlo."; return; }
             if (!response.IsSuccessStatusCode)
             {
                 var body = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -145,7 +190,7 @@
                 return;
             }
             guardada = true;
-            aviso = "Si la fecha de publicación es futura, aparecerá en el inicio al llegar esa fecha.";
+            aviso = form.Publicada ? "Será pública desde la fecha indicada; en inicio se muestran solo las tres últimas." : "La convocatoria no está publicada y solo es visible en administración.";
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
         { error = "No se pudo confirmar el guardado. Compruebe la conexión y el código antes de reintentar."; }
